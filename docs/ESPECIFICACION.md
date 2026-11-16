@@ -12,7 +12,7 @@ Todas las rutas cuelgan de `/encargos/[encargo]`.
 | Importación de Excel | `…/importaciones` | Plantillas de mapeo, vista previa, carga | 03 |
 | Red de vínculos | `…/red`, `…/red/vista` | Generar, regenerar, calificar; explorar en el visor | 04, 05 |
 | Alertas | `…/alertas`, `…/alertas/[id]` | Resultado de las reglas R01–R09; evidencias lado a lado; confirmar o descartar con motivo | 06 |
-| Ingreso de documentos | `…/ingreso/importar` | Subida con pre-clasificación | 07 |
+| Ingreso de documentos | `…/ingreso/importar`, `…/documentos/[id]` | Subida con pre-clasificación; visor del original | 07 |
 | Captura manual | `…/ingreso/capturar` | Registro sin documento | 08 |
 | Validación | `…/validacion` | Cola de extracciones por confirmar | 09 |
 | Expediente documental | `…/expedientes/[exp]` | Tabla única con cuatro vistas | 10 |
@@ -41,7 +41,7 @@ cuando pertenece a un encargo. No se repiten abajo.
 | `categoria_documental` | `nombre`, `orden` |
 | `tipo_documento` | `clave`, `nombre`, `categoria_id`, `campos_esperados jsonb` |
 | `documento_origen` | `expediente_id`, `sha256`, `storage_path`, `nombre_archivo`, `mime`, `tamano`, `folio`, `fuente`, `recibido_por`, `recibido_en`, `original_id` (si es derivado); único (`encargo_id`, `sha256`) |
-| `registro` | `expediente_id`, `tipo_documento_id`, `origen` (`documento`, `captura`, `importacion`), `documento_id` (nulo en capturas), `fuente`, `fecha_documento`, `estado_validacion` (`pendiente`, `validado`, `corregido`, `rechazado`), `resumen` |
+| `registro` | `expediente_id`, `tipo_documento_id`, `origen` (`documento`, `captura`, `importacion`), `documento_id` (nulo en capturas), `fuente`, `fecha_documento`, `estado_validacion` (`pendiente`, `validado`, `corregido`, `rechazado`), `estado_extraccion`, `resumen` |
 | `extraccion` | `registro_id`, `campo`, `valor_crudo text`, `valor_normalizado jsonb`, `confianza numeric` (nulo si es manual), `ubicacion jsonb` (página, hoja, fila, celda), `metodo` (`ia`, `manual`, `importacion`), `estado`, `validado_por`, `validado_en` |
 
 **Entidades, vínculos y eventos**
@@ -118,6 +118,18 @@ miembros; sin UPDATE ni DELETE. El navegador calcula el SHA-256 (Web Crypto) par
 antes de subir; el servidor lo recalcula al procesar y **ese** es el que se guarda. Si no coinciden,
 el documento se rechaza y se registra en bitácora. Descarga solo con URL firmada de corta duración.
 
+- **Flujo (tarea 07):** el servidor emite una URL firmada de subida para la ruta de la huella declarada;
+  el navegador sube directo; el servidor descarga lo que quedó, recalcula el SHA-256, revisa que los
+  primeros bytes correspondan a la extensión y que el tipo almacenado sea el esperado, y solo entonces
+  llama a `registrar_documento` (documento, registro pendiente y trabajo en una transacción).
+- **Aceptados:** PDF, PNG, JPG, WEBP, TIFF, XLSX, XLS, EML y MSG, hasta 50 MB. Solo PDF e imágenes
+  rasterizadas tienen vista previa; lo demás se descarga. Nunca HTML ni SVG.
+- **Rechazos:** `bitacora.accion = 'documento.rechazado'` con `motivo` (`sha256_no_coincide`,
+  `tipo_no_coincide`, `tamano_excedido`) y ambas huellas. El objeto rechazado queda en el bucket (no
+  hay DELETE) sin `documento_origen` que lo referencie.
+- **Visor:** `…/documentos/[id]`, URL firmada de 60 segundos; cada consulta escribe
+  `documento.consulta` en bitácora.
+
 ## 5. Normalización
 
 - **Montos:** conserva signo y paréntesis contables. Nunca `replace(/[^0-9.]/g,'')`.
@@ -135,6 +147,14 @@ Dos vías, un mismo `registro`.
 **Importar documento** (tarea 07). Pre-clasificación manual de tres campos: tipo de documento,
 expediente (existente o nuevo) y fuente. Con eso se crean `documento_origen` y `registro`
 (`origen = documento`, `estado_validacion = pendiente`) y un `trabajo` de extracción.
+`registro.estado_extraccion` sigue al trabajo: `en_cola` al crear, `en_espera` cuando el procesador
+lo toma (hasta la tarea 09 no hay extracción), luego `en_proceso`, `hecha` o `error`; `no_aplica`
+para capturas e importaciones.
+
+**Procesador de trabajos.** `/api/trabajos/procesar` (cron de Vercel, `CRON_SECRET`) usa la service
+role key, único lugar donde se permite. `tomar_trabajos` toma pendientes con `for update skip locked`
+y los bloquea 5 minutos; `terminar_trabajo` los cierra o los reintenta con espera creciente (2, 4
+minutos); al tercer fallo quedan en `error`. Los manejadores son idempotentes.
 
 **Captura manual** (tarea 08). El mismo formulario que produce una extracción validada, sin archivo:
 `origen = captura`, `metodo = manual`, `confianza` nula, fuente declarada obligatoria. Se muestra como

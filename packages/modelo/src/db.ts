@@ -1215,6 +1215,7 @@ export type Database = {
           creado_por: string | null
           documento_id: string | null
           encargo_id: string
+          estado_extraccion: string
           estado_validacion: string
           expediente_id: string | null
           fecha_documento: string | null
@@ -1231,6 +1232,7 @@ export type Database = {
           creado_por?: string | null
           documento_id?: string | null
           encargo_id: string
+          estado_extraccion?: string
           estado_validacion?: string
           expediente_id?: string | null
           fecha_documento?: string | null
@@ -1246,6 +1248,7 @@ export type Database = {
           creado_por?: string | null
           documento_id?: string | null
           encargo_id?: string
+          estado_extraccion?: string
           estado_validacion?: string
           expediente_id?: string | null
           fecha_documento?: string | null
@@ -1730,6 +1733,7 @@ export type Database = {
         Args: { p_organizacion: string; p_reglas: Json }
         Returns: number
       }
+      registrar_documento: { Args: { p: Json }; Returns: Json }
       resolver_alerta: {
         Args: { p_alerta: string; p_estado: string; p_motivo: string }
         Returns: undefined
@@ -1737,6 +1741,32 @@ export type Database = {
       resolver_fusion: {
         Args: { p_aceptar: boolean; p_fusion: string }
         Returns: undefined
+      }
+      terminar_trabajo: {
+        Args: { p_error?: string; p_ok: boolean; p_trabajo: string }
+        Returns: string
+      }
+      tomar_trabajos: {
+        Args: { p_limite?: number; p_trabajo?: string }
+        Returns: {
+          bloqueado_hasta: string | null
+          creado_en: string
+          creado_por: string | null
+          encargo_id: string | null
+          error: string | null
+          estado: string
+          id: string
+          intentos: number
+          organizacion_id: string
+          payload: NonNullable<Json>
+          tipo: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "trabajo"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
     }
     Enums: {

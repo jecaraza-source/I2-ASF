@@ -42,7 +42,9 @@ En cada proyecto remoto:
 1. Importa el repositorio. **Root Directory:** `apps/web`. Framework: Next.js.
 2. Variables de entorno (ver tabla). Producción apunta a `sigma-prod`; Preview, a `sigma-staging`.
 3. Protección de despliegues activada para las vistas previas.
-4. Cron: lo define `apps/web/vercel.json` (tarea 07) y llama a `/api/trabajos/procesar`.
+4. Cron: lo define `apps/web/vercel.json` y llama a `/api/trabajos/procesar` cada 5 minutos (requiere
+   plan Pro; en Hobby Vercel solo acepta crons diarios). Vercel manda `Authorization: Bearer $CRON_SECRET`;
+   sin `CRON_SECRET` o sin `SUPABASE_SERVICE_ROLE_KEY` el procesador responde 503 y no hace nada.
 
 | Variable | Dónde | Notas |
 |---|---|---|

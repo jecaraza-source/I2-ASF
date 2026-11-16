@@ -80,6 +80,15 @@ jobs:
           fi
           echo "NEXT_PUBLIC_SUPABASE_URL=$url" >> "$GITHUB_ENV"
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$clave" >> "$GITHUB_ENV"
+          # Procesador de trabajos (solo servidor): clave de servicio local y un secreto de prueba.
+          servicio=$(grep -E '^(SERVICE_ROLE_KEY|SECRET_KEY)=' "$RUNNER_TEMP/supabase.env" | head -1 | cut -d= -f2- | tr -d '"')
+          if [ -z "$servicio" ]; then
+            echo "::error::supabase status no devolvió SERVICE_ROLE_KEY"
+            exit 1
+          fi
+          echo "::add-mask::$servicio"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$servicio" >> "$GITHUB_ENV"
+          echo "CRON_SECRET=secreto-solo-para-pruebas-e2e" >> "$GITHUB_ENV"
 
       - name: Navegador de Playwright
         working-directory: apps/web
