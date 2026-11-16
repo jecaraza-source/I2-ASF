@@ -90,6 +90,26 @@ Función `es_miembro(organizacion_id, roles text[])` (`security definer`, `searc
 todas las políticas. `bitacora`: solo INSERT y SELECT. Registro por invitación; el alta pública queda
 desactivada.
 
+Decisiones de implementación (tarea 01):
+
+- **Catálogos por organización, sin `encargo_id`:** `categoria_documental`, `tipo_documento`,
+  `regla_calificacion`, `fuente_consulta` y `plantilla_importacion`. Solo `admin` los escribe.
+  `trabajo.encargo_id` y `bitacora.encargo_id` son opcionales.
+- **Integridad entre organizaciones en la base:** las referencias usan claves foráneas compuestas
+  (`organizacion_id, encargo_id` → `encargo`; `encargo_id, x_id` → tabla del encargo), así que no se
+  puede ligar un objeto a un encargo de otra organización.
+- **Sin DELETE en la evidencia:** ningún usuario borra `documento_origen`, `registro`, `extraccion`,
+  `evidencia`, `entidad`, `vinculo`, `evento`, redes, calificaciones, alertas ni hallazgos; lo erróneo
+  se marca (`rechazado`, `descartada`). `documento_origen`, `evidencia`, `red_*` y `hallazgo_alerta`
+  tampoco admiten UPDATE. Un disparador impide reescribir `sha256`, ruta, organización o encargo de un
+  original, incluso desde el servidor.
+- **`bitacora`:** además de RLS, un disparador rechaza UPDATE, DELETE y TRUNCATE para cualquier rol.
+  Los disparadores de bitácora guardan IDs y cambios de estado, nunca valores de la evidencia.
+- **Valores de estado:** `text` con `check` (no `enum`). `encargo.estado`: `activo`, `cerrado`,
+  `archivado`. `alerta.severidad`: `critica`, `alta`, `media`, `baja`. `calificacion.nivel`:
+  `critico`, `alto`, `medio`, `bajo`.
+- **Funciones auxiliares** en el esquema `privado`, que no se expone por la API.
+
 ## 4. Almacenamiento
 
 Bucket privado `originales`, ruta `{organizacion}/{encargo}/{sha256}`. Políticas: INSERT y SELECT para

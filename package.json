@@ -14,7 +14,8 @@
     "test:e2e": "pnpm --filter web test:e2e",
     "tipos": "supabase gen types typescript --local --schema public > packages/modelo/src/db.ts",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:db": "supabase test db"
   },
   "devDependencies": {
     "@eslint/js": "^9",
