@@ -1,3 +1,4 @@
+export * from "./archivos";
 export * from "./esquemas";
 export * from "./formularios";
 export * from "./permisos";

@@ -18,7 +18,8 @@ export type Accion =
   | "fusion.resolver"
   | "reglas.editar"
   | "reglas.ejecutar"
-  | "alerta.resolver";
+  | "alerta.resolver"
+  | "documento.ingresar";
 
 const PERMISOS: Record<Accion, readonly Rol[]> = {
   "encargo.crear": ["admin", "auditor"],
@@ -34,6 +35,7 @@ const PERMISOS: Record<Accion, readonly Rol[]> = {
   "reglas.editar": ["admin"],
   "reglas.ejecutar": ["admin", "auditor"],
   "alerta.resolver": ["admin", "auditor"],
+  "documento.ingresar": ["admin", "auditor"],
 };
 
 export function puede(rol: Rol | null | undefined, accion: Accion): boolean {

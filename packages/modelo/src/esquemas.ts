@@ -138,6 +138,14 @@ export const registroSchema = z
     fecha_documento: fechaSchema.nullable(),
     estado_validacion: estadoValidacionSchema,
     resumen: z.string().nullable(),
+    estado_extraccion: z.enum([
+      "no_aplica",
+      "en_cola",
+      "en_espera",
+      "en_proceso",
+      "hecha",
+      "error",
+    ]),
   })
   .refine((r) => r.origen !== "documento" || r.documento_id !== null, {
     message: "Un registro de documento debe apuntar a su documento",
