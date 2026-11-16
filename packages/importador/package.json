@@ -1,0 +1,15 @@
+{
+  "name": "@sigma/importador",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lectura de Excel y normalización (funciones puras).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

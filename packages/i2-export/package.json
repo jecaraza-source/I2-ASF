@@ -1,0 +1,15 @@
+{
+  "name": "@sigma/i2-export",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Exportación a i2 Analyst's Notebook (CSV + especificación) y GraphML.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

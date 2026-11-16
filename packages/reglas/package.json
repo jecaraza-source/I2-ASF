@@ -1,0 +1,15 @@
+{
+  "name": "@sigma/reglas",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Reglas de validación cruzada R01–R11 (funciones puras).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}
