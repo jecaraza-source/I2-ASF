@@ -5,7 +5,7 @@ import { z } from "zod";
 import { resolverFusionAccion } from "@/acciones/red";
 import { EstadoVacio } from "@/components/estados";
 import { FormularioAjuste, FormularioGenerar } from "@/components/red/formularios";
-import { Panel, Titulo } from "@/components/ui";
+import { EnlaceBoton, Panel, Titulo } from "@/components/ui";
 import { formatoFecha, obtenerEncargo } from "@/lib/datos";
 import { cargarGeneracion, type CalificacionGuardada } from "@/lib/red-datos";
 import { requerirOrganizacion } from "@/lib/sesion";
@@ -160,7 +160,13 @@ export default async function Red({
 
   return (
     <main className="flex-1 px-8 py-8">
-      <Titulo>Red de vínculos</Titulo>
+      <Titulo
+        accion={
+          actual ? <EnlaceBoton href={`${base}/vista`}>Explorar la red</EnlaceBoton> : undefined
+        }
+      >
+        Red de vínculos
+      </Titulo>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex min-w-0 flex-col gap-6">
           {puedeGenerar ? (

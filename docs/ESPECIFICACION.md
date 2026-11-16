@@ -10,13 +10,14 @@ Todas las rutas cuelgan de `/encargos/[encargo]`.
 |---|---|---|---|
 | Encargos y expedientes | `/encargos`, `…/expedientes` | Alta y navegación | 02 |
 | Importación de Excel | `…/importaciones` | Plantillas de mapeo, vista previa, carga | 03 |
-| Red de vínculos | `…/red` | Generar, regenerar, calificar, explorar | 04, 05 |
+| Red de vínculos | `…/red`, `…/red/vista` | Generar, regenerar, calificar; explorar en el visor | 04, 05 |
 | Alertas | `…/alertas` | Resultado de las reglas R01–R10 | 06 |
 | Ingreso de documentos | `…/ingreso/importar` | Subida con pre-clasificación | 07 |
 | Captura manual | `…/ingreso/capturar` | Registro sin documento | 08 |
 | Validación | `…/validacion` | Cola de extracciones por confirmar | 09 |
 | Expediente documental | `…/expedientes/[exp]` | Tabla única con cuatro vistas | 10 |
 | Ficha de entidad | `…/entidades/[id]` | Todo lo que se sabe de una entidad | 05, 11 |
+| Registro | `…/registros/[id]` | Un registro con sus datos y la hoja, fila, celda o página de origen | 05 |
 | Configuración | `…/configuracion` | Categorías, tipos de documento, reglas, fuentes | 02, 04, 11 |
 
 ## 2. Modelo de datos
@@ -275,7 +276,12 @@ Funciones puras `(datos) => Alerta[]`. Cada alerta enlaza las evidencias que se 
 - **Entidad central:** al elegir un nodo, la red se redibuja con él al centro y sus vínculos directos;
   control para ampliar a 2 saltos. El estado vive en la URL (`?foco=<id>&saltos=1&ruta=<id>,<id>`),
   así el botón atrás y los enlaces compartidos funcionan. Ruta de navegación visible con regreso a
-  cualquier paso y a la vista general, conservando filtros.
+  cualquier paso y a la vista general, conservando filtros (`tipos`, `niveles`, `desde`, `hasta`,
+  `diseno`, que también viven en la URL).
+- **Qué se dibuja:** la generación más reciente. Los vínculos declarados son líneas continuas; los
+  eventos se agrupan en una línea por par de entidades y tipo («12 llamadas»), punteada, con grosor
+  creciente según la cantidad. En una llamada se unen teléfono con teléfono y persona con persona.
+  Clic en una línea muestra los vínculos o eventos que la sostienen y sus registros de origen.
 - **Ficha:** panel lateral y página propia. Secciones: datos generales e identificadores, registros y
   documentos, vínculos y eventos, calificación con criterios, otros expedientes, coincidencias externas.
 - **Ficha enriquecida:** interfaz `ConectorFuente { buscar(entidad): Promise<Coincidencia[]> }`.
