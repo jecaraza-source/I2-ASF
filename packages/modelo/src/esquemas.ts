@@ -175,6 +175,7 @@ export const entidadSchema = z.object({
   identificadores: jsonObjetoSchema,
   atributos: jsonObjetoSchema,
   riesgo_declarado: z.string().nullable(),
+  fusionada_en: uuidSchema.nullable(),
 });
 
 export const vinculoSchema = z.object({

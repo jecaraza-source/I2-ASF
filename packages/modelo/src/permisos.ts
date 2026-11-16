@@ -12,7 +12,11 @@ export type Accion =
   | "expediente.editar"
   | "catalogo.editar"
   | "importacion.crear"
-  | "plantilla.editar";
+  | "plantilla.editar"
+  | "red.generar"
+  | "red.ajustar"
+  | "fusion.resolver"
+  | "reglas.editar";
 
 const PERMISOS: Record<Accion, readonly Rol[]> = {
   "encargo.crear": ["admin", "auditor"],
@@ -22,6 +26,10 @@ const PERMISOS: Record<Accion, readonly Rol[]> = {
   "catalogo.editar": ["admin"],
   "importacion.crear": ["admin", "auditor"],
   "plantilla.editar": ["admin"],
+  "red.generar": ["admin", "auditor"],
+  "red.ajustar": ["admin", "auditor"],
+  "fusion.resolver": ["admin", "auditor"],
+  "reglas.editar": ["admin"],
 };
 
 export function puede(rol: Rol | null | undefined, accion: Accion): boolean {
