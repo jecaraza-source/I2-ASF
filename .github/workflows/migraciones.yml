@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "supabase/migrations/**"
+      - ".github/workflows/migraciones.yml"
 
 concurrency:
   group: migraciones-produccion
