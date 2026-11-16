@@ -16,11 +16,15 @@ export type Database = {
           detalle: NonNullable<Json>
           encargo_id: string
           estado: string
+          huella: string | null
           id: string
           organizacion_id: string
           regla: string
+          resolucion_motivo: string | null
+          resuelta_en: string | null
           resuelta_por: string | null
           severidad: string
+          vigente: boolean
         }
         ComputedFields: never
         Insert: {
@@ -29,11 +33,15 @@ export type Database = {
           detalle?: NonNullable<Json>
           encargo_id: string
           estado?: string
+          huella?: string | null
           id?: string
           organizacion_id: string
           regla: string
+          resolucion_motivo?: string | null
+          resuelta_en?: string | null
           resuelta_por?: string | null
           severidad: string
+          vigente?: boolean
         }
         Update: {
           creado_en?: string
@@ -41,11 +49,15 @@ export type Database = {
           detalle?: NonNullable<Json>
           encargo_id?: string
           estado?: string
+          huella?: string | null
           id?: string
           organizacion_id?: string
           regla?: string
+          resolucion_motivo?: string | null
+          resuelta_en?: string | null
           resuelta_por?: string | null
           severidad?: string
+          vigente?: boolean
         }
         Relationships: [
           {
@@ -1707,11 +1719,16 @@ export type Database = {
         Args: { p_organizacion_id: string; p_roles?: string[] }
         Returns: boolean
       }
+      guardar_alertas: { Args: { p: Json }; Returns: Json }
       guardar_red: { Args: { p: Json }; Returns: string }
       importar_excel: { Args: { p: Json }; Returns: Json }
       nueva_version_reglas: {
         Args: { p_organizacion: string; p_reglas: Json }
         Returns: number
+      }
+      resolver_alerta: {
+        Args: { p_alerta: string; p_estado: string; p_motivo: string }
+        Returns: undefined
       }
       resolver_fusion: {
         Args: { p_aceptar: boolean; p_fusion: string }

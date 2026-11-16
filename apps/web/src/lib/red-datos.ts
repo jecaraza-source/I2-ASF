@@ -8,7 +8,7 @@ type Cliente = Awaited<ReturnType<typeof clienteServidor>>;
 const PAGINA = 1000;
 
 /** Lee todas las filas de una consulta, en páginas (PostgREST limita a 1000 por respuesta). */
-async function leerTodo<T>(
+export async function leerTodo<T>(
   consulta: (
     desde: number,
     hasta: number,
@@ -68,6 +68,7 @@ export async function cargarDatosRed(supabase: Cliente, encargoId: string): Prom
         .from("alerta")
         .select("id, regla, estado, detalle")
         .eq("encargo_id", encargoId)
+        .eq("vigente", true)
         .order("id")
         .range(d, h),
     ),

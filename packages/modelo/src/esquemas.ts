@@ -218,6 +218,10 @@ export const alertaSchema = z.object({
   estado: estadoAlertaSchema,
   detalle: jsonObjetoSchema,
   resuelta_por: uuidSchema.nullable(),
+  huella: z.string().min(3).max(2000).nullable(),
+  vigente: z.boolean(),
+  resolucion_motivo: z.string().nullable(),
+  resuelta_en: z.string().nullable(),
 });
 
 export const calificacionSchema = z

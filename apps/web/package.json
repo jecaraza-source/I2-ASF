@@ -14,6 +14,7 @@
     "@sigma/importador": "workspace:*",
     "@sigma/modelo": "workspace:*",
     "@sigma/red": "workspace:*",
+    "@sigma/reglas": "workspace:*",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
     "cytoscape": "^3.35.0",
