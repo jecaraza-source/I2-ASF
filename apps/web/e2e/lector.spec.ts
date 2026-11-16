@@ -23,11 +23,11 @@ test("lector ve encargos y expedientes sin botones de alta", async ({ page }) =>
 test("lector que entra directo al alta ve que no tiene permiso", async ({ page }) => {
   await ingresar(page, "lector");
   await page.goto("/encargos/nuevo");
-  await expect(page.getByRole("alert")).toContainText("Tu rol no permite");
+  await expect(page.getByRole("alert").filter({ hasText: "Tu rol no permite" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Crear encargo" })).toHaveCount(0);
 
   await page.goto(`/encargos/${ENCARGO}/expedientes/nuevo`);
-  await expect(page.getByRole("alert")).toContainText("Tu rol no permite");
+  await expect(page.getByRole("alert").filter({ hasText: "Tu rol no permite" })).toBeVisible();
 });
 
 test("el servidor rechaza mutaciones del lector aunque se salte la interfaz", async () => {

@@ -57,5 +57,5 @@ test("auditor no configura el catálogo", async ({ page }) => {
     .getByRole("navigation", { name: "Módulos" })
     .getByRole("link", { name: "Configuración" })
     .click();
-  await expect(page.getByRole("alert")).toContainText("Solo un administrador");
+  await expect(page.getByRole("alert").filter({ hasText: "Solo un administrador" })).toBeVisible();
 });

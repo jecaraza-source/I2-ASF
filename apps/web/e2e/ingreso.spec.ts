@@ -13,7 +13,9 @@ test("una contraseña incorrecta muestra un error genérico", async ({ page }) =
   await page.getByLabel("Correo").fill(USUARIOS.auditor);
   await page.getByLabel("Contraseña").fill(`${CONTRASENA}-mal`);
   await page.getByRole("button", { name: "Ingresar" }).click();
-  await expect(page.getByRole("alert")).toHaveText("Correo o contraseña incorrectos.");
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Correo o contraseña incorrectos." }),
+  ).toBeVisible();
   await expect(page).toHaveURL(/\/ingresar/);
 });
 
