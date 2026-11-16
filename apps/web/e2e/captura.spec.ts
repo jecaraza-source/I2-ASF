@@ -44,7 +44,7 @@ test("captura un contrato sin documento, aparece en la red y deja de estar sin s
     },
   );
   const urlRegistro = page.url();
-  await expect(page.getByText("Sin soporte documental")).toBeVisible();
+  await expect(page.getByText("Sin soporte documental", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Datos de origen" })).toContainText("1500000.00");
   await expect(page.getByRole("link", { name: "CONSTRUCTORA CAPTURA E2E SA DE CV" })).toBeVisible();
 
@@ -79,7 +79,7 @@ test("captura un contrato sin documento, aparece en la red y deja de estar sin s
   await expect(page.getByRole("link", { name: "contrato-cap.pdf" })).toBeVisible({
     timeout: 60_000,
   });
-  await expect(page.getByText("Sin soporte documental")).toHaveCount(0);
+  await expect(page.getByText("Sin soporte documental", { exact: true })).toHaveCount(0);
   await modulos.getByRole("link", { name: "Captura manual" }).click();
   await expect(capturas.getByRole("row", { name: /CAP-2026-001/ })).toContainText("Con documento");
 });
