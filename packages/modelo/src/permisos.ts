@@ -6,7 +6,13 @@
 import type { Rol } from "./esquemas";
 
 export type Accion =
-  "encargo.crear" | "encargo.editar" | "expediente.crear" | "expediente.editar" | "catalogo.editar";
+  | "encargo.crear"
+  | "encargo.editar"
+  | "expediente.crear"
+  | "expediente.editar"
+  | "catalogo.editar"
+  | "importacion.crear"
+  | "plantilla.editar";
 
 const PERMISOS: Record<Accion, readonly Rol[]> = {
   "encargo.crear": ["admin", "auditor"],
@@ -14,6 +20,8 @@ const PERMISOS: Record<Accion, readonly Rol[]> = {
   "expediente.crear": ["admin", "auditor"],
   "expediente.editar": ["admin", "auditor"],
   "catalogo.editar": ["admin"],
+  "importacion.crear": ["admin", "auditor"],
+  "plantilla.editar": ["admin"],
 };
 
 export function puede(rol: Rol | null | undefined, accion: Accion): boolean {

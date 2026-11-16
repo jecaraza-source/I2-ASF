@@ -5,11 +5,21 @@
   "description": "Lectura de Excel y normalización (funciones puras).",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./leer": "./src/leer.ts",
+    "./plantillas/*": "./plantillas/*"
   },
   "scripts": {
     "lint": "eslint src",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "plantillas:seed": "node scripts/generar-seed.mjs"
+  },
+  "dependencies": {
+    "read-excel-file": "^9.3.17",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5"
   }
 }

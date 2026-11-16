@@ -1,0 +1,62 @@
+{
+  "nombre": "ANALISIS_ASF_EJEMPLO",
+  "firma_hojas": [
+    {
+      "hoja": "CONTRATOS",
+      "encabezados": ["FOLIO_ASF", "NUM_CONTRATO", "PROVEEDOR", "MONTO_ORIGINAL", "MONTO_PAGADO"]
+    },
+    { "hoja": "VINCULOS", "encabezados": ["ENTIDAD_A", "TIPO_A", "ENTIDAD_B", "TIPO_B", "FUERZA"] },
+    {
+      "hoja": "FINANCIEROS",
+      "encabezados": ["FOLIO", "NOMBRE_ORIGEN", "NOMBRE_DESTINO", "MONTO_MXN", "ETAPA_ALERTA"]
+    }
+  ],
+  "mapeo": {
+    "hojas": [
+      {
+        "hoja": "CONTRATOS",
+        "clase": "contratos",
+        "fila_encabezado": 1,
+        "moneda": "MXN",
+        "columnas": {
+          "identificador": "FOLIO_ASF",
+          "numero": "NUM_CONTRATO",
+          "proveedor": "PROVEEDOR",
+          "dependencia": "DEPENDENCIA",
+          "fecha": "FECHA_FIRMA",
+          "monto_original": "MONTO_ORIGINAL",
+          "monto_pagado": "MONTO_PAGADO"
+        }
+      },
+      {
+        "hoja": "VINCULOS",
+        "clase": "vinculos",
+        "fila_encabezado": 1,
+        "columnas": {
+          "origen": "ENTIDAD_A",
+          "tipo_origen": "TIPO_A",
+          "destino": "ENTIDAD_B",
+          "tipo_destino": "TIPO_B",
+          "tipo_vinculo": "TIPO_VINCULO",
+          "fuerza": "FUERZA"
+        }
+      },
+      {
+        "hoja": "FINANCIEROS",
+        "clase": "transferencias",
+        "fila_encabezado": 1,
+        "columnas": {
+          "identificador": "FOLIO",
+          "fecha": "FECHA",
+          "origen": "NOMBRE_ORIGEN",
+          "cuenta_origen": "NUM_CUENTA_ORIGEN",
+          "destino": "NOMBRE_DESTINO",
+          "tipo": "TIPO",
+          "etapa": "ETAPA_ALERTA"
+        },
+        "montos": [{ "columna": "MONTO_MXN", "moneda": "MXN" }]
+      },
+      { "hoja": "RESUMEN EJECUTIVO", "clase": "cifras" }
+    ]
+  }
+}

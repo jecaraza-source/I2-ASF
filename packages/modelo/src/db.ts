@@ -339,6 +339,13 @@ export type Database = {
             referencedColumns: ["encargo_id", "id"]
           },
           {
+            foreignKeyName: "documento_origen_encargo_id_original_id_fkey"
+            columns: ["encargo_id", "original_id"]
+            isOneToOne: false
+            referencedRelation: "importacion_resumen"
+            referencedColumns: ["encargo_id", "documento_id"]
+          },
+          {
             foreignKeyName: "documento_origen_organizacion_id_encargo_id_fkey"
             columns: ["organizacion_id", "encargo_id"]
             isOneToOne: false
@@ -1236,6 +1243,13 @@ export type Database = {
             referencedColumns: ["encargo_id", "id"]
           },
           {
+            foreignKeyName: "registro_encargo_id_documento_id_fkey"
+            columns: ["encargo_id", "documento_id"]
+            isOneToOne: false
+            referencedRelation: "importacion_resumen"
+            referencedColumns: ["encargo_id", "documento_id"]
+          },
+          {
             foreignKeyName: "registro_encargo_id_expediente_id_fkey"
             columns: ["encargo_id", "expediente_id"]
             isOneToOne: false
@@ -1604,13 +1618,86 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      importacion_resumen: {
+        Row: {
+          cifras: number | null
+          contratos: number | null
+          documento_id: string | null
+          encargo_id: string | null
+          entidades: number | null
+          expediente_id: string | null
+          llamadas: number | null
+          nombre_archivo: string | null
+          organizacion_id: string | null
+          recibido_en: string | null
+          recibido_por: string | null
+          registros: number | null
+          sha256: string | null
+          tamano: number | null
+          transferencias: number | null
+          vinculos: number | null
+        }
+        ComputedFields: never
+        Insert: {
+          cifras?: never
+          contratos?: never
+          documento_id?: string | null
+          encargo_id?: string | null
+          entidades?: never
+          expediente_id?: string | null
+          llamadas?: never
+          nombre_archivo?: string | null
+          organizacion_id?: string | null
+          recibido_en?: string | null
+          recibido_por?: string | null
+          registros?: never
+          sha256?: string | null
+          tamano?: number | null
+          transferencias?: never
+          vinculos?: never
+        }
+        Update: {
+          cifras?: never
+          contratos?: never
+          documento_id?: string | null
+          encargo_id?: string | null
+          entidades?: never
+          expediente_id?: string | null
+          llamadas?: never
+          nombre_archivo?: string | null
+          organizacion_id?: string | null
+          recibido_en?: string | null
+          recibido_por?: string | null
+          registros?: never
+          sha256?: string | null
+          tamano?: number | null
+          transferencias?: never
+          vinculos?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documento_origen_encargo_id_expediente_id_fkey"
+            columns: ["encargo_id", "expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expediente"
+            referencedColumns: ["encargo_id", "id"]
+          },
+          {
+            foreignKeyName: "documento_origen_organizacion_id_encargo_id_fkey"
+            columns: ["organizacion_id", "encargo_id"]
+            isOneToOne: false
+            referencedRelation: "encargo"
+            referencedColumns: ["organizacion_id", "id"]
+          },
+        ]
+      }
     }
     Functions: {
       es_miembro: {
         Args: { p_organizacion_id: string; p_roles?: string[] }
         Returns: boolean
       }
+      importar_excel: { Args: { p: Json }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
