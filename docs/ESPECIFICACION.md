@@ -199,6 +199,20 @@ filas sin identificador válido. Los totales del archivo **sí** se guardan como
 Las entidades se resuelven por identificador cuando existe (`ID`, `RFC`) y por nombre normalizado en
 caso contrario. Así los tres formatos terminan en el mismo grafo.
 
+**Formato del mapeo (tarea 03).** `plantilla_importacion.mapeo = { hojas: [...] }`. Cada hoja declara
+su `clase` (`contratos`, `transferencias`, `vinculos`, `llamadas`, `entidades`, `cifras`), la
+`fila_encabezado` y las `columnas` por encabezado (validado con `plantillaSchema` de
+`@sigma/importador`). `firma_hojas = [{ hoja, encabezados[] }]`: la plantilla aplica si todas sus hojas
+existen y traen esos encabezados en las primeras 10 filas. Las plantillas semilla viven en
+`packages/importador/plantillas/*.json` y generan `supabase/seed_plantillas.sql`.
+
+**Carga (tarea 03).** La función `importar_excel(jsonb)` (`security invoker`, con RLS) crea en una sola
+transacción el `documento_origen`, un `registro` validado por fila (y uno por hoja de cifras, con
+extracciones `total_declarado`), las extracciones con `ubicacion` (hoja, fila, celda), entidades
+(reutiliza las del encargo por RFC válido, teléfono o nombre normalizado), vínculos, eventos,
+`registro_entidad`, `evidencia` y la entrada `importacion.carga` en bitácora. La vista
+`importacion_resumen` (`security_invoker`) cuenta lo producido por cada archivo.
+
 ## 9. Red de vínculos
 
 **Resolución de entidades.** Prioridad: RFC → CURP → identificador del archivo → nombre normalizado.

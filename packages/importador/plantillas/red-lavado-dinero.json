@@ -1,0 +1,59 @@
+{
+  "nombre": "Red_Lavado_Dinero",
+  "firma_hojas": [
+    { "hoja": "NODOS — ENTIDADES", "encabezados": ["ID", "NOMBRE / RAZÓN SOCIAL", "RIESGO"] },
+    {
+      "hoja": "FLUJOS FINANCIEROS",
+      "encabezados": ["ORIGEN (ID)", "DESTINO (ID)", "MONTO ($USD)", "MONTO ($MXN)"]
+    },
+    { "hoja": "VÍNCULOS", "encabezados": ["NODO_A", "NODO_B", "PESO"] }
+  ],
+  "mapeo": {
+    "hojas": [
+      {
+        "hoja": "NODOS — ENTIDADES",
+        "clase": "entidades",
+        "fila_encabezado": 3,
+        "columnas": {
+          "id": "ID",
+          "nombre": "NOMBRE / RAZÓN SOCIAL",
+          "tipo": "TIPO",
+          "id_fiscal": "RFC / ID FISCAL",
+          "riesgo": "RIESGO"
+        }
+      },
+      {
+        "hoja": "FLUJOS FINANCIEROS",
+        "clase": "transferencias",
+        "fila_encabezado": 2,
+        "columnas": {
+          "identificador": "NO.",
+          "fecha": "FECHA",
+          "origen": "NOMBRE ORIGEN",
+          "origen_id": "ORIGEN (ID)",
+          "destino": "NOMBRE DESTINO",
+          "destino_id": "DESTINO (ID)",
+          "tipo": "TIPO",
+          "etapa": "ETAPA LAVADO"
+        },
+        "montos": [
+          { "columna": "MONTO ($MXN)", "moneda": "MXN" },
+          { "columna": "MONTO ($USD)", "moneda": "USD" }
+        ]
+      },
+      {
+        "hoja": "VÍNCULOS",
+        "clase": "vinculos",
+        "fila_encabezado": 2,
+        "extremos_por_id": true,
+        "columnas": {
+          "origen": "NODO_A",
+          "destino": "NODO_B",
+          "tipo_vinculo": "TIPO VÍNCULO",
+          "fuerza": "PESO",
+          "fecha": "FECHA PRIMER CONTACTO"
+        }
+      }
+    ]
+  }
+}

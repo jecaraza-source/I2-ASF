@@ -1,0 +1,83 @@
+{
+  "nombre": "ASF_Auditoria_Forense",
+  "firma_hojas": [
+    {
+      "hoja": "ANALISIS TELEFONICO",
+      "encabezados": ["NUMERO_A", "NUMERO_B", "FECHA", "HORA", "NOMBRE_A", "NOMBRE_B"]
+    },
+    {
+      "hoja": "CONTRATOS IRREGULARES",
+      "encabezados": ["No. CONTRATO", "PROVEEDOR / EMPRESA", "RFC", "MONTO ORIGINAL ($MXN)"]
+    },
+    { "hoja": "RED DE VÍNCULOS", "encabezados": ["ENTIDAD_A", "ENTIDAD_B", "FUERZA"] },
+    {
+      "hoja": "MOVIMIENTOS FINANCIEROS",
+      "encabezados": ["TITULAR ORIGEN", "TITULAR DESTINO", "MONTO ($MXN)", "TIPO OPERACIÓN"]
+    }
+  ],
+  "mapeo": {
+    "hojas": [
+      { "hoja": "PORTADA", "clase": "cifras" },
+      {
+        "hoja": "ANALISIS TELEFONICO",
+        "clase": "llamadas",
+        "fila_encabezado": 1,
+        "columnas": {
+          "numero_origen": "NUMERO_A",
+          "numero_destino": "NUMERO_B",
+          "fecha": "FECHA",
+          "hora": "HORA",
+          "duracion": "DURACION_SEG",
+          "tipo": "TIPO_EVENTO",
+          "nombre_origen": "NOMBRE_A",
+          "nombre_destino": "NOMBRE_B"
+        }
+      },
+      {
+        "hoja": "CONTRATOS IRREGULARES",
+        "clase": "contratos",
+        "fila_encabezado": 3,
+        "moneda": "MXN",
+        "columnas": {
+          "identificador": "No. CONTRATO",
+          "numero": "No. CONTRATO",
+          "proveedor": "PROVEEDOR / EMPRESA",
+          "rfc": "RFC",
+          "fecha": "FECHA FIRMA",
+          "monto_original": "MONTO ORIGINAL ($MXN)",
+          "monto_pagado": "MONTO PAGADO ($MXN)"
+        }
+      },
+      {
+        "hoja": "RED DE VÍNCULOS",
+        "clase": "vinculos",
+        "fila_encabezado": 3,
+        "columnas": {
+          "origen": "ENTIDAD_A",
+          "tipo_origen": "TIPO_A",
+          "destino": "ENTIDAD_B",
+          "tipo_destino": "TIPO_B",
+          "tipo_vinculo": "TIPO_VÍNCULO",
+          "fuerza": "FUERZA",
+          "fecha": "FECHA_DETECCIÓN"
+        }
+      },
+      {
+        "hoja": "MOVIMIENTOS FINANCIEROS",
+        "clase": "transferencias",
+        "fila_encabezado": 2,
+        "columnas": {
+          "identificador": "NO.",
+          "fecha": "FECHA",
+          "origen": "TITULAR ORIGEN",
+          "cuenta_origen": "CUENTA ORIGEN",
+          "destino": "TITULAR DESTINO",
+          "cuenta_destino": "CUENTA DESTINO",
+          "tipo": "TIPO OPERACIÓN"
+        },
+        "montos": [{ "columna": "MONTO ($MXN)", "moneda": "MXN" }]
+      },
+      { "hoja": "RESUMEN EJECUTIVO", "clase": "cifras" }
+    ]
+  }
+}
