@@ -4,6 +4,7 @@
  * Los valores permitidos replican los `check` de supabase/migrations.
  */
 import { z } from "zod";
+import { PROVEEDORES_IA } from "./ia";
 
 // ---------------------------------------------------------------------------
 // Primitivos
@@ -103,6 +104,7 @@ export const encargoSchema = z.object({
   periodo_inicio: fechaSchema.nullable(),
   periodo_fin: fechaSchema.nullable(),
   estado: estadoEncargoSchema,
+  ia_proveedores: z.array(z.enum(PROVEEDORES_IA)),
 });
 
 export const expedienteSchema = z.object({

@@ -53,6 +53,8 @@ En cada proyecto remoto:
 | `SUPABASE_SERVICE_ROLE_KEY` | **Solo servidor** | Únicamente en el procesador de trabajos |
 | `ANTHROPIC_API_KEY` | Solo servidor | Extracción con IA |
 | `ANTHROPIC_MODEL` | Solo servidor | Modelo a usar; se cambia sin tocar código |
+| `OPENAI_API_KEY` | Solo servidor | Opcional. Segundo proveedor de IA; solo se usa en encargos que lo permitan |
+| `OPENAI_MODEL` | Solo servidor | Modelo de OpenAI a usar, si se configura ese proveedor |
 | `CRON_SECRET` | Solo servidor | Autoriza la llamada del cron |
 
 Para desarrollo local: copia `.env.example` a `apps/web/.env.local` y llénalo con los valores que

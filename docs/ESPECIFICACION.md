@@ -31,7 +31,7 @@ cuando pertenece a un encargo. No se repiten abajo.
 |---|---|
 | `organizacion` | `nombre` |
 | `miembro` | `usuario_id → auth.users`, `rol` (`admin`, `auditor`, `lector`); único por organización y usuario |
-| `encargo` | `nombre`, `tipo_auditoria`, `umbral_confianza numeric default 0.85`, `periodo_inicio`, `periodo_fin`, `estado` |
+| `encargo` | `ia_proveedores`, `nombre`, `tipo_auditoria`, `umbral_confianza numeric default 0.85`, `periodo_inicio`, `periodo_fin`, `estado` |
 
 **Expediente y registros**
 
@@ -202,6 +202,26 @@ domicilios, teléfonos. Cada tipo de documento añade los suyos en `campos_esper
 - Extracciones con `confianza ≥ umbral` quedan `validado` con `validado_por` nulo (automáticas);
   las demás entran a la cola de validación. Solo lo validado alimenta entidades y vínculos.
 - Formato de envío de PDF e imágenes: verificar en la documentación vigente del SDK al implementar.
+
+### 7.1 Administrador de uso de IA
+
+- **Proveedores:** `anthropic` y `openai`. Cada encargo declara en `encargo.ia_proveedores` a cuáles
+  puede enviar documentos; vacío (valor inicial, incluso si el insert pide otra cosa) significa IA
+  apagada en ese encargo. Solo un administrador lo cambia y queda en bitácora (`encargo.ia`).
+- **Compuerta:** antes de cada llamada el procesador consulta `ia_permitida(encargo, proveedor)`:
+  interruptor de la organización, proveedor permitido en el encargo, tope diario y tope mensual de
+  tokens (día y mes en hora de México) y llave del proveedor presente. Si no pasa, no se llama y se
+  registra como `bloqueada`.
+- **Consumo:** `uso_ia`, una fila por llamada (proveedor, modelo, función, tokens de entrada y salida,
+  resultado, código de error, duración, trabajo y registro). Nunca contenido. Append-only; la escribe
+  el procesador y solo la leen los administradores.
+- **Configuración:** `configuracion_ia` (interruptor y topes por organización; sin fila rigen
+  2,000,000 diarios y 30,000,000 mensuales) y `precio_ia` (USD por millón de tokens de entrada y
+  salida por modelo, que captura el administrador para estimar el costo).
+- **Pantalla `/ia`** (solo administradores): estado, consumo de hoy y del mes contra los topes, costo
+  estimado, desglose por modelo, encargo y función, errores y bloqueos recientes, estado de las llaves
+  (sin mostrarlas) y los controles.
+- El papel de OpenAI (proveedor alterno de extracción, respaldo o búsqueda) está por definir (§14).
 
 ## 8. Importador de Excel
 
