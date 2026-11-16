@@ -1,0 +1,15 @@
+{
+  "name": "@sigma/red",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Resolución de entidades, generación y calificación de la red (funciones puras).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

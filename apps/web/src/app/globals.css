@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/* Paleta y tipografía tomadas del prototipo (legacy/sigma_analisis_asf.html). */
+:root {
+  --bg: #0a0e14;
+  --bg2: #0d1320;
+  --panel: #121a28;
+  --panel2: #172132;
+  --line: #243042;
+  --line2: #2e3c52;
+  --gold: #d4af37;
+  --gold-soft: #e6c466;
+  --gold-dim: #8a7330;
+  --txt: #e8ecef;
+  --muted: #8893a4;
+  --muted2: #5d6779;
+  --node: #5a8bb0;
+  --node-edge: #7fb3d8;
+  --danger: #c65a4a;
+  --ok: #5aa06f;
+  --azul-claro: #8ecdff;
+  --azul-medio: #4a7aaa;
+  --azul-borde: #2a6aaa;
+  --azul-profundo: #0a1e38;
+  --azul-header: #1a4a7a;
+  --sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "SFMono-Regular", Consolas, "Roboto Mono", "Liberation Mono", monospace;
+}
+
+@theme inline {
+  --color-fondo: var(--bg);
+  --color-fondo-2: var(--bg2);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel2);
+  --color-linea: var(--line);
+  --color-linea-2: var(--line2);
+  --color-oro: var(--gold);
+  --color-oro-suave: var(--gold-soft);
+  --color-oro-tenue: var(--gold-dim);
+  --color-texto: var(--txt);
+  --color-tenue: var(--muted);
+  --color-tenue-2: var(--muted2);
+  --color-nodo: var(--node);
+  --color-peligro: var(--danger);
+  --color-ok: var(--ok);
+  --color-azul-claro: var(--azul-claro);
+  --color-azul-medio: var(--azul-medio);
+  --color-azul-borde: var(--azul-borde);
+  --color-azul-profundo: var(--azul-profundo);
+  --color-azul-header: var(--azul-header);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+}
+
+body {
+  background-color: var(--bg);
+  background-image: radial-gradient(ellipse at 20% -10%, rgba(212, 175, 55, 0.06), transparent 55%);
+  color: var(--txt);
+  font-family: var(--sans);
+}

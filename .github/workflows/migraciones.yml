@@ -1,0 +1,42 @@
+name: migraciones
+
+# Única vía para cambiar la base de producción (docs/SETUP.md §5).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+
+concurrency:
+  group: migraciones-produccion
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Ligar proyecto de producción
+        run: pnpm exec supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Aplicar migraciones
+        run: pnpm exec supabase db push --password "$SUPABASE_DB_PASSWORD"

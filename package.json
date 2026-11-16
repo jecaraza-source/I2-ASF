@@ -1,0 +1,28 @@
+{
+  "name": "sigma-plataforma",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "lint": "pnpm -r --parallel lint",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "test": "pnpm -r --filter \"./packages/*\" test",
+    "test:e2e": "pnpm --filter web test:e2e",
+    "tipos": "supabase gen types typescript --local --schema public > packages/modelo/src/db.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9",
+    "eslint": "^9",
+    "prettier": "^3",
+    "supabase": "^3.1.0",
+    "typescript": "^5",
+    "typescript-eslint": "^8",
+    "vitest": "^3"
+  }
+}
