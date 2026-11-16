@@ -70,12 +70,19 @@ test("captura un contrato sin documento, aparece en la red y deja de estar sin s
 
   // Asociar el documento: deja de mostrarse «sin soporte documental».
   await page.goto(urlRegistro);
-  await page.getByLabel("Documento de soporte").setInputFiles({
+  const soporte = {
     name: "contrato-cap.pdf",
     mimeType: "application/pdf",
     buffer: Buffer.from(`%PDF-1.4\n% ${unico("soporte")}\n%%EOF\n`),
-  });
-  await page.getByRole("button", { name: "Asociar documento" }).click();
+  };
+  const asociar = page.getByRole("button", { name: "Asociar documento" });
+  // Tras una carga completa, el campo puede recibir el archivo antes de que la página esté
+  // interactiva; se reintenta hasta que el botón se habilita.
+  await expect(async () => {
+    await page.getByLabel("Documento de soporte").setInputFiles(soporte);
+    await expect(asociar).toBeEnabled({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+  await asociar.click();
   await expect(page.getByRole("link", { name: "contrato-cap.pdf" })).toBeVisible({
     timeout: 60_000,
   });
