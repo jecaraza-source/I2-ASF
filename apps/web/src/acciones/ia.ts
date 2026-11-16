@@ -1,7 +1,7 @@
 "use server";
 
 import { PROVEEDORES_IA, puede } from "@sigma/modelo";
-import { revalidatePath } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mensajeDeError } from "@/lib/errores-db";
 import type { EstadoFormulario } from "@/lib/formulario";
@@ -53,6 +53,7 @@ export async function guardarConfiguracionIA(
   });
   if (error) return { ok: false, mensaje: mensajeDeError(error, "guardarConfiguracionIA") };
   revalidatePath("/ia");
+  refresh();
   return { ok: true, mensaje: "Configuración guardada." };
 }
 
@@ -91,6 +92,7 @@ export async function guardarPrecioIA(
     );
   if (error) return { ok: false, mensaje: mensajeDeError(error, "guardarPrecioIA") };
   revalidatePath("/ia");
+  refresh();
   return { ok: true, mensaje: "Precio guardado." };
 }
 
@@ -104,6 +106,7 @@ export async function eliminarPrecioIA(f: FormData): Promise<void> {
     .eq("id", id.data)
     .eq("organizacion_id", c.organizacionId);
   revalidatePath("/ia");
+  refresh();
 }
 
 const encargoSchema = z.object({
@@ -132,6 +135,7 @@ export async function configurarIAEncargo(
   if (error) return { ok: false, mensaje: mensajeDeError(error, "configurarIAEncargo") };
   if (!data?.length) return { ok: false, mensaje: "El encargo no existe o no tienes acceso." };
   revalidatePath("/ia");
+  refresh();
   return {
     ok: true,
     mensaje: d.data.proveedores.length
