@@ -47,6 +47,12 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.119.0
         version: 2.119.0
+      cytoscape:
+        specifier: ^3.35.0
+        version: 3.35.0
+      cytoscape-dagre:
+        specifier: ^4.1.0
+        version: 4.1.0(cytoscape@3.35.0)
       next:
         specifier: 16.4.6
         version: 16.4.6(@babel/core@7.29.13)(@playwright/test@1.65.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -1365,6 +1371,15 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  cytoscape-dagre@4.1.0:
+    resolution: {integrity: sha512-wZYva0KmkIeCrUIy6u/SJgwEFHtWUuu4UqVOjJ6thtvmiNcjS9hY/4AXiIDx8k/zleVxrYCPb7TGlAyNjZ627Q==}
+    peerDependencies:
+      cytoscape: ^3.2.22
+
+  cytoscape@3.35.0:
+    resolution: {integrity: sha512-sMvBIXiGMnhkCaWz2R06FwF/27MNlS+Tqvi17foO9UhnUg3XGZccKjxsvEqQFAQYMSSZmN5SxYzUYlQ0DOJJ3g==}
+    engines: {node: '>=0.10'}
 
   damerau-levenshtein@1.0.8:
     resolution: {integrity: sha512-sdQSFB7+llfUcQHUQO3+B8ERRj0Oa4w9POWMI/puGtuf7gFywGmkaLCElnudfTiKZV+NvHqL0ifzdrI8Ro7ESA==}
@@ -3747,6 +3762,12 @@ snapshots:
       which: 2.0.2
 
   csstype@3.2.3: {}
+
+  cytoscape-dagre@4.1.0(cytoscape@3.35.0):
+    dependencies:
+      cytoscape: 3.35.0
+
+  cytoscape@3.35.0: {}
 
   damerau-levenshtein@1.0.8: {}
 
