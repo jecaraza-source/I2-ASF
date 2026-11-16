@@ -45,3 +45,6 @@ jobs:
         run: |
           pnpm exec supabase db start
           pnpm exec supabase db reset
+
+      - name: Pruebas de base de datos (RLS, bitácora, storage)
+        run: pnpm exec supabase test db
