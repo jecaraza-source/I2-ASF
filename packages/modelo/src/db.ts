@@ -1722,6 +1722,8 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      asociar_documento: { Args: { p: Json }; Returns: Json }
+      capturar_registro: { Args: { p: Json }; Returns: string }
       es_miembro: {
         Args: { p_organizacion_id: string; p_roles?: string[] }
         Returns: boolean

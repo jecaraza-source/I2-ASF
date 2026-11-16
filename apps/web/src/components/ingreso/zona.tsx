@@ -3,8 +3,8 @@
 import { EXTENSIONES_ACEPTADAS, MAX_BYTES_DOCUMENTO, tipoPorNombre } from "@sigma/modelo";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState, type DragEvent } from "react";
-import { prepararSubida, registrarDocumento, revisarDuplicados } from "@/acciones/ingreso";
-import { clienteNavegador } from "@/lib/supabase/navegador";
+import { registrarDocumento, revisarDuplicados } from "@/acciones/ingreso";
+import { huellaDe, subirOriginal } from "./subir";
 
 type Opcion = { id: string; nombre: string };
 type Clasificacion = {
@@ -63,11 +63,6 @@ const TONO: Record<Estado, string> = {
   rechazado: "text-peligro",
   error: "text-peligro",
 };
-
-async function huella(archivo: File): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", await archivo.arrayBuffer());
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 function tamano(bytes: number) {
   return bytes >= 1048576
@@ -214,7 +209,7 @@ export function ZonaIngreso({
     for (const e of nuevos) {
       if (e.estado !== "calculando") continue;
       try {
-        calculados.push({ clave: e.clave, sha256: await huella(e.archivo) });
+        calculados.push({ clave: e.clave, sha256: await huellaDe(e.archivo) });
       } catch {
         actualizar(e.clave, { estado: "error", mensaje: "No se pudo leer el archivo." });
       }
@@ -261,28 +256,13 @@ export function ZonaIngreso({
     setAviso("");
     setOcupado(true);
     let registrados = 0;
-    const supabase = clienteNavegador();
     for (const e of pendientes) {
       const sha256 = e.sha256 as string;
       actualizar(e.clave, { estado: "subiendo", mensaje: "" });
-      const subida = await prepararSubida({
-        encargoId,
-        sha256,
-        nombre: e.archivo.name,
-        tamano: e.archivo.size,
-      });
+      const subida = await subirOriginal(encargoId, e.archivo, sha256);
       if (!subida.ok) {
         actualizar(e.clave, { estado: "error", mensaje: subida.mensaje });
         continue;
-      }
-      if (subida.token) {
-        const { error } = await supabase.storage
-          .from("originales")
-          .uploadToSignedUrl(subida.ruta, subida.token, e.archivo, { contentType: subida.mime });
-        if (error && !/exist|duplicate/i.test(error.message)) {
-          actualizar(e.clave, { estado: "error", mensaje: "No se pudo subir. Intenta de nuevo." });
-          continue;
-        }
       }
       actualizar(e.clave, { estado: "registrando" });
       const r = await registrarDocumento({

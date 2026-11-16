@@ -161,6 +161,21 @@ minutos); al tercer fallo quedan en `error`. Los manejadores son idempotentes.
 «sin soporte documental». Al asociarle un documento se ejecuta la extracción y se compara campo por
 campo con lo capturado; cada diferencia genera una alerta `R11_captura_vs_documento`.
 
+- **Formulario único:** campos comunes (abajo) + `campos_esperados` del tipo + involucrados repetibles
+  (empresa, persona o dependencia; rol; RFC; CURP) con autocompletado contra las entidades del
+  encargo. Lo valida y normaliza el servidor con las funciones de §5. Un RFC o CURP con formato
+  inválido se conserva marcado, no bloquea.
+- **`campos_esperados`:** arreglo de `{ clave, etiqueta, tipo, requerido? }` con `tipo` en `texto`,
+  `texto_largo`, `fecha`, `monto`, `numero`. El catálogo provisional trae los suyos
+  (`privado.campos_provisionales`); un tipo nuevo con esa clave los recibe al crearse.
+- **Qué guarda `capturar_registro`** (una transacción): el registro `validado`; una extracción
+  `manual`/`validado` por campo y por involucrado, sin confianza; las entidades (se reutiliza la que
+  tenga el mismo RFC válido, o el mismo tipo y nombre normalizado); `registro_entidad` con el rol;
+  evidencia; y un evento cuando el tipo lo amerita: `contrato` (dependencia → proveedor) o
+  `comprobante_transferencia` (ordenante → beneficiario), con al menos dos involucrados.
+- **`asociar_documento`:** sube y verifica el original como en §4, liga `documento_id` (el origen
+  sigue siendo `captura`) y encola la extracción con `comparar_con_captura`.
+
 **Catálogo provisional** (configurable por organización):
 
 | Categoría | Tipos de documento |
