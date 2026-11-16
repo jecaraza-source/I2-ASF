@@ -16,6 +16,7 @@ import {
 import { leerXlsx } from "@sigma/importador/leer";
 import { puede, type Json } from "@sigma/modelo";
 import { redirect } from "next/navigation";
+import { ejecutarYGuardarReglas } from "@/lib/reglas-datos";
 import { z } from "zod";
 import { mensajeDeError } from "@/lib/errores-db";
 import { requerirOrganizacion } from "@/lib/sesion";
@@ -264,5 +265,10 @@ export async function confirmarImportacion(formData: FormData): Promise<EstadoAn
   }
   const documento = z.object({ documento_id: z.uuid() }).safeParse(data);
   if (!documento.success) return { ok: false, mensaje: "La importación no devolvió un documento." };
+  // §10: las reglas corren al terminar cada importación. Si fallan, la importación ya quedó
+  // guardada; se pueden volver a ejecutar desde Alertas.
+  const reglas = await ejecutarYGuardarReglas(supabase, encargo.id);
+  if (!reglas.ok)
+    console.error(`[reglasTrasImportar] error de base: ${reglas.codigo ?? "desconocido"}`);
   redirect(`/encargos/${encargo.id}/importaciones/${documento.data.documento_id}`);
 }

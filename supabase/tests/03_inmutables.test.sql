@@ -49,7 +49,8 @@ update public.registro set estado_validacion = 'validado' where id = '30000000-0
 insert into public.alerta (id, organizacion_id, encargo_id, regla, severidad)
 values ('50000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001',
         'c0000000-0000-4000-8000-000000000001', 'R01', 'alta');
-update public.alerta set estado = 'descartada', resuelta_por = 'a0000000-0000-4000-8000-000000000002'
+update public.alerta set estado = 'descartada', resolucion_motivo = 'Prueba',
+                          resuelta_por = 'a0000000-0000-4000-8000-000000000002'
  where id = '50000000-0000-4000-8000-000000000001';
 insert into public.red_generada (id, organizacion_id, encargo_id, semillas, alcance, version_reglas)
 values ('60000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001',

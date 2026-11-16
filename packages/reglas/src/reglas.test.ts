@@ -1,0 +1,338 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import {
+  detectarPlantilla,
+  importar,
+  plantillaSchema,
+  rfcValido,
+  type ResultadoImportacion,
+} from "@sigma/importador";
+import { leerXlsx } from "@sigma/importador/leer";
+import { beforeAll, describe, expect, it } from "vitest";
+import {
+  REGLAS,
+  constitucionSegunRfc,
+  ejecutarReglas,
+  r01,
+  r02,
+  r03,
+  r04,
+  r05,
+  r06,
+  r07,
+  r08,
+  r09,
+} from "./reglas";
+import type { DatosReglas } from "./tipos";
+
+const RAIZ = join(__dirname, "..", "..", "..");
+const DIR = join(RAIZ, "packages", "importador", "plantillas");
+const PLANTILLAS = readdirSync(DIR).map((f) =>
+  plantillaSchema.parse(JSON.parse(readFileSync(join(DIR, f), "utf8"))),
+);
+
+/** Convierte un resultado de importación en los datos que leen las reglas (como lo haría la base). */
+function aDatos(r: ResultadoImportacion): DatosReglas {
+  return {
+    registros: r.registros.map((g) => ({
+      id: g.clave,
+      hoja: g.hoja,
+      resumen: g.resumen,
+      extracciones: g.extracciones.map((x, i) => ({
+        id: `${g.clave}#${i}`,
+        campo: x.campo,
+        valor_crudo: x.valor_crudo,
+        valor_normalizado: x.valor_normalizado,
+        ubicacion: `Hoja ${x.ubicacion.hoja}, fila ${x.ubicacion.fila}, celda ${x.ubicacion.celda}`,
+      })),
+    })),
+    entidades: r.entidades.map((e) => ({
+      id: e.clave,
+      tipo: e.tipo,
+      nombre: e.nombre,
+      nombre_normalizado: e.nombre_normalizado,
+      rfc: rfcValido(e.identificadores) ?? null,
+    })),
+    vinculos: r.vinculos.map((v, i) => ({
+      id: `v${i + 1}`,
+      registro_id: v.registro,
+      origen_id: v.origen,
+      destino_id: v.destino,
+      tipo: v.tipo,
+    })),
+    eventos: r.eventos.map((e, i) => ({
+      id: `ev${i + 1}`,
+      registro_id: e.registro,
+      tipo: e.tipo,
+      fecha: e.fecha_hora ? e.fecha_hora.slice(0, 10) : null,
+      monto: e.monto,
+      monto_pagado: typeof e.atributos.monto_pagado === "string" ? e.atributos.monto_pagado : null,
+      tipo_operacion:
+        typeof e.atributos.tipo_operacion === "string" ? e.atributos.tipo_operacion : null,
+      participantes: e.participantes.map((p) => ({ entidad_id: p.entidad, rol: p.rol })),
+    })),
+  };
+}
+
+async function datosDe(nombre: string): Promise<DatosReglas> {
+  const libro = await leerXlsx(readFileSync(join(RAIZ, "fixtures", `${nombre}.xlsx`)));
+  const plantilla = detectarPlantilla(libro, PLANTILLAS);
+  if (!plantilla) throw new Error("sin plantilla");
+  return aDatos(importar(libro, plantilla));
+}
+
+let asf: DatosReglas;
+let ejemplo: DatosReglas;
+let lavado: DatosReglas;
+beforeAll(async () => {
+  asf = await datosDe("ASF_Auditoria_Forense_07734");
+  ejemplo = await datosDe("ANALISIS_ASF_EJEMPLO");
+  lavado = await datosDe("Red_Lavado_Dinero_LDN2024047");
+});
+
+const nombre = (d: DatosReglas, id: string) => d.entidades.find((e) => e.id === id)?.nombre;
+
+describe("expediente 07734 (§13)", () => {
+  it("R02 alerta con los tres montos: portada, resumen y detalle", () => {
+    const a = r02(asf).filter((x) => x.huella.startsWith("R02|monto_contratado"));
+    expect(a).toHaveLength(1);
+    expect(a[0]?.evidencias.map((e) => e.valor).sort()).toEqual([
+      "$1,847,320,450.00",
+      "$1,947,320,450.00",
+      "$1,948,320,450.00",
+    ]);
+    expect(new Set(a[0]?.evidencias.map((e) => e.ubicacion?.split(",")[0]))).toEqual(
+      new Set(["Hoja PORTADA", "Hoja RESUMEN EJECUTIVO", "Hoja CONTRATOS IRREGULARES"]),
+    );
+  });
+
+  it("R04 alerta: wire transfers por 138.5 M contra 116.5 M del resumen", () => {
+    const a = r04(asf);
+    expect(a).toHaveLength(1);
+    expect(a[0]?.evidencias.map((e) => e.valor)).toEqual(["$116,500,000.00", "$138,500,000.00"]);
+    expect(a[0]?.evidencias[1]?.etiqueta).toContain("5 transferencias al exterior");
+  });
+
+  it("R03 alerta: 87 llamadas declaradas contra 0", () => {
+    const a = r03(asf);
+    expect(a).toHaveLength(1);
+    expect(a[0]?.titulo).toBe("Vínculo afirma 87 llamadas y hay 0");
+    expect(a[0]?.entidades.map((id) => nombre(asf, id)).sort()).toEqual([
+      "ANA TORRES CASTILLO",
+      "CARLOS MENDOZA RÍOS",
+    ]);
+  });
+
+  it("R01 no alerta: los totales coinciden con las 12 filas (la fila 16 no es un contrato)", () => {
+    expect(r01(asf)).toEqual([]);
+  });
+
+  it("R05 no alerta por cuñados: la nota explica el parentesco", () => {
+    expect(r05(asf)).toEqual([]);
+  });
+
+  it("R06 marca el contrato pagado por encima del original", () => {
+    const a = r06(asf);
+    expect(a).toHaveLength(1);
+    expect(a[0]?.evidencias.map((e) => e.valor)).toEqual(["$148,500,000.00", "$189,320,000.00"]);
+    expect(a[0]?.entidades.map((id) => nombre(asf, id))).toEqual([
+      "GRUPO CONSTRUCTOR MENDOZA SA DE CV",
+    ]);
+  });
+
+  it("R09 usa la fecha del RFC: constituida 73 días antes del contrato", () => {
+    const a = r09(asf);
+    const mendoza = a.find((x) => x.titulo.includes("73 días"));
+    expect(mendoza?.descripcion).toContain("01/01/2022");
+    expect(a.every((x) => x.entidades.length === 1)).toBe(true);
+  });
+});
+
+describe("ANALISIS_ASF_EJEMPLO (§13)", () => {
+  it("R05 marca el parentesco con apellidos distintos", () => {
+    const a = r05(ejemplo);
+    expect(a).toHaveLength(1);
+    expect(a[0]?.entidades.map((id) => nombre(ejemplo, id)).sort()).toEqual([
+      "ING. RODRIGO VARGAS MORENO",
+      "MARIO ALBERTO FUENTES CASTILLO",
+    ]);
+    expect(a[0]?.descripcion).toContain("FUENTES CASTILLO / VARGAS MORENO");
+  });
+
+  it("R01 no produce falsos positivos por la fila de totales", () => {
+    expect(r01(ejemplo)).toEqual([]);
+  });
+
+  it("R03 no contrasta afirmaciones sobre contratos (no unen a las dos partes del vínculo)", () => {
+    expect(r03(ejemplo)).toEqual([]);
+  });
+
+  it("R02 no alerta: resumen y detalle coinciden", () => {
+    expect(r02(ejemplo)).toEqual([]);
+  });
+
+  it("R04: 9 wire transfers contra 8 reportadas y flujos por 56.68 M contra 44.52 M", () => {
+    const a = r04(ejemplo).map((x) => x.evidencias.map((e) => e.valor).join(" vs "));
+    expect(a.sort()).toEqual(["$44,520,000.00 vs $56,680,000.00", "8 vs 9"]);
+  });
+
+  it("R06 ignora «sin modificatorio» como si fuera un convenio", () => {
+    const a = r06(ejemplo);
+    expect(a.length).toBeGreaterThanOrEqual(3);
+    expect(
+      a.some((x) => x.evidencias[0]?.valor === "$4,500,000.00" && x.severidad === "critica"),
+    ).toBe(true);
+  });
+
+  it("R07 agrupa las adjudicaciones directas por proveedor", () => {
+    const a = r07(ejemplo);
+    const zeta = a.find(
+      (x) => nombre(ejemplo, x.entidades[0] ?? "") === "CONSTRUCTORA ZETA SA DE CV",
+    );
+    expect(zeta?.evidencias).toHaveLength(4);
+    expect(zeta?.severidad).toBe("alta");
+  });
+});
+
+describe("red de lavado", () => {
+  it("sin contratos ni cifras, R01–R07 y R09 no alertan", () => {
+    for (const r of [r01, r02, r03, r04, r05, r06, r07, r09]) expect(r(lavado)).toEqual([]);
+  });
+});
+
+describe("casos sintéticos", () => {
+  const base: DatosReglas = {
+    registros: [
+      {
+        id: "r1",
+        hoja: "V",
+        resumen: "Vínculo",
+        extracciones: [
+          {
+            id: "x1",
+            campo: "TIPO",
+            valor_crudo: "REPRESENTANTE LEGAL",
+            valor_normalizado: null,
+            ubicacion: null,
+          },
+        ],
+      },
+      {
+        id: "r2",
+        hoja: "V",
+        resumen: "Vínculo",
+        extracciones: [
+          {
+            id: "x2",
+            campo: "TIPO",
+            valor_crudo: "APODERADO",
+            valor_normalizado: null,
+            ubicacion: null,
+          },
+        ],
+      },
+      {
+        id: "r3",
+        hoja: "T",
+        resumen: "Totales",
+        extracciones: [
+          {
+            id: "x3",
+            campo: "total_declarado",
+            valor_crudo: "100",
+            valor_normalizado: { concepto: "D · MONTO", valor: "100.00", es_monto: true },
+            ubicacion: null,
+          },
+        ],
+      },
+      {
+        id: "r4",
+        hoja: "D",
+        resumen: "Fila",
+        extracciones: [
+          {
+            id: "x4",
+            campo: "MONTO",
+            valor_crudo: "60",
+            valor_normalizado: "60.00",
+            ubicacion: null,
+          },
+        ],
+      },
+      {
+        id: "r5",
+        hoja: "D",
+        resumen: "Fila",
+        extracciones: [
+          {
+            id: "x5",
+            campo: "MONTO",
+            valor_crudo: "30",
+            valor_normalizado: "30.00",
+            ubicacion: null,
+          },
+        ],
+      },
+    ],
+    entidades: [
+      {
+        id: "p",
+        tipo: "persona_fisica",
+        nombre: "JUAN PÉREZ",
+        nombre_normalizado: "JUAN PEREZ",
+        rfc: null,
+      },
+      { id: "a", tipo: "persona_moral", nombre: "ALFA SA", nombre_normalizado: "ALFA", rfc: null },
+      { id: "b", tipo: "persona_moral", nombre: "BETA SA", nombre_normalizado: "BETA", rfc: null },
+    ],
+    vinculos: [
+      { id: "v1", registro_id: "r1", origen_id: "p", destino_id: "a", tipo: "REPRESENTANTE LEGAL" },
+      { id: "v2", registro_id: "r2", origen_id: "b", destino_id: "p", tipo: "APODERADO" },
+    ],
+    eventos: [],
+  };
+
+  it("R08: el mismo representante en dos proveedores", () => {
+    const a = r08(base);
+    expect(a).toHaveLength(1);
+    expect(a[0]?.entidades).toEqual(["p", "a", "b"]);
+    expect(a[0]?.evidencias).toHaveLength(2);
+  });
+
+  it("R01: total 100 contra detalle 90", () => {
+    const a = r01(base);
+    expect(a).toHaveLength(1);
+    expect(a[0]?.evidencias.map((e) => e.valor)).toEqual(["$100.00", "$90.00"]);
+  });
+
+  it("constitucionSegunRfc elige el siglo y rechaza fechas imposibles", () => {
+    expect(constitucionSegunRfc("GCM220101ABC", "2022-03-15")).toBe("2022-01-01");
+    expect(constitucionSegunRfc("ABC990230XYZ", "2022-03-15")).toBeNull();
+    expect(constitucionSegunRfc("ABC850615XYZ", "2022-03-15")).toBe("1985-06-15");
+  });
+});
+
+describe("catálogo", () => {
+  it("R01–R09 activas; R10 y R11 declaradas y desactivadas", () => {
+    expect(REGLAS.map((r) => r.id)).toEqual([
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R06",
+      "R07",
+      "R08",
+      "R09",
+      "R10",
+      "R11",
+    ]);
+    expect(REGLAS.filter((r) => !r.activa).map((r) => r.id)).toEqual(["R10", "R11"]);
+  });
+  it("las huellas son únicas y estables entre ejecuciones", () => {
+    const a = ejecutarReglas(asf).alertas.map((x) => x.huella);
+    expect(new Set(a).size).toBe(a.length);
+    expect(ejecutarReglas(asf).alertas.map((x) => x.huella)).toEqual(a);
+    expect(ejecutarReglas(asf).reglas).toHaveLength(9);
+  });
+});

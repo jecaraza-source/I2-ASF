@@ -11,7 +11,7 @@ Todas las rutas cuelgan de `/encargos/[encargo]`.
 | Encargos y expedientes | `/encargos`, `…/expedientes` | Alta y navegación | 02 |
 | Importación de Excel | `…/importaciones` | Plantillas de mapeo, vista previa, carga | 03 |
 | Red de vínculos | `…/red`, `…/red/vista` | Generar, regenerar, calificar; explorar en el visor | 04, 05 |
-| Alertas | `…/alertas` | Resultado de las reglas R01–R10 | 06 |
+| Alertas | `…/alertas`, `…/alertas/[id]` | Resultado de las reglas R01–R09; evidencias lado a lado; confirmar o descartar con motivo | 06 |
 | Ingreso de documentos | `…/ingreso/importar` | Subida con pre-clasificación | 07 |
 | Captura manual | `…/ingreso/capturar` | Registro sin documento | 08 |
 | Validación | `…/validacion` | Cola de extracciones por confirmar | 09 |
@@ -71,7 +71,7 @@ cuando pertenece a un encargo. No se repiten abajo.
 
 | Tabla | Columnas |
 |---|---|
-| `alerta` | `regla`, `severidad`, `estado` (`abierta`, `confirmada`, `descartada`), `detalle jsonb`, `resuelta_por` |
+| `alerta` | `regla`, `severidad`, `estado` (`abierta`, `confirmada`, `descartada`), `detalle jsonb`, `huella`, `vigente`, `resuelta_por`, `resuelta_en`, `resolucion_motivo` |
 | `hallazgo`, `hallazgo_alerta` | `redaccion`, `firmado_por`, `firmado_en` |
 | `fuente_consulta` | `nombre`, `tipo` (`interna`, `externa`), `conector`, `config jsonb`, `activa` |
 | `resultado_consulta` | `entidad_id`, `fuente_id`, `coincidencia` (`exacta`, `propuesta`), `datos jsonb`, `consultado_en`, `estado` (`pendiente`, `confirmada`, `descartada`), `registro_id` (si se incorporó) |
@@ -268,6 +268,21 @@ Funciones puras `(datos) => Alerta[]`. Cada alerta enlaza las evidencias que se 
 | R09 | Empresa constituida pocos días antes del contrato |
 | R10 | Proveedor en lista 69-B del SAT (requiere la fuente de la tarea 11) |
 | R11 | Captura manual que difiere del documento asociado después |
+
+- **Ejecución:** al terminar cada importación y a demanda desde `…/alertas`. Solo leen registros
+  validados. R10 y R11 están declaradas y desactivadas hasta las tareas 11 y 09.
+- **Identidad:** cada alerta lleva una `huella` (regla + evidencias). Volver a ejecutar no duplica
+  alertas ni reabre las resueltas. Una alerta abierta que ya no se reproduce queda `vigente = false`
+  (se sigue viendo, pero no cuenta para la calificación de §9); nunca se resuelve sola.
+- **Detalle:** `detalle` guarda `titulo`, `descripcion`, `entidades` y `evidencias` (`lado`, `etiqueta`,
+  `valor`, `registro_id`, `extraccion_id`, `ubicacion`); además cada evidencia se inserta en
+  `evidencia` con `objeto_tipo = 'alerta'`.
+- **Resolución:** `confirmada` o `descartada`, siempre con motivo, quién y cuándo. Confirmar no crea
+  un hallazgo.
+- **Criterios provisionales** (por confirmar con el cliente, §14): R02 agrupa cifras del mismo concepto
+  que difieren menos de 10 %; R03 contrasta llamadas y transferencias (no contratos); R05 revisa
+  hermanos, padres e hijos; R07 alerta desde 2 adjudicaciones directas; R09 toma la fecha de
+  constitución del RFC y alerta hasta 90 días antes del primer contrato.
 
 ## 11. Vista dinámica y ficha
 

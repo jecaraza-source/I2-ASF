@@ -6,7 +6,7 @@ const MODULOS = [
   { ruta: "/expedientes", texto: "Expedientes", listo: true },
   { ruta: "/importaciones", texto: "Importación de Excel", listo: true },
   { ruta: "/red", texto: "Red de vínculos", listo: true },
-  { ruta: "/alertas", texto: "Alertas", listo: false },
+  { ruta: "/alertas", texto: "Alertas", listo: true },
   { ruta: "/ingreso/importar", texto: "Ingreso de documentos", listo: false },
   { ruta: "/ingreso/capturar", texto: "Captura manual", listo: false },
   { ruta: "/validacion", texto: "Validación", listo: false },
