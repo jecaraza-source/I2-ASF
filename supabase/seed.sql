@@ -74,3 +74,14 @@ from (values
 ) as t (clave, nombre, categoria)
 join public.categoria_documental c
   on c.organizacion_id = 'b0000000-0000-4000-8000-000000000001' and c.nombre = t.categoria;
+
+-- ---------------------------------------------------------------------------
+-- Reglas de calificación provisionales (§9), versión 1
+-- ---------------------------------------------------------------------------
+insert into public.regla_calificacion (organizacion_id, version, criterio, peso, parametros, activa) values
+  ('b0000000-0000-4000-8000-000000000001', 1, 'riesgo_declarado', 60, '{"niveles": {"CRITICO": 60, "ALTO": 40, "MEDIO": 20}}', true),
+  ('b0000000-0000-4000-8000-000000000001', 1, 'tipo_declarado', 30, '{"patron": "FANTASMA|FACHADA|OFFSHORE"}', true),
+  ('b0000000-0000-4000-8000-000000000001', 1, 'alertas_abiertas', 15, '{"reglas": ["R06", "R07", "R08", "R09", "R10"]}', true),
+  ('b0000000-0000-4000-8000-000000000001', 1, 'vinculo_fuerte_con_critico', 10, '{"fuerza_minima": 7}', true),
+  ('b0000000-0000-4000-8000-000000000001', 1, 'evento_con_etapa', 20, '{}', true),
+  ('b0000000-0000-4000-8000-000000000001', 1, 'fuerza_vinculo', 8, '{}', true);

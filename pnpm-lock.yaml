@@ -38,6 +38,9 @@ importers:
       '@sigma/modelo':
         specifier: workspace:*
         version: link:../../packages/modelo
+      '@sigma/red':
+        specifier: workspace:*
+        version: link:../../packages/red
       '@supabase/ssr':
         specifier: ^0.12.7
         version: 0.12.7(@supabase/supabase-js@2.119.0)
@@ -109,7 +112,14 @@ importers:
         specifier: ^4
         version: 4.6.7
 
-  packages/red: {}
+  packages/red:
+    devDependencies:
+      '@sigma/importador':
+        specifier: workspace:*
+        version: link:../importador
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
 
   packages/reglas: {}
 

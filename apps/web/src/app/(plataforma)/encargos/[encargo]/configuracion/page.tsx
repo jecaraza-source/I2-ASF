@@ -2,8 +2,10 @@ import { puede } from "@sigma/modelo";
 import Link from "next/link";
 import { SinPermiso } from "@/components/estados";
 import { FormularioCategoria, FormularioTipoDocumento } from "@/components/formularios/catalogo";
+import { FormularioReglas } from "@/components/red/formularios";
 import { Panel, Titulo } from "@/components/ui";
 import { obtenerEncargo } from "@/lib/datos";
+import { cargarReglas, valoresDeReglas } from "@/lib/red-datos";
 import { requerirOrganizacion } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
@@ -34,6 +36,7 @@ export default async function Configuracion({ params }: { params: Promise<{ enca
       .eq("organizacion_id", activa.organizacionId)
       .order("nombre"),
   ]);
+  const reglas = await cargarReglas(supabase, activa.organizacionId);
   const cats = categorias ?? [];
   const nombreCategoria = new Map(cats.map((c) => [c.id, c.nombre]));
   const base = `/encargos/${encargo.id}/configuracion`;
@@ -86,6 +89,12 @@ export default async function Configuracion({ params }: { params: Promise<{ enca
             ))}
           </ul>
           <FormularioTipoDocumento encargoId={encargo.id} categorias={cats} />
+        </Panel>
+        <Panel>
+          <h2 className="mb-4 text-base font-semibold text-texto" id="reglas">
+            Reglas de calificación de la red
+          </h2>
+          <FormularioReglas valores={valoresDeReglas(reglas.reglas)} version={reglas.version} />
         </Panel>
       </div>
     </main>

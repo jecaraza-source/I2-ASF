@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@sigma/modelo", "@sigma/importador"],
+  transpilePackages: ["@sigma/modelo", "@sigma/importador", "@sigma/red"],
   experimental: {
     // Archivos de Excel de hasta 4 MB (límite de cuerpo de las funciones de Vercel: 4.5 MB).
     serverActions: { bodySizeLimit: "5mb" },

@@ -47,7 +47,7 @@ cuando pertenece a un encargo. No se repiten abajo.
 
 | Tabla | Columnas |
 |---|---|
-| `entidad` | `tipo` (`persona_fisica`, `persona_moral`, `cuenta`, `domicilio`, `telefono`, `dependencia`, `otro`), `nombre`, `nombre_normalizado`, `identificadores jsonb` (rfc, curp, clabe, imsi), `atributos jsonb`, `riesgo_declarado` |
+| `entidad` | `tipo` (`persona_fisica`, `persona_moral`, `cuenta`, `domicilio`, `telefono`, `dependencia`, `otro`), `nombre`, `nombre_normalizado`, `identificadores jsonb` (rfc, curp, clabe, imsi), `atributos jsonb`, `riesgo_declarado`, `fusionada_en` (entidad canónica si se aceptó una fusión) |
 | `alias_entidad` | `entidad_id`, `alias`, `extraccion_id` |
 | `fusion_propuesta` | `entidad_a`, `entidad_b`, `motivo`, `estado` (`propuesta`, `aceptada`, `rechazada`), `resuelta_por` |
 | `registro_entidad` | `registro_id`, `entidad_id`, `rol` (involucrados de un registro) |
@@ -217,7 +217,10 @@ extracciones `total_declarado`), las extracciones con `ubicacion` (hoja, fila, c
 
 **Resolución de entidades.** Prioridad: RFC → CURP → identificador del archivo → nombre normalizado.
 Coincidencia por identificador fusiona directo. Coincidencia solo por nombre parecido crea
-`fusion_propuesta`; no se fusiona hasta que un auditor acepta.
+`fusion_propuesta`; no se fusiona hasta que un auditor acepta. Aceptar (`resolver_fusion`) no reescribe
+vínculos, eventos ni evidencia: marca `entidad_b.fusionada_en = entidad_a`, agrega el nombre de B como
+alias de A y la red usa la entidad canónica al generarse. Un par (en cualquier orden) se propone una sola
+vez; un rechazo no se vuelve a proponer.
 
 **Generación.** Entrada: una o varias entidades semilla y alcance (1 o 2 saltos). Pasos: reunir
 registros validados que las mencionan → obtener entidades → reunir vínculos declarados y eventos
@@ -239,6 +242,13 @@ calificaciones. Regenerar crea una generación nueva; la pantalla muestra qué c
 Puntaje = suma con tope en 100. Niveles: crítico ≥ 75, alto ≥ 50, medio ≥ 25, bajo < 25.
 `calificacion.criterios` guarda la lista de criterios activados con su aporte, para explicar el nivel.
 El auditor puede ajustar el nivel con motivo obligatorio; el ajuste va a bitácora.
+
+Criterios en `regla_calificacion` (tarea 04): `riesgo_declarado` (`parametros.niveles`),
+`tipo_declarado` (`parametros.patron`), `alertas_abiertas` (`parametros.reglas`, peso por alerta),
+`vinculo_fuerte_con_critico` (`parametros.fuerza_minima`, se suma una vez), `evento_con_etapa` (vínculo
+cuyos extremos comparten un evento con etapa) y `fuerza_vinculo` (peso × fuerza). Editar pesos crea la
+versión N+1 (`nueva_version_reglas`) y desactiva las anteriores; sin reglas se usan las de esta tabla
+como versión 0. Cada generación se guarda con `guardar_red` en una transacción.
 
 ## 10. Reglas de validación cruzada
 

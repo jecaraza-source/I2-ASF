@@ -103,7 +103,7 @@ select lives_ok(
 );
 select lives_ok(
   $$ insert into public.regla_calificacion (organizacion_id, version, criterio, peso)
-     values ('b0000000-0000-4000-8000-000000000001', 1, 'riesgo_declarado', 60) $$,
+     values ('b0000000-0000-4000-8000-000000000001', 99, 'riesgo_declarado', 60) $$,
   'admin crea reglas de calificación'
 );
 

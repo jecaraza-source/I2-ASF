@@ -408,6 +408,7 @@ export type Database = {
           creado_en: string
           creado_por: string | null
           encargo_id: string
+          fusionada_en: string | null
           id: string
           identificadores: NonNullable<Json>
           nombre: string
@@ -422,6 +423,7 @@ export type Database = {
           creado_en?: string
           creado_por?: string | null
           encargo_id: string
+          fusionada_en?: string | null
           id?: string
           identificadores?: NonNullable<Json>
           nombre: string
@@ -435,6 +437,7 @@ export type Database = {
           creado_en?: string
           creado_por?: string | null
           encargo_id?: string
+          fusionada_en?: string | null
           id?: string
           identificadores?: NonNullable<Json>
           nombre?: string
@@ -444,6 +447,13 @@ export type Database = {
           tipo?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "entidad_fusionada_en_fk"
+            columns: ["encargo_id", "fusionada_en"]
+            isOneToOne: false
+            referencedRelation: "entidad"
+            referencedColumns: ["encargo_id", "id"]
+          },
           {
             foreignKeyName: "entidad_organizacion_id_encargo_id_fkey"
             columns: ["organizacion_id", "encargo_id"]
@@ -1697,7 +1707,16 @@ export type Database = {
         Args: { p_organizacion_id: string; p_roles?: string[] }
         Returns: boolean
       }
+      guardar_red: { Args: { p: Json }; Returns: string }
       importar_excel: { Args: { p: Json }; Returns: Json }
+      nueva_version_reglas: {
+        Args: { p_organizacion: string; p_reglas: Json }
+        Returns: number
+      }
+      resolver_fusion: {
+        Args: { p_aceptar: boolean; p_fusion: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
