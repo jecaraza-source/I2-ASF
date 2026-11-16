@@ -41,7 +41,7 @@ test("dos PDF con pre-clasificación quedan como registros pendientes; el duplic
   const b = archivo("convenio-b.pdf", pdf(`${marca} B`));
 
   await clasificarLote(page, "EXP-E2E");
-  await page.getByLabel("Archivos").setInputFiles([a, b]);
+  await page.getByLabel("Archivos", { exact: true }).setInputFiles([a, b]);
   const porSubir = page.getByRole("list", { name: "Archivos por subir" });
   await expect(porSubir.getByText("Listo para subir")).toHaveCount(2);
   // La pre-clasificación del lote se puede ajustar por archivo.
@@ -65,7 +65,9 @@ test("dos PDF con pre-clasificación quedan como registros pendientes; el duplic
 
   // El mismo archivo otra vez: se avisa antes de subir y no se crea otro.
   await page.getByRole("button", { name: "Limpiar terminados" }).click();
-  await page.getByLabel("Archivos").setInputFiles([archivo("copia.pdf", a.buffer)]);
+  await page
+    .getByLabel("Archivos", { exact: true })
+    .setInputFiles([archivo("copia.pdf", a.buffer)]);
   await expect(
     porSubir.getByText(/Duplicado · Ya existe en este encargo como «contrato-a\.pdf»/),
   ).toBeVisible();
@@ -115,7 +117,7 @@ test("una huella que no coincide, o un contenido que no es lo que dice, se recha
     (window as unknown as { alterarHuella?: boolean }).alterarHuella = true;
   });
   await page
-    .getByLabel("Archivos")
+    .getByLabel("Archivos", { exact: true })
     .setInputFiles([archivo("alterado.pdf", pdf(unico("alterado")))]);
   await page.getByRole("button", { name: /Subir 1 documento/ }).click();
   const porSubir = page.getByRole("list", { name: "Archivos por subir" });
@@ -129,7 +131,7 @@ test("una huella que no coincide, o un contenido que no es lo que dice, se recha
     (window as unknown as { alterarHuella?: boolean }).alterarHuella = false;
   });
   await page
-    .getByLabel("Archivos")
+    .getByLabel("Archivos", { exact: true })
     .setInputFiles([
       archivo("pagina.pdf", Buffer.from(`<html><script>alert(1)</script>${unico("x")}</html>`)),
     ]);
@@ -161,5 +163,5 @@ test("lector consulta los documentos pero no puede ingresar", async ({ page }) =
   await expect(
     page.getByText("Tu rol permite consultar los documentos, no ingresarlos."),
   ).toBeVisible();
-  await expect(page.getByLabel("Archivos")).toHaveCount(0);
+  await expect(page.getByLabel("Archivos", { exact: true })).toHaveCount(0);
 });
