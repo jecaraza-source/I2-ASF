@@ -1715,6 +1715,10 @@ export type Database = {
       }
     }
     Functions: {
+      actualizar_estadisticas: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       es_miembro: {
         Args: { p_organizacion_id: string; p_roles?: string[] }
         Returns: boolean

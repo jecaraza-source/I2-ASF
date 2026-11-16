@@ -25,7 +25,7 @@ export default async function Importacion({
   if (!z.uuid().safeParse(documento).success) notFound();
   const encargo = await obtenerEncargo(encargoId);
   const supabase = await clienteServidor();
-  const [{ data: resumen }, { data: carga }] = await Promise.all([
+  const [{ data: resumen, error: errorResumen }, { data: carga }] = await Promise.all([
     supabase
       .from("importacion_resumen")
       .select("*")
@@ -39,6 +39,29 @@ export default async function Importacion({
       .eq("accion", "importacion.carga")
       .maybeSingle(),
   ]);
+  if (errorResumen) {
+    // Un fallo de lectura no es «no existe»: la importación pudo haberse guardado.
+    console.error(`[resumenImportacion] error de base: ${errorResumen.code ?? "desconocido"}`);
+    return (
+      <main className="flex-1 px-8 py-8">
+        <Titulo>Importación</Titulo>
+        <Panel className="max-w-2xl">
+          <p role="alert" className="text-sm text-texto">
+            No se pudo cargar el resumen en este momento. Si acabas de importar, el archivo ya quedó
+            guardado: no lo subas otra vez.
+          </p>
+          <div className="mt-4 flex gap-3">
+            <EnlaceBoton href={`/encargos/${encargo.id}/importaciones/${documento}`}>
+              Reintentar
+            </EnlaceBoton>
+            <EnlaceBoton href={`/encargos/${encargo.id}/importaciones`} variante="secundario">
+              Ver importaciones
+            </EnlaceBoton>
+          </div>
+        </Panel>
+      </main>
+    );
+  }
   if (!resumen) notFound();
   const detalle = z
     .object({ plantilla: z.string().optional(), hojas: z.unknown() })

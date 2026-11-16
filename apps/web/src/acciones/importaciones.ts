@@ -265,6 +265,13 @@ export async function confirmarImportacion(formData: FormData): Promise<EstadoAn
   }
   const documento = z.object({ documento_id: z.uuid() }).safeParse(data);
   if (!documento.success) return { ok: false, mensaje: "La importación no devolvió un documento." };
+  // Tras una carga grande el planificador aún no tiene estadísticas y las consultas con RLS pueden
+  // exceder el límite de tiempo; se actualizan antes de leer. Si falla, el autoanalyze lo hará.
+  const estadisticas = await supabase.rpc("actualizar_estadisticas");
+  if (estadisticas.error)
+    console.error(
+      `[estadisticasTrasImportar] error de base: ${estadisticas.error.code ?? "desconocido"}`,
+    );
   // §10: las reglas corren al terminar cada importación. Si fallan, la importación ya quedó
   // guardada; se pueden volver a ejecutar desde Alertas.
   const reglas = await ejecutarYGuardarReglas(supabase, encargo.id);

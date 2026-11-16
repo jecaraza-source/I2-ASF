@@ -113,6 +113,11 @@ select is((select count(*) from public.registro r where r.fuente = 'Prueba pgTAP
             and r.documento_id not in (select id from public.documento_origen where sha256 in (repeat('a', 64), repeat('b', 64)))),
           0::bigint, 'ni registros');
 
+-- Estadísticas tras la carga: cualquier usuario con sesión; sin sesión, no.
+select lives_ok($$ select public.actualizar_estadisticas() $$, 'un usuario con sesión actualiza estadísticas');
+select set_config('request.jwt.claims', '{"role":"authenticated"}', true);
+select throws_ok($$ select public.actualizar_estadisticas() $$, '42501', null, 'sin sesión no se puede');
+
 reset role;
 select * from finish();
 rollback;
