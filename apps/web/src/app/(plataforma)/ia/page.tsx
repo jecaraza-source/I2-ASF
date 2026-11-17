@@ -226,6 +226,7 @@ async function Contenido() {
             <p className="text-xs text-tenue">
               Modelo (<span className="font-mono">{p.variableModelo}</span>):{" "}
               <span className="font-mono text-texto">{p.modelo ?? "sin definir"}</span>
+              {p.esfuerzo ? <span> · esfuerzo {p.esfuerzo}</span> : null}
             </p>
             <p className="mt-2 text-xs text-tenue">
               {i === 0

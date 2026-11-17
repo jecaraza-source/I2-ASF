@@ -92,6 +92,17 @@ async function llamarAnthropic(p: PeticionExtraccion): Promise<RespuestaProveedo
   return { datos: uso.input, ...tokens };
 }
 
+const ESFUERZOS = ["none", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
+
+/**
+ * Esfuerzo de razonamiento de OpenAI (`OPENAI_REASONING_EFFORT`). Es un parámetro aparte del
+ * modelo: «GPT-6 high» es un modelo GPT-6 con esfuerzo `high`. Sin la variable rige el del modelo.
+ */
+export function esfuerzoOpenAI(): (typeof ESFUERZOS)[number] | null {
+  const v = process.env.OPENAI_REASONING_EFFORT?.trim().toLowerCase();
+  return ESFUERZOS.find((e) => e === v) ?? null;
+}
+
 async function llamarOpenAI(p: PeticionExtraccion): Promise<RespuestaProveedor> {
   const cliente = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -104,10 +115,14 @@ async function llamarOpenAI(p: PeticionExtraccion): Promise<RespuestaProveedor> 
     p.archivo.mime === "application/pdf"
       ? ({ type: "input_file", filename: "documento.pdf", file_data: dataUrl } as const)
       : ({ type: "input_image", image_url: dataUrl, detail: "high" } as const);
+  const esfuerzo = esfuerzoOpenAI();
   const r = await cliente.responses.create({
     model: p.modelo,
     instructions: p.sistema,
-    max_output_tokens: MAX_TOKENS_SALIDA,
+    // El razonamiento cuenta como tokens de salida: con esfuerzo alto hace falta más margen para
+    // que la respuesta no se corte.
+    max_output_tokens: esfuerzo ? MAX_TOKENS_SALIDA * 4 : MAX_TOKENS_SALIDA,
+    ...(esfuerzo ? { reasoning: { effort: esfuerzo } } : {}),
     store: false,
     input: [{ role: "user", content: [adjunto, { type: "input_text", text: p.instruccion }] }],
     text: { format: { type: "json_schema", name: HERRAMIENTA, schema: p.esquema, strict: true } },

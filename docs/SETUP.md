@@ -55,6 +55,7 @@ En cada proyecto remoto:
 | `ANTHROPIC_MODEL` | Solo servidor | Modelo a usar; se cambia sin tocar código |
 | `OPENAI_API_KEY` | Solo servidor | Opcional. Proveedor de respaldo cuando Anthropic llega a su límite; solo en encargos que lo permitan |
 | `OPENAI_MODEL` | Solo servidor | Modelo de OpenAI a usar; sin él, el respaldo no se usa |
+| `OPENAI_REASONING_EFFORT` | Solo servidor | Opcional. Esfuerzo de razonamiento de OpenAI (`low`, `medium`, `high`…); sin valor rige el del modelo |
 | `IA_SIMULADA` | Solo pruebas | `1` en local y CI: la extracción no llama a ningún proveedor. Se ignora en producción |
 | `CRON_SECRET` | Solo servidor | Autoriza la llamada del cron |
 
