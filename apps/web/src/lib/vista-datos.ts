@@ -576,7 +576,7 @@ export async function cargarRegistro(supabase: Cliente, encargoId: string, regis
   const { data: r } = await supabase
     .from("registro")
     .select(
-      "id, origen, fuente, fecha_documento, estado_validacion, resumen, creado_en, documento_id, documento_origen(id, nombre_archivo), expediente_id",
+      "id, origen, fuente, fecha_documento, estado_validacion, resumen, creado_en, documento_id, documento_origen(id, nombre_archivo), expediente_id, expediente(identificador)",
     )
     .eq("encargo_id", encargoId)
     .eq("id", registroId)
@@ -610,5 +610,67 @@ export async function cargarRegistro(supabase: Cliente, encargoId: string, regis
       ubicacion_texto: describirUbicacion(x.ubicacion),
     })),
     entidades: (menciones.data ?? []).map((m) => ({ rol: m.rol, ...m.entidad })),
+  };
+}
+
+/** Lo que un registro generó (vínculos y eventos, por su evidencia) y su bitácora. */
+export async function cargarGenerado(supabase: Cliente, encargoId: string, registroId: string) {
+  const [{ data: evidencias }, bitacora] = await Promise.all([
+    supabase
+      .from("evidencia")
+      .select("objeto_tipo, objeto_id")
+      .eq("encargo_id", encargoId)
+      .eq("registro_id", registroId)
+      .in("objeto_tipo", ["vinculo", "evento"])
+      .limit(500),
+    supabase.rpc("bitacora_registro", { p_registro: registroId }),
+  ]);
+  const ids = (tipo: string) => [
+    ...new Set((evidencias ?? []).filter((e) => e.objeto_tipo === tipo).map((e) => e.objeto_id)),
+  ];
+  const [vinculos, eventos] = await Promise.all([
+    ids("vinculo").length
+      ? supabase
+          .from("vinculo")
+          .select("id, tipo, fuerza, origen_id, destino_id, dirigido")
+          .eq("encargo_id", encargoId)
+          .in("id", ids("vinculo"))
+      : Promise.resolve({ data: [] }),
+    ids("evento").length
+      ? supabase
+          .from("evento")
+          .select(
+            "id, tipo, fecha_hora, monto, moneda, evento_participante(rol, entidad(id, nombre))",
+          )
+          .eq("encargo_id", encargoId)
+          .in("id", ids("evento"))
+          .order("fecha_hora")
+      : Promise.resolve({ data: [] }),
+  ]);
+  const extremos = [...new Set((vinculos.data ?? []).flatMap((v) => [v.origen_id, v.destino_id]))];
+  const { data: nombres } = extremos.length
+    ? await supabase.from("entidad").select("id, nombre").in("id", extremos)
+    : { data: [] };
+  const nombre = new Map((nombres ?? []).map((e) => [e.id, e.nombre]));
+  if (bitacora.error) {
+    console.error(`[cargarGenerado] bitácora: ${bitacora.error.code ?? "desconocido"}`);
+  }
+  return {
+    vinculos: (vinculos.data ?? []).map((v) => ({
+      ...v,
+      origen: nombre.get(v.origen_id) ?? "Entidad",
+      destino: nombre.get(v.destino_id) ?? "Entidad",
+    })),
+    eventos: (eventos.data ?? []).map((ev) => ({
+      id: ev.id,
+      tipo: ev.tipo,
+      fecha: diaMexico(ev.fecha_hora),
+      monto: ev.monto,
+      moneda: ev.moneda,
+      participantes: (ev.evento_participante ?? []).flatMap((p) =>
+        p.entidad ? [{ rol: p.rol, id: p.entidad.id, nombre: p.entidad.nombre }] : [],
+      ),
+    })),
+    bitacora: bitacora.data ?? [],
   };
 }

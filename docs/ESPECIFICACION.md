@@ -15,7 +15,7 @@ Todas las rutas cuelgan de `/encargos/[encargo]`.
 | Ingreso de documentos | `…/ingreso/importar`, `…/documentos/[id]` | Subida con pre-clasificación; visor del original | 07 |
 | Captura manual | `…/ingreso/capturar` | Registro sin documento | 08 |
 | Validación | `…/validacion`, `…/validacion/[registro]` | Cola de documentos leídos por la IA; aceptar, corregir o rechazar por campo y por registro (§7.2) | 09 |
-| Expediente documental | `…/expedientes/[exp]` | Tabla única con cuatro vistas | 10 |
+| Expediente documental | `…/expedientes/[exp]`, `…/registros`, `…/registros/exportar` | Tabla única con cuatro vistas, árbol y exportación (§6.1) | 10 |
 | Ficha de entidad | `…/entidades/[id]` | Todo lo que se sabe de una entidad | 05, 11 |
 | Registro | `…/registros/[id]` | Un registro con sus datos y la hoja, fila, celda o página de origen | 05 |
 | Configuración | `…/configuracion` | Categorías, tipos de documento, reglas, fuentes | 02, 04, 11 |
@@ -242,6 +242,38 @@ campo con lo capturado; cada diferencia genera una alerta `R11_captura_vs_docume
   `comprobante_transferencia` (ordenante → beneficiario), con al menos dos involucrados.
 - **`asociar_documento`:** sube y verifica el original como en §4, liga `documento_id` (el origen
   sigue siendo `captura`) y encola la extracción con `comparar_con_captura`.
+
+### 6.1 Expediente documental
+
+Una sola tabla de registros, en la página de cada expediente (`…/expedientes/[exp]`) y para todo el
+encargo (`…/registros`, donde también viven los registros sin expediente y la vista por entidad).
+
+- **Columnas:** registro (resumen, folio `R-` + 8 caracteres del ID, origen, hoja y fila si viene de
+  Excel), expediente, tipo y categoría, fecha (la del documento o, si falta, la del primer evento
+  que generó), involucrados con su rol, RFC y CURP válidos, referencias (números de contrato,
+  factura, cuenta, folio o expediente y el número del evento), montos con moneda, fuente o archivo
+  con su SHA-256, estado de validación y calificación.
+- **Calificación de un registro:** el nivel más alto de sus entidades en la última red generada
+  del encargo (con el ajuste manual si lo hay) y cuántas alertas abiertas lo citan. Sin red,
+  «sin calificar».
+- **Filtros, búsqueda y orden en la base** (`expediente_registros`, security invoker: RLS decide):
+  expediente (o `sin`), entidad (o `sin`), categoría (o `sin`), estado (`validados`, `pendiente`,
+  `rechazado`), origen, fechas y texto. La búsqueda no distingue acentos ni mayúsculas y exige
+  todos los términos en el resumen, archivo, fuente, involucrados, identificadores, referencias o
+  cualquier dato validado. Por defecto se ven todos los registros, con su estado.
+- **Cuatro vistas** sobre los mismos datos: por expediente; por entidad (sus registros en todos los
+  expedientes del encargo); por categoría (agrupada); línea de tiempo (por mes, de lo más antiguo
+  a lo más reciente, lo que no tiene fecha al final).
+- **Árbol lateral** expediente → entidad → categoría (`expediente_arbol`), con los mismos filtros de
+  texto, estado, origen y fechas. Un registro con dos entidades cuenta en ambas; cada nivel trae su
+  propio conteo, igual al total de la tabla al elegir ese nodo.
+- **Detalle del registro:** además de datos y ubicación de origen, los vínculos y eventos que generó
+  (por su evidencia) y su bitácora y la de su documento (`bitacora_registro`, con el correo de
+  quien actuó).
+- **Exportar CSV** (admin y auditor) la vista actual con sus filtros, hasta 10,000 filas. Una celda
+  que empieza con `=`, `+`, `-` o `@` sale como texto (`'`) para que una hoja de cálculo no la
+  ejecute. Queda en bitácora (`registro.exportacion`: vista, IDs de los filtros, si hubo búsqueda
+  y filas); si la bitácora falla no se entrega el archivo.
 
 **Catálogo provisional** (configurable por organización):
 
