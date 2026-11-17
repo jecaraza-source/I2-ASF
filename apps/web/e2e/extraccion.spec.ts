@@ -184,16 +184,19 @@ test("validación: lo leído no cuenta hasta validarlo; corregir conserva lo que
   await cola.getByRole("link", { name: "contrato-val.pdf" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Validar: Contrato");
   await expect(page.getByRole("region", { name: "Documento original" })).toBeVisible();
-  const numero = page.getByLabel("Número de contrato");
+  // Con cacheComponents, la página anterior (Captura manual) sigue en el DOM, oculta: los campos
+  // se buscan dentro de la región visible.
+  const lectura = page.getByRole("region", { name: "Lectura de la IA" });
+  const numero = lectura.getByLabel("Número de contrato", { exact: true });
   await expect(numero).toHaveValue("SOP-IA-001");
-  await expect(page.getByLabel(/^Tipo de documento/)).toBeDisabled();
-  await expect(page.getByLabel(/^Fuente declarada/)).toHaveCount(0);
-  const monto = page.getByLabel("Monto", { exact: true });
+  await expect(lectura.getByLabel(/^Tipo de documento/)).toBeDisabled();
+  await expect(lectura.getByLabel(/^Fuente declarada/)).toHaveCount(0);
+  const monto = lectura.getByLabel("Monto", { exact: true });
   await expect(monto).toHaveValue("$1,500,000.00");
   const notaMonto = page.locator(`#${await monto.getAttribute("aria-describedby")}`);
   await expect(notaMonto).toContainText("IA · 50% · pág. 2 · por revisar");
   await expect(notaMonto).toContainText("Se acepta");
-  await expect(page.getByLabel("Nombre del involucrado 1")).toHaveValue(
+  await expect(lectura.getByLabel("Nombre del involucrado 1")).toHaveValue(
     "CONSTRUCTORA IA E2E SA DE CV",
   );
 
@@ -207,7 +210,7 @@ test("validación: lo leído no cuenta hasta validarlo; corregir conserva lo que
   // Corregir el monto y rechazar el objeto.
   await monto.fill("1,800,000.00");
   await expect(notaMonto).toContainText("Se corrige (la IA leyó «$1,500,000.00»)");
-  await page.getByRole("button", { name: /^Rechazar Objeto/ }).click();
+  await lectura.getByRole("button", { name: /^Rechazar Objeto/ }).click();
   await page.keyboard.press("Control+Enter");
   await expect(page).toHaveURL(/\/validacion\?listo=1$/);
   await expect(page.getByText("Listo. No queda nada por validar.")).toBeVisible();
@@ -229,10 +232,17 @@ test("validación: lo leído no cuenta hasta validarlo; corregir conserva lo que
 
   // 5. R11: una captura con un monto y su documento con otro.
   await modulos.getByRole("link", { name: "Captura manual" }).click();
-  await page.getByLabel(/^Tipo de documento/).selectOption({ label: "Contrato" });
-  await page.getByLabel(/^Fuente declarada/).fill("Entrevista con el área contratante");
-  await page.getByLabel("Número de contrato").fill("SOP-IA-001");
-  await page.getByLabel("Monto", { exact: true }).fill("1,000,000.00");
+  const visible = { visible: true };
+  await page
+    .getByLabel(/^Tipo de documento/)
+    .filter(visible)
+    .selectOption({ label: "Contrato" });
+  await page
+    .getByLabel(/^Fuente declarada/)
+    .filter(visible)
+    .fill("Entrevista con el área contratante");
+  await page.getByLabel("Número de contrato", { exact: true }).filter(visible).fill("SOP-IA-001");
+  await page.getByLabel("Monto", { exact: true }).filter(visible).fill("1,000,000.00");
   await page.getByRole("button", { name: "Guardar captura" }).click();
   await expect(page.getByText("Sin soporte documental", { exact: true })).toBeVisible();
   const soporte = pdf("soporte-r11.pdf", { ...contrato, involucrados: [] });
