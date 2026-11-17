@@ -24,19 +24,28 @@ async function leerTodo<T>(
   }
 }
 
-/** Consulta `.in()` en lotes para no exceder el largo de la URL. */
+/** Lotes que se piden a la vez: con 5,000 entidades son 34 lotes, y en serie tardaban segundos. */
+const LOTES_EN_PARALELO = 6;
+
+/** Consulta `.in()` en lotes para no exceder el largo de la URL; varios lotes a la vez. */
 export async function enLotes<T>(
   ids: string[],
   consulta: (lote: string[]) => PromiseLike<{ data: T[] | null; error: { code?: string } | null }>,
   tamano = LOTE,
 ): Promise<T[]> {
-  const filas: T[] = [];
-  for (let i = 0; i < ids.length; i += tamano) {
-    const { data, error } = await consulta(ids.slice(i, i + tamano));
-    if (error) throw new Error(`Lectura fallida (${error.code ?? "?"})`);
-    filas.push(...(data ?? []));
-  }
-  return filas;
+  const lotes: string[][] = [];
+  for (let i = 0; i < ids.length; i += tamano) lotes.push(ids.slice(i, i + tamano));
+  const resultados: T[][] = new Array<T[]>(lotes.length);
+  let siguiente = 0;
+  const trabajador = async () => {
+    for (let i = siguiente++; i < lotes.length; i = siguiente++) {
+      const { data, error } = await consulta(lotes[i] ?? []);
+      if (error) throw new Error(`Lectura fallida (${error.code ?? "?"})`);
+      resultados[i] = data ?? [];
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(LOTES_EN_PARALELO, lotes.length) }, trabajador));
+  return resultados.flat();
 }
 
 const fechaMexico = new Intl.DateTimeFormat("en-CA", {

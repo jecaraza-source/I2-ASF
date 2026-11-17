@@ -16,10 +16,10 @@
   --gold-dim: #8a7330;
   --txt: #e8ecef;
   --muted: #8893a4;
-  --muted2: #5d6779;
+  --muted2: #808a9c; /* 4.6:1 sobre los paneles (WCAG AA); antes #5d6779 */
   --node: #5a8bb0;
   --node-edge: #7fb3d8;
-  --danger: #c65a4a;
+  --danger: #e2705f; /* 5.2:1 sobre los paneles (WCAG AA); antes #c65a4a */
   --ok: #5aa06f;
   --azul-claro: #8ecdff;
   --azul-medio: #4a7aaa;
@@ -60,4 +60,10 @@ body {
   background-image: radial-gradient(ellipse at 20% -10%, rgba(212, 175, 55, 0.06), transparent 55%);
   color: var(--txt);
   font-family: var(--sans);
+}
+
+/* Foco visible para quien navega con teclado (WCAG 2.4.7). */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }

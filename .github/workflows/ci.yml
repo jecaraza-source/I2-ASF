@@ -92,6 +92,11 @@ jobs:
           # IA simulada: ninguna prueba llama a un proveedor real.
           echo "IA_SIMULADA=1" >> "$GITHUB_ENV"
 
+      - name: Datos de la prueba de carga (5,000 entidades y 50,000 registros)
+        run: |
+          db=$(grep -E '^DB_URL=' "$RUNNER_TEMP/supabase.env" | head -1 | cut -d= -f2- | tr -d '"')
+          psql "$db" -v ON_ERROR_STOP=1 -q -f supabase/carga/sembrar.sql
+
       - name: Navegador de Playwright
         working-directory: apps/web
         run: pnpm exec playwright install --with-deps chromium

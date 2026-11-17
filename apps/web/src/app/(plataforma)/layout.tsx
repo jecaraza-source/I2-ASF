@@ -11,6 +11,12 @@ const ROLES = { admin: "Administrador", auditor: "Auditor", lector: "Lector" } a
 export default function LayoutPlataforma({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
+      <a
+        href="#contenido"
+        className="sr-only z-50 rounded-md bg-oro px-3 py-2 text-sm font-medium text-fondo focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+      >
+        Saltar al contenido
+      </a>
       <BarraMarca
         centro={
           <Suspense fallback={null}>
@@ -25,7 +31,9 @@ export default function LayoutPlataforma({ children }: { children: ReactNode }) 
       <Suspense fallback={null}>
         <BarraNavegacion />
       </Suspense>
-      <div className="flex flex-1">{children}</div>
+      <div id="contenido" tabIndex={-1} className="flex flex-1 focus:outline-none">
+        {children}
+      </div>
     </div>
   );
 }
