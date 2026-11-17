@@ -127,7 +127,7 @@ test("Analizador: síntesis con origen, alcance que se reduce, documento que da 
 
   // El auditor corrige el texto y aprueba.
   await page
-    .getByLabel("Afirmación 1", { exact: true })
+    .getByRole("textbox", { name: "Afirmación 1", exact: true })
     .fill("Texto revisado por el auditor con su registro.");
   await page.getByRole("button", { name: "Aprobar síntesis" }).click();
   await esperar(page, page.getByTestId("estado-sintesis").filter(visible), "Aprobada");

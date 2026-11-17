@@ -70,7 +70,8 @@ test("menú superior: abre con clic y teclado, muestra descripciones y cierra co
   await expect(panel.getByRole("link", { name: /Alertas/ })).toContainText(
     "Inconsistencias entre fuentes",
   );
-  await expect(panel.getByText("Analizador · próximamente")).toBeVisible();
+  await expect(panel.getByRole("link", { name: /^Analizador/ })).toBeVisible();
+  await expect(panel.getByRole("link", { name: /^Hallazgos/ })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(analisis).toHaveAttribute("aria-expanded", "false");
   await expect(analisis).toBeFocused();
