@@ -5,6 +5,7 @@ import { z } from "zod";
 import { resolverFusionAccion } from "@/acciones/red";
 import { EstadoVacio } from "@/components/estados";
 import { FormularioAjuste, FormularioGenerar } from "@/components/red/formularios";
+import { BotonConsultarFuentes } from "@/components/fuentes/consultar";
 import { EnlaceBoton, Panel, Titulo } from "@/components/ui";
 import { formatoFecha, obtenerEncargo } from "@/lib/datos";
 import { cargarGeneracion, type CalificacionGuardada } from "@/lib/red-datos";
@@ -66,6 +67,9 @@ const resumenSchema = z
     todas: z.boolean().optional(),
   })
   .catch({ indicadores: {} });
+
+/** La consulta de fuentes corre después de responder. */
+export const maxDuration = 300;
 
 export default async function Red({
   params,
@@ -162,7 +166,15 @@ export default async function Red({
     <main className="flex-1 px-8 py-8">
       <Titulo
         accion={
-          actual ? <EnlaceBoton href={`${base}/vista`}>Explorar la red</EnlaceBoton> : undefined
+          <div className="flex flex-wrap items-start gap-3">
+            {puede(activa.rol, "fuente.consultar") ? (
+              <BotonConsultarFuentes
+                encargoId={encargo.id}
+                texto="Consultar fuentes de todas las entidades"
+              />
+            ) : null}
+            {actual ? <EnlaceBoton href={`${base}/vista`}>Explorar la red</EnlaceBoton> : null}
+          </div>
         }
       >
         Red de vínculos

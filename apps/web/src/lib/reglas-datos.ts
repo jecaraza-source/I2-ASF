@@ -105,6 +105,7 @@ export async function cargarDatosReglas(
   }
 
   return {
+    coincidencias_69b: await cargarCoincidencias69b(supabase, encargoId, VALIDADOS),
     registros: [...porRegistro.values()],
     entidades: entidades.map((e) => {
       const ids = (e.identificadores ?? {}) as Record<string, unknown>;
@@ -192,6 +193,75 @@ const resultadoSchema = z.object({
   reproducidas: z.number(),
   no_vigentes: z.number(),
 });
+
+const datos69bSchema = z
+  .object({
+    situacion: z.string().catch("otro"),
+    rfc: z.string().nullable().optional().catch(null),
+    nombre: z.string().nullable().optional().catch(null),
+    carga_vigente_desde: z.string().nullable().optional().catch(null),
+    carga_sha256: z.string().nullable().optional().catch(null),
+  })
+  .catch({ situacion: "otro" });
+
+/**
+ * Coincidencias con la lista 69-B que cuentan para R10 (todo menos lo descartado) y, para cada
+ * entidad, un registro validado donde aparece (la evidencia de la alerta).
+ */
+async function cargarCoincidencias69b(
+  supabase: Cliente,
+  encargoId: string,
+  validados: string[],
+): Promise<NonNullable<DatosReglas["coincidencias_69b"]>> {
+  const resultados = await leerTodo((d, h) =>
+    supabase
+      .from("resultado_consulta")
+      .select("id, entidad_id, coincidencia, estado, datos, fuente_consulta!inner(conector)")
+      .eq("encargo_id", encargoId)
+      .eq("fuente_consulta.conector", "lista_69b")
+      .neq("estado", "descartada")
+      .order("id")
+      .range(d, h),
+  );
+  if (!resultados.length) return [];
+  const entidades = [...new Set(resultados.map((r) => r.entidad_id))];
+  const menciones = await leerTodo((d, h) =>
+    supabase
+      .from("registro_entidad")
+      .select("registro_id, entidad_id, registro!inner(estado_validacion)")
+      .eq("encargo_id", encargoId)
+      .in("entidad_id", entidades)
+      .in("registro.estado_validacion", validados)
+      .order("registro_id")
+      .range(d, h),
+  );
+  const registroDe = new Map<string, string>();
+  for (const m of menciones)
+    if (!registroDe.has(m.entidad_id)) registroDe.set(m.entidad_id, m.registro_id);
+  return resultados.map((r) => {
+    const d = datos69bSchema.parse(r.datos);
+    const fecha = d.carga_vigente_desde ? diaMexico(d.carga_vigente_desde) : null;
+    return {
+      resultado_id: r.id,
+      entidad_id: r.entidad_id,
+      coincidencia: r.coincidencia === "exacta" ? "exacta" : "propuesta",
+      confirmada: r.estado === "confirmada",
+      situacion: d.situacion,
+      rfc: d.rfc ?? null,
+      nombre_en_lista: d.nombre ?? null,
+      carga:
+        fecha || d.carga_sha256
+          ? [
+              fecha ? `carga del ${fecha.split("-").reverse().join("/")}` : "carga vigente",
+              d.carga_sha256 ? `SHA-256 ${d.carga_sha256.slice(0, 8)}…` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")
+          : null,
+      registro_id: registroDe.get(r.entidad_id) ?? null,
+    };
+  });
+}
 
 /** Ejecuta las reglas activas sobre el encargo y guarda las alertas con sus evidencias. */
 export async function ejecutarYGuardarReglas(supabase: Cliente, encargoId: string) {

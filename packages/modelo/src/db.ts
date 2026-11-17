@@ -243,6 +243,63 @@ export type Database = {
           },
         ]
       }
+      carga_fuente: {
+        Row: {
+          creado_en: string
+          creado_por: string | null
+          estado: string
+          filas: number
+          filas_esperadas: number
+          formato: string
+          fuente_id: string
+          id: string
+          nombre_archivo: string
+          organizacion_id: string
+          sha256: string
+          storage_path: string | null
+          vigente_desde: string | null
+        }
+        ComputedFields: never
+        Insert: {
+          creado_en?: string
+          creado_por?: string | null
+          estado?: string
+          filas?: number
+          filas_esperadas: number
+          formato: string
+          fuente_id: string
+          id?: string
+          nombre_archivo: string
+          organizacion_id: string
+          sha256: string
+          storage_path?: string | null
+          vigente_desde?: string | null
+        }
+        Update: {
+          creado_en?: string
+          creado_por?: string | null
+          estado?: string
+          filas?: number
+          filas_esperadas?: number
+          formato?: string
+          fuente_id?: string
+          id?: string
+          nombre_archivo?: string
+          organizacion_id?: string
+          sha256?: string
+          storage_path?: string | null
+          vigente_desde?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carga_fuente_organizacion_id_fuente_id_fkey"
+            columns: ["organizacion_id", "fuente_id"]
+            isOneToOne: false
+            referencedRelation: "fuente_consulta"
+            referencedColumns: ["organizacion_id", "id"]
+          },
+        ]
+      }
       categoria_documental: {
         Row: {
           creado_en: string
@@ -1000,6 +1057,54 @@ export type Database = {
           },
         ]
       }
+      lista_69b: {
+        Row: {
+          carga_id: string
+          creado_en: string
+          creado_por: string | null
+          datos: NonNullable<Json>
+          id: string
+          nombre: string
+          nombre_normalizado: string
+          organizacion_id: string
+          rfc: string
+          situacion: string
+        }
+        ComputedFields: never
+        Insert: {
+          carga_id: string
+          creado_en?: string
+          creado_por?: string | null
+          datos?: NonNullable<Json>
+          id?: string
+          nombre: string
+          nombre_normalizado: string
+          organizacion_id: string
+          rfc: string
+          situacion: string
+        }
+        Update: {
+          carga_id?: string
+          creado_en?: string
+          creado_por?: string | null
+          datos?: NonNullable<Json>
+          id?: string
+          nombre?: string
+          nombre_normalizado?: string
+          organizacion_id?: string
+          rfc?: string
+          situacion?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lista_69b_organizacion_id_carga_id_fkey"
+            columns: ["organizacion_id", "carga_id"]
+            isOneToOne: false
+            referencedRelation: "carga_fuente"
+            referencedColumns: ["organizacion_id", "id"]
+          },
+        ]
+      }
       miembro: {
         Row: {
           activo: boolean
@@ -1511,9 +1616,13 @@ export type Database = {
           entidad_id: string
           estado: string
           fuente_id: string
+          huella: string
           id: string
+          motivo: string | null
           organizacion_id: string
           registro_id: string | null
+          revisado_en: string | null
+          revisado_por: string | null
         }
         ComputedFields: never
         Insert: {
@@ -1526,9 +1635,13 @@ export type Database = {
           entidad_id: string
           estado?: string
           fuente_id: string
+          huella: string
           id?: string
+          motivo?: string | null
           organizacion_id: string
           registro_id?: string | null
+          revisado_en?: string | null
+          revisado_por?: string | null
         }
         Update: {
           coincidencia?: string
@@ -1540,9 +1653,13 @@ export type Database = {
           entidad_id?: string
           estado?: string
           fuente_id?: string
+          huella?: string
           id?: string
+          motivo?: string | null
           organizacion_id?: string
           registro_id?: string | null
+          revisado_en?: string | null
+          revisado_por?: string | null
         }
         Relationships: [
           {
@@ -1930,6 +2047,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      agregar_lote_69b: {
+        Args: { p_carga: string; p_filas: Json }
+        Returns: number
+      }
       asociar_documento: { Args: { p: Json }; Returns: Json }
       bitacora_registro: {
         Args: { p_registro: string }
@@ -1960,6 +2081,11 @@ export type Database = {
         }[]
       }
       capturar_registro: { Args: { p: Json }; Returns: string }
+      cerrar_carga_fuente: { Args: { p_carga: string }; Returns: number }
+      encolar_consulta_fuentes: {
+        Args: { p_encargo: string; p_entidad?: string }
+        Returns: string
+      }
       encolar_extraccion: { Args: { p_registro: string }; Returns: string }
       encolar_extracciones_en_espera: {
         Args: { p_encargo: string }
@@ -2024,6 +2150,7 @@ export type Database = {
       }
       guardar_extraccion_ia: { Args: { p: Json }; Returns: Json }
       guardar_red: { Args: { p: Json }; Returns: string }
+      guardar_resultados_consulta: { Args: { p: Json }; Returns: number }
       guardar_tope_proveedor_ia: {
         Args: {
           p_organizacion: string
@@ -2038,6 +2165,11 @@ export type Database = {
         Returns: Json
       }
       importar_excel: { Args: { p: Json }; Returns: Json }
+      incorporar_resultado_consulta: {
+        Args: { p_resultado: string }
+        Returns: string
+      }
+      iniciar_carga_fuente: { Args: { p: Json }; Returns: string }
       nueva_version_reglas: {
         Args: { p_organizacion: string; p_reglas: Json }
         Returns: number

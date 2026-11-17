@@ -1,0 +1,10 @@
+Información actualizada al 31 de mayo de 2026
+Listado completo de contribuyentes (Artículo 69-B del Código Fiscal de la Federación)
+No,RFC,Nombre del Contribuyente,Situación del contribuyente,"Número y fecha de oficio global de presunción SAT",Publicación página SAT presuntos,Publicación DOF definitivos
+1,EFO190101AB1,"EMPRESA FACTURADORA DE PRUEBA, S.A. DE C.V.",Definitivo,"500-05-2023-1234 de fecha 01/02/2023",01/02/2023,15/06/2023
+2,PRE200202CD2,PRESUNTA DE OPERACIONES SA DE CV,Presunto,"500-05-2025-5678 de fecha 10/03/2025",10/03/2025,
+3,DES210303EF3,DESVIRTUADA DE PRUEBA SC,Desvirtuado,"500-05-2022-0001 de fecha 05/05/2022",05/05/2022,
+4,SEN220404GH4,SENTENCIA FAVORABLE SA DE CV,Sentencia Favorable,,,
+5,NO-ES-UN-RFC,FILA CON RFC INVÁLIDO,Presunto,,,
+6,PRE200202CD2,PRESUNTA DE OPERACIONES SA DE CV,Presunto,,,
+7,NOM230505JK5,"=SUMA PROVEEDOR DOC SA DE CV",Presunto,,,

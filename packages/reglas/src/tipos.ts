@@ -50,11 +50,28 @@ export type EventoRegla = {
   participantes: { entidad_id: string; rol: string }[];
 };
 
+/** Coincidencia de una entidad con una lista externa (lista 69-B del SAT, §11.1). */
+export type CoincidenciaListaRegla = {
+  resultado_id: string;
+  entidad_id: string;
+  coincidencia: "exacta" | "propuesta";
+  /** Confirmada por un auditor (una propuesta solo cuenta si se confirma). */
+  confirmada: boolean;
+  situacion: string;
+  rfc: string | null;
+  nombre_en_lista: string | null;
+  /** «carga del 31/05/2026 · SHA-256 1a2b3c4d…» */
+  carga: string | null;
+  /** Un registro validado donde aparece la entidad: la evidencia de la alerta. */
+  registro_id: string | null;
+};
+
 export type DatosReglas = {
   registros: RegistroRegla[];
   entidades: EntidadRegla[];
   vinculos: VinculoRegla[];
   eventos: EventoRegla[];
+  coincidencias_69b?: CoincidenciaListaRegla[];
 };
 
 export type Severidad = "critica" | "alta" | "media" | "baja";

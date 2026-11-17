@@ -568,6 +568,57 @@ export function r09(datos: DatosReglas): Alerta[] {
 // Catálogo y ejecución
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
+// R10 · Proveedor en lista 69-B del SAT
+// ---------------------------------------------------------------------------
+const SITUACION_R10: Record<string, { texto: string; severidad: Alerta["severidad"] }> = {
+  definitivo: { texto: "definitivo", severidad: "critica" },
+  presunto: { texto: "presunto", severidad: "alta" },
+};
+
+/**
+ * Una entidad del encargo aparece en la lista 69-B en situación de presunto o definitivo. Cuenta la
+ * coincidencia exacta por RFC (aunque nadie la haya revisado) y la propuesta por nombre solo si un
+ * auditor la confirmó; una descartada no llega aquí. Desvirtuado y sentencia favorable no alertan.
+ */
+export function r10(datos: DatosReglas): Alerta[] {
+  const entidades = indice(datos.entidades);
+  const alertas: Alerta[] = [];
+  const vistas = new Set<string>();
+  for (const c of datos.coincidencias_69b ?? []) {
+    const s = SITUACION_R10[c.situacion];
+    if (!s || !c.registro_id || !(c.coincidencia === "exacta" || c.confirmada)) continue;
+    const huella = `R10|${c.entidad_id}|${c.situacion}`;
+    if (vistas.has(huella)) continue;
+    vistas.add(huella);
+    const e = entidades.get(c.entidad_id);
+    const nombre = e?.nombre ?? c.nombre_en_lista ?? "La entidad";
+    const como =
+      c.coincidencia === "exacta"
+        ? `por RFC${c.rfc ? ` (${c.rfc})` : ""}`
+        : "por nombre, confirmada por un auditor";
+    alertas.push({
+      regla: "R10",
+      severidad: s.severidad,
+      titulo: `${nombre} aparece en la lista 69-B del SAT como ${s.texto}`,
+      descripcion: `Coincidencia ${como}${c.carga ? ` en la ${c.carga}` : ""}. Las operaciones con contribuyentes en esta situación pueden carecer de efectos fiscales; revisa sus comprobantes.`,
+      huella,
+      entidades: [c.entidad_id],
+      evidencias: [
+        {
+          lado: "a",
+          etiqueta: "Registro donde aparece",
+          valor: nombre,
+          registro_id: c.registro_id,
+          extraccion_id: null,
+          ubicacion: null,
+        },
+      ],
+    });
+  }
+  return alertas;
+}
+
+// ---------------------------------------------------------------------------
 // R11 · Captura manual que difiere del documento asociado
 // ---------------------------------------------------------------------------
 const ETIQUETA_R11: Record<string, string> = {
@@ -689,9 +740,8 @@ export const REGLAS: Regla[] = [
   {
     id: "R10",
     nombre: "Proveedor en lista 69-B del SAT",
-    activa: false,
-    nota: "Requiere la fuente de consulta de la tarea 11.",
-    evaluar: () => [],
+    activa: true,
+    evaluar: r10,
   },
   {
     id: "R11",

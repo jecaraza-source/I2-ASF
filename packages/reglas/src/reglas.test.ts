@@ -22,6 +22,7 @@ import {
   r07,
   r08,
   r09,
+  r10,
   r11,
 } from "./reglas";
 import type { DatosReglas } from "./tipos";
@@ -313,6 +314,57 @@ describe("casos sintéticos", () => {
   });
 });
 
+describe("R10: lista 69-B", () => {
+  const c = (cambios: Partial<NonNullable<DatosReglas["coincidencias_69b"]>[number]>) => ({
+    resultado_id: "r",
+    entidad_id: "e",
+    coincidencia: "exacta" as const,
+    confirmada: false,
+    situacion: "definitivo",
+    rfc: "EFO190101AB1",
+    nombre_en_lista: "EMPRESA FACTURADORA",
+    carga: "carga del 31/05/2026 · SHA-256 1a2b3c4d…",
+    registro_id: "reg",
+    ...cambios,
+  });
+  const datos = (coincidencias: ReturnType<typeof c>[]): DatosReglas => ({
+    registros: [],
+    entidades: [
+      {
+        id: "e",
+        tipo: "persona_moral",
+        nombre: "Facturadora SA",
+        nombre_normalizado: "FACTURADORA",
+        rfc: "EFO190101AB1",
+      },
+    ],
+    vinculos: [],
+    eventos: [],
+    coincidencias_69b: coincidencias,
+  });
+
+  it("exacta en definitivo es crítica; en presunto, alta", () => {
+    const a = r10(
+      datos([c({}), c({ entidad_id: "e", situacion: "presunto", resultado_id: "r2" })]),
+    );
+    expect(a.map((x) => [x.huella, x.severidad])).toEqual([
+      ["R10|e|definitivo", "critica"],
+      ["R10|e|presunto", "alta"],
+    ]);
+    expect(a[0]?.titulo).toBe("Facturadora SA aparece en la lista 69-B del SAT como definitivo");
+    expect(a[0]?.descripcion).toContain("por RFC (EFO190101AB1) en la carga del 31/05/2026");
+    expect(a[0]?.evidencias[0]).toMatchObject({ lado: "a", registro_id: "reg" });
+  });
+
+  it("la propuesta por nombre solo cuenta confirmada; desvirtuado no alerta; sin registro no alerta", () => {
+    expect(r10(datos([c({ coincidencia: "propuesta" })]))).toHaveLength(0);
+    expect(r10(datos([c({ coincidencia: "propuesta", confirmada: true })]))).toHaveLength(1);
+    expect(r10(datos([c({ situacion: "desvirtuado" })]))).toHaveLength(0);
+    expect(r10(datos([c({ situacion: "sentencia_favorable" })]))).toHaveLength(0);
+    expect(r10(datos([c({ registro_id: null })]))).toHaveLength(0);
+  });
+});
+
 describe("R11: captura contra su documento asociado", () => {
   const x = (
     id: string,
@@ -382,7 +434,7 @@ describe("R11: captura contra su documento asociado", () => {
 });
 
 describe("catálogo", () => {
-  it("R01–R09 y R11 activas; R10 declarada y desactivada", () => {
+  it("R01–R11 activas", () => {
     expect(REGLAS.map((r) => r.id)).toEqual([
       "R01",
       "R02",
@@ -396,12 +448,12 @@ describe("catálogo", () => {
       "R10",
       "R11",
     ]);
-    expect(REGLAS.filter((r) => !r.activa).map((r) => r.id)).toEqual(["R10"]);
+    expect(REGLAS.filter((r) => !r.activa).map((r) => r.id)).toEqual([]);
   });
   it("las huellas son únicas y estables entre ejecuciones", () => {
     const a = ejecutarReglas(asf).alertas.map((x) => x.huella);
     expect(new Set(a).size).toBe(a.length);
     expect(ejecutarReglas(asf).alertas.map((x) => x.huella)).toEqual(a);
-    expect(ejecutarReglas(asf).reglas).toHaveLength(10);
+    expect(ejecutarReglas(asf).reglas).toHaveLength(11);
   });
 });
