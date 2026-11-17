@@ -113,7 +113,9 @@ cuando pertenece a un encargo. No se repiten abajo.
 | `alerta` | `regla`, `severidad`, `estado` (`abierta`, `confirmada`, `descartada`), `detalle jsonb`, `huella`, `vigente`, `resuelta_por`, `resuelta_en`, `resolucion_motivo` |
 | `hallazgo`, `hallazgo_alerta` | `redaccion`, `firmado_por`, `firmado_en` |
 | `fuente_consulta` | `nombre`, `tipo` (`interna`, `externa`), `conector`, `config jsonb`, `activa` |
-| `resultado_consulta` | `entidad_id`, `fuente_id`, `coincidencia` (`exacta`, `propuesta`), `datos jsonb`, `consultado_en`, `estado` (`pendiente`, `confirmada`, `descartada`), `registro_id` (si se incorporó) |
+| `resultado_consulta` | `encargo_id`, `entidad_id`, `fuente_id`, `huella`, `coincidencia` (`exacta`, `propuesta`), `datos jsonb`, `consultado_en`, `estado` (`pendiente`, `confirmada`, `descartada`), `revisado_por`, `revisado_en`, `motivo`, `registro_id` (si se incorporó) |
+| `carga_fuente` | `fuente_id`, `nombre_archivo`, `formato` (`csv`, `xlsx`), `sha256`, `filas_esperadas`, `filas`, `estado` (`en_proceso`, `vigente`, `reemplazada`), `storage_path` (reservado), `vigente_desde` |
+| `lista_69b` | `carga_id`, `rfc`, `nombre`, `nombre_normalizado`, `situacion` (`presunto`, `desvirtuado`, `definitivo`, `sentencia_favorable`, `otro`), `datos jsonb` |
 | `plantilla_importacion` | `nombre`, `firma_hojas jsonb`, `mapeo jsonb` |
 | `trabajo` | `tipo`, `payload jsonb`, `estado` (`pendiente`, `en_proceso`, `hecho`, `error`), `intentos`, `error`, `bloqueado_hasta` |
 | `bitacora` | `actor`, `accion`, `objeto_tipo`, `objeto_id`, `detalle jsonb`, `en` |
@@ -466,11 +468,13 @@ Funciones puras `(datos) => Alerta[]`. Cada alerta enlaza las evidencias que se 
 | R07 | Adjudicaciones directas sucesivas al mismo proveedor |
 | R08 | Domicilio fiscal o representante legal compartido entre proveedores |
 | R09 | Empresa constituida pocos días antes del contrato |
-| R10 | Proveedor en lista 69-B del SAT (requiere la fuente de la tarea 11) |
+| R10 | Proveedor en lista 69-B del SAT como presunto (alta) o definitivo (crítica) |
 | R11 | Captura manual que difiere del documento asociado después |
 
 - **Ejecución:** al terminar cada importación y a demanda desde `…/alertas`. Solo leen registros
-  validados. R10 y R11 están declaradas y desactivadas hasta las tareas 11 y 09.
+  validados. Las 11 reglas están activas. R10 cuenta la
+  coincidencia exacta por RFC y la propuesta por nombre solo si un auditor la confirmó; desvirtuado y
+  sentencia favorable no alertan.
 - **Identidad:** cada alerta lleva una `huella` (regla + evidencias). Volver a ejecutar no duplica
   alertas ni reabre las resueltas. Una alerta abierta que ya no se reproduce queda `vigente = false`
   (se sigue viendo, pero no cuenta para la calificación de §9); nunca se resuelve sola.
@@ -499,11 +503,33 @@ Funciones puras `(datos) => Alerta[]`. Cada alerta enlaza las evidencias que se 
   Clic en una línea muestra los vínculos o eventos que la sostienen y sus registros de origen.
 - **Ficha:** panel lateral y página propia. Secciones: datos generales e identificadores, registros y
   documentos, vínculos y eventos, calificación con criterios, otros expedientes, coincidencias externas.
-- **Ficha enriquecida:** interfaz `ConectorFuente { buscar(entidad): Promise<Coincidencia[]> }`.
-  Coincidencia por RFC o CURP = `exacta`; por nombre = `propuesta`, que el auditor confirma o descarta.
-  Cada resultado guarda fuente y hora de consulta. Lo confirmado puede incorporarse como registro
-  (`origen = captura`, fuente = nombre de la fuente).
+- **Ficha enriquecida:** detalle en §11.1.
 - La búsqueda en otros expedientes nunca cruza organizaciones.
+
+### 11.1 Fuentes de consulta
+
+- **Fuentes por organización.** Toda organización nace con dos: «Otros expedientes» (interna,
+  conector `otros_expedientes`) y «Lista 69-B del SAT» (externa, conector `lista_69b`). Un conector
+  por organización.
+- **Conector:** `ConectorFuente { conector, enviaDatos, aplica(entidad), buscar(entidad) }` en
+  `apps/web/src/lib/fuentes/`. Por RFC o CURP la coincidencia es `exacta`; por nombre normalizado,
+  `propuesta`. Cada resultado guarda fuente, hora de consulta y una `huella` (volver a consultar
+  actualiza, no duplica).
+- **Lista 69-B.** Se consulta sobre una copia local: ningún dato sale de la plataforma. Un `admin` la
+  carga en `…/configuracion`: el navegador lee el CSV o Excel del SAT (UTF-8 o Windows-1252, `,` o `;`),
+  muestra filas válidas, inválidas con su número y repetidas, y la envía por lotes; el servidor valida
+  cada fila. Se guarda la huella SHA-256 del archivo; el original todavía no se sube
+  (`carga_fuente.storage_path` queda reservado para hacerlo). La carga nueva queda `vigente` al
+  cerrarse y la anterior pasa a `reemplazada`; si falla a medio camino, la anterior sigue vigente.
+  Toda carga va a bitácora (`fuente.carga`).
+- **Consulta:** trabajo `consulta_fuentes` (una entidad desde su ficha o todo el encargo desde la red,
+  en lotes de 150). Roles `admin` y `auditor`. Al terminar se ejecutan las reglas.
+- **Revisión:** el resultado solo cambia de `pendiente` a `confirmada` o `descartada` (con motivo de
+  al menos 5 caracteres), con quién y cuándo. Lo encontrado no se edita. Todo va a bitácora.
+- **Incorporación:** un resultado externo confirmado puede incorporarse una sola vez como registro
+  (`origen = captura`, tipo `otro`, fuente = «<fuente> (consultada el …)», la entidad como titular).
+- **Fuentes que envían datos fuera** (plantilla `api_ejemplo`, ninguna activa): solo se consultan
+  para los encargos listados en `config.encargos_permitidos`; la llave vive en variables de entorno.
 
 ## 12. Exportaciones
 
@@ -541,5 +567,5 @@ Cada una tiene un valor provisional para no detener el desarrollo.
 | Catálogo de categorías y tipos de documento | Tabla de §6 | `…/configuracion` |
 | Regla para generar identificadores de expediente | `EXP-AAAA-NNNN` | Función SQL |
 | Pesos y umbrales de la calificación | Tabla de §9 | `regla_calificacion` |
-| Inventario de bases de datos para la ficha | Otros expedientes + lista 69-B por CSV | `fuente_consulta` |
+| Inventario de bases de datos para la ficha | Otros expedientes + lista 69-B (CSV o Excel) | `fuente_consulta` (§11.1) |
 | Umbral de confianza de la IA | 0.85 | `encargo.umbral_confianza` |

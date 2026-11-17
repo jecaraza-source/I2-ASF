@@ -2,10 +2,11 @@ import { PROVEEDORES_IA, puede, type ProveedorIA } from "@sigma/modelo";
 import Link from "next/link";
 import { SinPermiso } from "@/components/estados";
 import { FormularioCategoria, FormularioTipoDocumento } from "@/components/formularios/catalogo";
+import { CargaLista69b } from "@/components/fuentes/carga-lista";
 import { FormularioIAEncargo } from "@/components/ia/formularios";
 import { FormularioReglas } from "@/components/red/formularios";
 import { Panel, Titulo } from "@/components/ui";
-import { obtenerEncargo } from "@/lib/datos";
+import { formatoFecha, obtenerEncargo } from "@/lib/datos";
 import { cargarReglas, valoresDeReglas } from "@/lib/red-datos";
 import { requerirOrganizacion } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
@@ -38,6 +39,22 @@ export default async function Configuracion({ params }: { params: Promise<{ enca
       .order("nombre"),
   ]);
   const reglas = await cargarReglas(supabase, activa.organizacionId);
+  const [{ data: fuentes }, { data: cargas }] = await Promise.all([
+    supabase
+      .from("fuente_consulta")
+      .select("id, nombre, tipo, conector, activa")
+      .eq("organizacion_id", activa.organizacionId)
+      .order("nombre"),
+    supabase
+      .from("carga_fuente")
+      .select(
+        "id, fuente_id, nombre_archivo, formato, sha256, filas, estado, vigente_desde, creado_en",
+      )
+      .eq("organizacion_id", activa.organizacionId)
+      .neq("estado", "en_proceso")
+      .order("creado_en", { ascending: false })
+      .limit(10),
+  ]);
   const { data: iaEncargo } = await supabase
     .from("encargo")
     .select("ia_proveedores")
@@ -115,6 +132,65 @@ export default async function Configuracion({ params }: { params: Promise<{ enca
               (PROVEEDORES_IA as readonly string[]).includes(p),
             )}
           />
+        </Panel>
+        <Panel>
+          <h2 className="mb-1 text-base font-semibold text-texto" id="fuentes">
+            Fuentes de consulta
+          </h2>
+          <p className="mb-4 text-xs text-tenue">
+            Lo que se consulta desde la ficha de cada entidad. Son de la organización.
+          </p>
+          <ul className="flex flex-col gap-4" aria-label="Fuentes de consulta">
+            {(fuentes ?? []).map((f) => {
+              const historial = (cargas ?? []).filter((c) => c.fuente_id === f.id);
+              const vigente = historial.find((c) => c.estado === "vigente");
+              return (
+                <li
+                  key={f.id}
+                  className="flex flex-col gap-2 border-t border-linea pt-3 first:border-t-0 first:pt-0"
+                >
+                  <p className="text-sm text-texto">
+                    {f.nombre}{" "}
+                    <span className="text-xs text-tenue">
+                      · {f.tipo === "interna" ? "interna" : "externa (copia local)"} ·{" "}
+                      {f.activa ? "activa" : "inactiva"}
+                    </span>
+                  </p>
+                  {f.conector === "lista_69b" ? (
+                    <>
+                      <p className="text-xs text-tenue" data-testid="lista-vigente">
+                        {vigente
+                          ? `Vigente: ${vigente.nombre_archivo} · ${vigente.filas.toLocaleString("es-MX")} contribuyentes · cargada el ${formatoFecha(vigente.vigente_desde)} · SHA-256 ${vigente.sha256.slice(0, 12)}…`
+                          : "Aún no hay lista cargada: las consultas no encuentran nada en esta fuente."}
+                      </p>
+                      {historial.length > 1 ? (
+                        <details className="text-xs text-tenue">
+                          <summary className="cursor-pointer">Cargas anteriores</summary>
+                          <ul className="mt-1 flex flex-col gap-0.5">
+                            {historial
+                              .filter((c) => c.estado !== "vigente")
+                              .map((c) => (
+                                <li key={c.id}>
+                                  {c.nombre_archivo} · {c.filas.toLocaleString("es-MX")} ·{" "}
+                                  {formatoFecha(c.creado_en)} · SHA-256 {c.sha256.slice(0, 12)}…
+                                </li>
+                              ))}
+                          </ul>
+                        </details>
+                      ) : null}
+                      {puede(activa.rol, "fuente.cargar") ? (
+                        <CargaLista69b fuenteId={f.id} />
+                      ) : (
+                        <p className="text-xs text-tenue-2">
+                          Solo un administrador carga la lista.
+                        </p>
+                      )}
+                    </>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
         </Panel>
         <Panel>
           <h2 className="mb-4 text-base font-semibold text-texto" id="reglas">

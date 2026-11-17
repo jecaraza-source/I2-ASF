@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { consultarFuentes } from "@/lib/fuentes/consultar";
 import { extraerDocumento } from "@/lib/ia/extraer";
 import { clienteServicio } from "@/lib/supabase/servicio";
 
@@ -9,6 +10,7 @@ type Trabajo = { id: string; tipo: string; payload: unknown; intentos: number };
 
 const MANEJADORES: Record<string, (s: Servicio, trabajo: Trabajo) => Promise<void>> = {
   extraccion: extraerDocumento,
+  consulta_fuentes: consultarFuentes,
 };
 
 export type ResultadoTrabajos =

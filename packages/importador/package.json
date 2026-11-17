@@ -10,6 +10,8 @@
     "./captura": "./src/captura.ts",
     "./extraccion": "./src/extraccion.ts",
     "./validacion": "./src/validacion.ts",
+    "./lista69b": "./src/lista69b.ts",
+    "./leer-navegador": "./src/leer-navegador.ts",
     "./plantillas/*": "./plantillas/*"
   },
   "scripts": {

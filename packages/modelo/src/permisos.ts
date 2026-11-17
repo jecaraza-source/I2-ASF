@@ -23,6 +23,8 @@ export type Accion =
   | "registro.capturar"
   | "registro.validar"
   | "registro.exportar"
+  | "fuente.cargar"
+  | "fuente.consultar"
   | "ia.administrar"
   | "usuarios.administrar";
 
@@ -44,6 +46,8 @@ const PERMISOS: Record<Accion, readonly Rol[]> = {
   "registro.capturar": ["admin", "auditor"],
   "registro.validar": ["admin", "auditor"],
   "registro.exportar": ["admin", "auditor"],
+  "fuente.cargar": ["admin"],
+  "fuente.consultar": ["admin", "auditor"],
   "ia.administrar": ["admin"],
   "usuarios.administrar": ["admin"],
 };

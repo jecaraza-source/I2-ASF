@@ -34,8 +34,9 @@ insert into public.alerta (organizacion_id, encargo_id, regla, severidad)
 values ('b0000000-0000-4000-8000-0000000000b0', 'c0000000-0000-4000-8000-0000000000b0', 'R01', 'alta');
 insert into public.trabajo (organizacion_id, encargo_id, tipo)
 values ('b0000000-0000-4000-8000-0000000000b0', 'c0000000-0000-4000-8000-0000000000b0', 'extraccion');
+-- Las fuentes de B (otros expedientes y lista 69-B) las crea el disparador de organización.
 insert into public.fuente_consulta (organizacion_id, nombre, tipo, conector)
-values ('b0000000-0000-4000-8000-0000000000b0', 'Lista 69-B', 'externa', 'lista_69b');
+values ('b0000000-0000-4000-8000-0000000000b0', 'Fuente propia de B', 'externa', 'api_ejemplo');
 
 -- Objeto en el bucket subido por el auditor de B (pasa por RLS de storage).
 set local role authenticated;
