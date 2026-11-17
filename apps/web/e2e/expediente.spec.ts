@@ -204,8 +204,20 @@ test("expediente documental: filtra por entidad y por categoría, cambia de vist
   const lineas = csv.replace(/^﻿/, "").trimEnd().split("\r\n");
   expect(lineas[0]).toMatch(/^Registro,Folio,Expediente,/);
   expect(lineas).toHaveLength(3);
-  expect(csv).toContain(`'${PROVEEDOR} (proveedor)`);
-  expect(csv).not.toMatch(/(^|,)=SUMA/m);
+  // Ninguna celda empieza con un carácter que una hoja de cálculo ejecutaría como fórmula.
+  expect(csv).not.toMatch(/(^|,)"?[=+@]/m);
+
+  // En la vista de la entidad, la celda del CFDI empieza con «=»: sale neutralizada.
+  await arbol.getByRole("link", { name: /^=SUMA PROVEEDOR DOC/ }).click();
+  await page.getByRole("link", { name: "ver en todos los expedientes" }).filter(visible).click();
+  await expect(resumen).toHaveText(/^2 registro\(s\) de =SUMA PROVEEDOR DOC SA DE CV/);
+  const [otra] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("link", { name: "Exportar CSV" }).filter(visible).click(),
+  ]);
+  const csvEntidad = readFileSync(await otra.path(), "utf8");
+  expect(csvEntidad).toContain(`,'${PROVEEDOR} (proveedor),`);
+  expect(csvEntidad).not.toMatch(/(^|,)"?[=+@]/m);
 });
 
 test("el lector no exporta", async ({ page }) => {
