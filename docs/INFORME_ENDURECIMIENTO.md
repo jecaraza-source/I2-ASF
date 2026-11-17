@@ -10,7 +10,7 @@ Supabase que solo se cierra desde el panel: *Leaked password protection*, que re
 
 | # | Severidad | Hallazgo | Corrección | Estado |
 |---|---|---|---|---|
-| 1 | Crítica (rendimiento) | El expediente documental con 50,000 registros no respondía: más de 10 min por consulta. Había dos causas. Faltaban índices por `registro_id` en `extraccion` y `evidencia`, y la RLS evaluaba la membresía en cada fila de cada subconsulta. | Índices nuevos. Las políticas usan `organizacion_id = any ((select privado.mis_organizaciones(...))::uuid[])`, que se calcula una vez por consulta. La base del expediente corre como dueño después de verificar la membresía del encargo. | Corregido: unos 3.4 s por consulta con 50,000 registros (medido en local; ver «Prueba de carga») |
+| 1 | Crítica (rendimiento) | El expediente documental con 50,000 registros no respondía: más de 10 min por consulta. Había dos causas. Faltaban índices por `registro_id` en `extraccion` y `evidencia`, y la RLS evaluaba la membresía en cada fila de cada subconsulta. | Índices nuevos. Las políticas usan `organizacion_id = any ((select privado.mis_organizaciones(...))::uuid[])`, que se calcula una vez por consulta. El expediente primero filtra y pagina con lo mínimo (`privado.expediente_filas`) y arma el detalle solo de la página. Corre como dueño después de verificar la membresía del encargo. | Corregido: 0.8–2.5 s por consulta con 50,000 registros, por debajo del límite de 8 s de Supabase (ver «Prueba de carga») |
 | 2 | Alta | Por la API, un auditor podía modificar directamente entidades, vínculos, eventos, participantes, menciones, alias, extracciones y propuestas de fusión. Esos cambios no pasaban por la bitácora (reglas 1 y 3). | Vínculos, eventos, participantes, menciones y alias: sin permiso de UPDATE, porque nada los modifica. Entidad, extracción y fusión: un disparador rechaza el PATCH directo y solo acepta cambios dentro de funciones de la plataforma (`/rpc/…`). | Corregido (pgTAP `16_endurecimiento`) |
 | 3 | Media | Nueve funciones SECURITY DEFINER expuestas en la API. Una de ellas, `registrar_acceso_fallido`, se podía llamar sin sesión (asesores 0028 y 0029). | El cuerpo pasa a `privado` y en `public` queda una envoltura SECURITY INVOKER con la misma firma. `anon` solo ejecuta el registro de accesos fallidos, que ya tenía tope de 10 por hora por usuario. | Corregido |
 | 4 | Media (rendimiento) | La vista de la red con 5,000 entidades: el diseño por fuerzas (cose) crece con el cuadrado de las entidades y congelaba el navegador. Las lecturas por lotes iban una tras otra. | Arriba de 1,500 entidades visibles se dibuja en rejilla empaquetada, con aviso. Lotes en paralelo (6 a la vez). | Corregido (e2e `carga.spec.ts`) |
@@ -65,19 +65,21 @@ Los datos sintéticos están en `supabase/carga/sembrar.sql`; CI los siembra ant
 
 | Medición (Postgres local, sin red) | Antes | Después |
 |---|---|---|
-| Expediente: página 1 (50 de 50,000) | > 10 min (se canceló) | 3.4 s |
-| Expediente: página 900 | > 10 min | 3.5 s |
-| Expediente: filtro por entidad | > 10 min | 3.4 s |
-| Expediente: búsqueda de texto | > 10 min | 1.8 s |
-| Árbol del expediente | > 10 min | 3.1 s |
+| Expediente: página 1 (50 de 50,000) | > 10 min (se canceló) | 0.95 s |
+| Expediente: página 900 | > 10 min | 0.90 s |
+| Expediente: filtro por entidad | > 10 min | 0.79 s |
+| Expediente: orden por calificación | > 10 min | 1.3 s |
+| Expediente: búsqueda de texto | > 10 min | 2.0 s |
+| Árbol del expediente | > 10 min | 1.5 s |
+| Árbol con búsqueda | > 10 min | 2.5 s |
 | Nodos de la red (5,000) | 2 ms | 2 ms |
 
 Los tiempos de navegador quedan en las anotaciones de `e2e/carga.spec.ts` en cada corrida de CI. Los
 límites que la prueba exige: vista de la red en menos de 60 s, centrar una entidad en menos de 15 s,
 cada página del expediente en menos de 30 s.
 
-**Siguiente mejora, no bloqueante:** precalcular involucrados, referencias, montos y nivel de cada
-registro en una tabla de resumen. Así el expediente quedaría por debajo de 1 s con 50,000 registros.
+**Siguiente mejora, no bloqueante:** una tabla de resumen por registro, con el texto buscable y las
+entidades, bajaría la búsqueda y el árbol a menos de 0.5 s.
 
 ## Suite e2e de los hitos A y B
 
