@@ -34,6 +34,7 @@ const registro = {
   fecha_documento: "2024-03-15",
   estado_validacion: "pendiente" as const,
   estado_extraccion: "no_aplica" as const,
+  extraccion_nota: null,
   resumen: null,
 };
 

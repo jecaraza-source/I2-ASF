@@ -89,6 +89,8 @@ jobs:
           echo "::add-mask::$servicio"
           echo "SUPABASE_SERVICE_ROLE_KEY=$servicio" >> "$GITHUB_ENV"
           echo "CRON_SECRET=secreto-solo-para-pruebas-e2e" >> "$GITHUB_ENV"
+          # IA simulada: ninguna prueba llama a un proveedor real.
+          echo "IA_SIMULADA=1" >> "$GITHUB_ENV"
 
       - name: Navegador de Playwright
         working-directory: apps/web

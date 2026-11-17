@@ -53,8 +53,9 @@ En cada proyecto remoto:
 | `SUPABASE_SERVICE_ROLE_KEY` | **Solo servidor** | Únicamente en el procesador de trabajos |
 | `ANTHROPIC_API_KEY` | Solo servidor | Extracción con IA |
 | `ANTHROPIC_MODEL` | Solo servidor | Modelo a usar; se cambia sin tocar código |
-| `OPENAI_API_KEY` | Solo servidor | Opcional. Segundo proveedor de IA; solo se usa en encargos que lo permitan |
-| `OPENAI_MODEL` | Solo servidor | Modelo de OpenAI a usar, si se configura ese proveedor |
+| `OPENAI_API_KEY` | Solo servidor | Opcional. Proveedor de respaldo cuando Anthropic llega a su límite; solo en encargos que lo permitan |
+| `OPENAI_MODEL` | Solo servidor | Modelo de OpenAI a usar; sin él, el respaldo no se usa |
+| `IA_SIMULADA` | Solo pruebas | `1` en local y CI: la extracción no llama a ningún proveedor. Se ignora en producción |
 | `CRON_SECRET` | Solo servidor | Autoriza la llamada del cron |
 
 Para desarrollo local: copia `.env.example` a `apps/web/.env.local` y llénalo con los valores que

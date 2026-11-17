@@ -11,6 +11,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.9.0",
     "@sigma/importador": "workspace:*",
     "@sigma/modelo": "workspace:*",
     "@sigma/red": "workspace:*",
@@ -20,6 +21,7 @@
     "cytoscape": "^3.35.0",
     "cytoscape-dagre": "^4.1.0",
     "next": "16.4.6",
+    "openai": "^7.57.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1",

@@ -41,7 +41,9 @@ Si el código y la especificación se contradicen, detente y pregunta. Si cambia
 
 - **Web:** Next.js (App Router) + TypeScript `strict` + Tailwind. Desplegado en Vercel.
 - **Datos:** Supabase (Postgres, Auth, Storage, RLS). Acceso con `@supabase/ssr`.
-- **IA:** API de Claude desde servidor (route handlers). Modelo en `ANTHROPIC_MODEL`.
+- **IA:** API de Claude desde servidor (procesador de trabajos). Modelo en `ANTHROPIC_MODEL`. OpenAI
+  (`OPENAI_MODEL`) es respaldo: solo cuando Claude llegó a su límite y el encargo lo permite. Toda
+  llamada pasa por `iaPermitida` y queda en `uso_ia`.
 - **Trabajos en segundo plano:** tabla `trabajo` + route handler idempotente disparado por Vercel Cron.
 - **Red:** Cytoscape.js.
 - **Sin servicio Python en la fase 1.** Se agrega solo si el volumen de OCR lo exige.

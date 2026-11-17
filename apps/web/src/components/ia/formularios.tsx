@@ -2,7 +2,12 @@
 
 import { NOMBRE_PROVEEDOR_IA, PROVEEDORES_IA, type ProveedorIA } from "@sigma/modelo";
 import { useActionState, useState } from "react";
-import { configurarIAEncargo, guardarConfiguracionIA, guardarPrecioIA } from "@/acciones/ia";
+import {
+  configurarIAEncargo,
+  guardarConfiguracionIA,
+  guardarPrecioIA,
+  guardarTopeProveedorIA,
+} from "@/acciones/ia";
 import { BotonEnviar } from "@/components/formulario";
 import { ESTADO_INICIAL } from "@/lib/formulario";
 
@@ -154,6 +159,64 @@ export function FormularioIAEncargo({
         </button>
       </fieldset>
       <Mensaje ok={estado.ok} texto={estado.mensaje} />
+    </form>
+  );
+}
+
+export function FormularioTopeProveedor({
+  proveedor,
+  topeDiario,
+  topeMensual,
+}: {
+  proveedor: ProveedorIA;
+  topeDiario: number | null;
+  topeMensual: number | null;
+}) {
+  const [estado, enviar] = useActionState(guardarTopeProveedorIA, ESTADO_INICIAL);
+  const [valores, setValores] = useState({
+    diario: topeDiario === null ? "" : String(topeDiario),
+    mensual: topeMensual === null ? "" : String(topeMensual),
+  });
+  const nombre = NOMBRE_PROVEEDOR_IA[proveedor];
+  return (
+    <form action={enviar} className="mt-3 flex flex-col gap-2">
+      <input type="hidden" name="proveedor" value={proveedor} />
+      <div className="grid gap-2 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-xs text-tenue">
+          Tope diario propio
+          <input
+            name="tope_diario_tokens"
+            aria-label={`Tope diario de ${nombre}`}
+            placeholder="sin tope propio"
+            value={valores.diario}
+            onChange={(e) => setValores((v) => ({ ...v, diario: e.target.value }))}
+            inputMode="numeric"
+            className={claseControl}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-tenue">
+          Tope mensual propio
+          <input
+            name="tope_mensual_tokens"
+            aria-label={`Tope mensual de ${nombre}`}
+            placeholder="sin tope propio"
+            value={valores.mensual}
+            onChange={(e) => setValores((v) => ({ ...v, mensual: e.target.value }))}
+            inputMode="numeric"
+            className={claseControl}
+          />
+        </label>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          aria-label={`Guardar tope de ${nombre}`}
+          className="rounded-md border border-linea-2 px-2.5 py-1 text-xs text-texto hover:border-oro"
+        >
+          Guardar tope
+        </button>
+        <Mensaje ok={estado.ok} texto={estado.mensaje} />
+      </div>
     </form>
   );
 }

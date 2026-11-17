@@ -16,11 +16,13 @@ const VARIABLE_MODELO: Record<ProveedorIA, string> = {
 
 /** Estado de la configuración de un proveedor en el servidor. Nunca devuelve la llave. */
 export function estadoProveedor(proveedor: ProveedorIA) {
+  // Con la IA simulada (solo pruebas) no hacen falta llaves ni modelo: nada sale del servidor.
+  const simulada = process.env.IA_SIMULADA === "1" && process.env.VERCEL_ENV !== "production";
   return {
     proveedor,
-    llave: Boolean(process.env[VARIABLE_LLAVE[proveedor]]),
+    llave: simulada || Boolean(process.env[VARIABLE_LLAVE[proveedor]]),
     variableLlave: VARIABLE_LLAVE[proveedor],
-    modelo: process.env[VARIABLE_MODELO[proveedor]] || null,
+    modelo: process.env[VARIABLE_MODELO[proveedor]] || (simulada ? "simulado" : null),
     variableModelo: VARIABLE_MODELO[proveedor],
   };
 }
@@ -32,7 +34,7 @@ const permisoSchema = z.object({
 });
 
 export type PermisoIA =
-  | { permitida: true; organizacionId: string }
+  | { permitida: true; organizacionId: string; modelo: string }
   | { permitida: false; motivo: string; descripcion: string; organizacionId: string | null };
 
 /**
@@ -60,8 +62,10 @@ export async function iaPermitida(
   const organizacionId = r.data.organizacion_id ?? null;
   if (!r.data.permitida || !organizacionId)
     return negar(r.data.motivo ?? "encargo_inexistente", organizacionId);
-  if (!estadoProveedor(proveedor).llave) return negar("sin_llave", organizacionId);
-  return { permitida: true, organizacionId };
+  const estado = estadoProveedor(proveedor);
+  if (!estado.llave) return negar("sin_llave", organizacionId);
+  if (!estado.modelo) return negar("sin_modelo", organizacionId);
+  return { permitida: true, organizacionId, modelo: estado.modelo };
 }
 
 export type UsoIA = {

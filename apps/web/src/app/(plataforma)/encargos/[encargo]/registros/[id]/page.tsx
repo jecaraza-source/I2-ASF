@@ -20,6 +20,9 @@ function valor(v: unknown): string {
   return typeof v === "object" ? JSON.stringify(v) : String(v);
 }
 
+/** Las acciones de esta página procesan el documento después de responder (lectura con IA). */
+export const maxDuration = 300;
+
 export default async function Registro({
   params,
 }: {
