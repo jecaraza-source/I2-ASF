@@ -28,6 +28,8 @@ export async function avanceEncargo(
     red,
     todas,
     resueltas,
+    sintesis,
+    hallazgos,
   ] = await Promise.all([
     supabase.from("expediente").select("id", contar).eq("encargo_id", encargoId),
     registros().eq("origen", "importacion"),
@@ -39,6 +41,16 @@ export async function avanceEncargo(
     supabase.from("red_generada").select("id", contar).eq("encargo_id", encargoId),
     alertas(),
     alertas().neq("estado", "abierta"),
+    supabase
+      .from("sintesis")
+      .select("id", contar)
+      .eq("encargo_id", encargoId)
+      .eq("estado", "aprobada"),
+    supabase
+      .from("hallazgo")
+      .select("id", contar)
+      .eq("encargo_id", encargoId)
+      .not("firmado_en", "is", null),
   ]);
   return {
     expedientes: expedientes.count ?? 0,
@@ -51,5 +63,7 @@ export async function avanceEncargo(
     red: red.count ?? 0,
     alertas: todas.count ?? 0,
     alertas_resueltas: resueltas.count ?? 0,
+    sintesis_aprobadas: sintesis.count ?? 0,
+    hallazgos_firmados: hallazgos.count ?? 0,
   };
 }

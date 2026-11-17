@@ -339,6 +339,27 @@ export async function extraerConRespaldo<P extends string>(
   campos: CampoEsperado[],
   umbral: number,
 ): Promise<ResultadoExtraccion<P>> {
+  const r = await llamarConRespaldo(dep, (datos) => {
+    const i = interpretarExtraccion(datos, campos, umbral);
+    return i.ok ? i : null;
+  });
+  if (!r.ok) return r;
+  const { ok, ...interpretada } = r.valor;
+  return { ok, ...interpretada, proveedor: r.proveedor };
+}
+
+export type ResultadoRespaldo<P extends string, R> =
+  | { ok: true; proveedor: P; valor: R }
+  | { ok: false; clase: "bloqueada" | "error"; motivo: string };
+
+/**
+ * Llamada a IA con la misma política de respaldo para cualquier tarea (extracción, síntesis):
+ * `interpretar` valida la respuesta y devuelve null si no sirve (cuenta como respuesta inválida).
+ */
+export async function llamarConRespaldo<P extends string, R>(
+  dep: DependenciasExtraccion<P>,
+  interpretar: (datos: unknown) => R | null,
+): Promise<ResultadoRespaldo<P, R>> {
   const esperar = dep.esperar ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const ahora = dep.ahora ?? Date.now;
   const intentos = dep.intentos ?? 2;
@@ -369,9 +390,9 @@ export async function extraerConRespaldo<P extends string>(
       const inicio = ahora();
       try {
         const r = await dep.llamar(proveedor);
-        const interpretada = interpretarExtraccion(r.datos, campos, umbral);
+        const interpretada = interpretar(r.datos);
         const duracionMs = ahora() - inicio;
-        if (!interpretada.ok) {
+        if (interpretada === null) {
           await dep.registrar({
             proveedor,
             resultado: "error",
@@ -390,7 +411,7 @@ export async function extraerConRespaldo<P extends string>(
           tokensSalida: r.tokensSalida,
           duracionMs,
         });
-        return { ...interpretada, proveedor };
+        return { ok: true, proveedor, valor: interpretada };
       } catch (e) {
         const clase = clasificarError(e);
         const codigo = e instanceof ErrorProveedor ? e.codigo : "error";

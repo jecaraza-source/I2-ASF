@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { generarSintesis, sintesisFallida } from "@/lib/analizador/generar";
 import { consultarFuentes } from "@/lib/fuentes/consultar";
 import { extraerDocumento } from "@/lib/ia/extraer";
 import { clienteServicio } from "@/lib/supabase/servicio";
@@ -11,6 +12,12 @@ type Trabajo = { id: string; tipo: string; payload: unknown; intentos: number };
 const MANEJADORES: Record<string, (s: Servicio, trabajo: Trabajo) => Promise<void>> = {
   extraccion: extraerDocumento,
   consulta_fuentes: consultarFuentes,
+  sintesis: generarSintesis,
+};
+
+/** Qué hacer cuando un trabajo agota sus intentos (además de marcarlo en error). */
+const AL_FALLAR: Record<string, (s: Servicio, payload: unknown) => Promise<void>> = {
+  sintesis: sintesisFallida,
 };
 
 export type ResultadoTrabajos =
@@ -66,7 +73,14 @@ export async function procesarTrabajos(
     });
     if (estado === "hecho") resultado.hechos++;
     else if (estado === "pendiente") resultado.reintentos++;
-    else resultado.errores++;
+    else {
+      resultado.errores++;
+      try {
+        await AL_FALLAR[t.tipo]?.(servicio, t.payload);
+      } catch {
+        console.error(`[trabajos] ${t.id} (${t.tipo}) no pudo cerrar su error`);
+      }
+    }
   }
   return resultado;
 }

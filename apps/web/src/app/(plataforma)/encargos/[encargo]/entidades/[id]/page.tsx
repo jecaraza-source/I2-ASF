@@ -42,12 +42,22 @@ export default async function FichaEntidad({
     <main className="flex-1 px-8 py-8">
       <Titulo
         accion={
-          <EnlaceBoton
-            href={`/encargos/${encargo.id}/red/vista?foco=${ficha.entidad.id}&saltos=1&ruta=${ficha.entidad.id}`}
-            variante="secundario"
-          >
-            Ver en la red
-          </EnlaceBoton>
+          <div className="flex flex-wrap gap-3">
+            {puede(activa.rol, "sintesis.generar") ? (
+              <EnlaceBoton
+                href={`/encargos/${encargo.id}/analizador/nueva?entidad=${ficha.entidad.id}`}
+                variante="secundario"
+              >
+                Analizar esta entidad
+              </EnlaceBoton>
+            ) : null}
+            <EnlaceBoton
+              href={`/encargos/${encargo.id}/red/vista?foco=${ficha.entidad.id}&saltos=1&ruta=${ficha.entidad.id}`}
+              variante="secundario"
+            >
+              Ver en la red
+            </EnlaceBoton>
+          </div>
         }
       >
         {ficha.entidad.nombre}

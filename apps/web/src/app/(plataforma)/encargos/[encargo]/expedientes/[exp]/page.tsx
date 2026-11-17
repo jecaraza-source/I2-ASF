@@ -27,6 +27,14 @@ export default async function Expediente({
       <Titulo
         accion={
           <div className="flex flex-wrap items-start gap-3">
+            {puede(activa.rol, "sintesis.generar") ? (
+              <EnlaceBoton
+                variante="secundario"
+                href={`/encargos/${encargoId}/analizador/nueva?expediente=${expediente.id}`}
+              >
+                Analizar
+              </EnlaceBoton>
+            ) : null}
             {red && puede(activa.rol, "red.exportar") ? (
               <MenuExportar
                 encargoId={encargoId}

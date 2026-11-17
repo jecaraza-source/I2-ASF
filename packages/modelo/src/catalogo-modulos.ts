@@ -112,8 +112,15 @@ export const MODULOS = [
     descripcion: "Síntesis de un expediente o entidad, con cada afirmación ligada a su origen.",
     ruta: "/analizador",
     categoria: "analisis",
-    listo: false,
-    lateral: false,
+    listo: true,
+  },
+  {
+    clave: "hallazgos",
+    nombre: "Hallazgos",
+    descripcion: "Los redacta y firma un auditor, respaldados en alertas y síntesis aprobadas.",
+    ruta: "/hallazgos",
+    categoria: "analisis",
+    listo: true,
   },
   {
     clave: "recorridos",
@@ -153,6 +160,8 @@ export const SENALES_AVANCE = [
   "red",
   "alertas",
   "alertas_resueltas",
+  "sintesis_aprobadas",
+  "hallazgos_firmados",
 ] as const;
 export type SenalAvance = (typeof SENALES_AVANCE)[number];
 
@@ -356,9 +365,11 @@ export const RECORRIDOS: readonly Recorrido[] = [
       },
       {
         titulo: "Síntesis",
-        descripcion: "Genera la síntesis del expediente, con cada afirmación ligada a su origen.",
+        descripcion:
+          "Genera y aprueba la síntesis del expediente, con cada afirmación ligada a su origen; adjúntala al hallazgo que redactes.",
         modulo: "analizador",
         accion: "Ir al Analizador",
+        senal: "sintesis_aprobadas",
       },
     ],
   },

@@ -24,7 +24,12 @@ export type PeticionExtraccion = {
   sistema: string;
   instruccion: string;
   esquema: Record<string, unknown>;
-  archivo: { bytes: Uint8Array; mime: MimeLegible; nombre: string };
+  /** Documento adjunto (extracción). Sin archivo, solo viaja el texto de `instruccion` (síntesis). */
+  archivo?: { bytes: Uint8Array; mime: MimeLegible; nombre: string };
+  /** Respuesta de la IA simulada para tareas sin archivo (solo pruebas, nunca en producción). */
+  simulacion?: (proveedor: ProveedorIA) => unknown;
+  /** Nombre de la herramienta o del formato de salida. */
+  herramienta?: string;
 };
 
 /**
@@ -59,17 +64,20 @@ async function llamarAnthropic(p: PeticionExtraccion): Promise<RespuestaProveedo
     maxRetries: 0,
     timeout: TIEMPO_LIMITE_MS,
   });
-  const base64 = Buffer.from(p.archivo.bytes).toString("base64");
+  const herramienta = p.herramienta ?? HERRAMIENTA;
+  const archivo = p.archivo;
+  const base64 = archivo ? Buffer.from(archivo.bytes).toString("base64") : "";
   // PDF → bloque `document`; imágenes → bloque `image` (docs: build-with-claude/pdf-support).
-  const adjunto =
-    p.archivo.mime === "application/pdf"
+  const adjunto = !archivo
+    ? null
+    : archivo.mime === "application/pdf"
       ? ({
           type: "document",
           source: { type: "base64", media_type: "application/pdf", data: base64 },
         } as const)
       : ({
           type: "image",
-          source: { type: "base64", media_type: p.archivo.mime, data: base64 },
+          source: { type: "base64", media_type: archivo.mime, data: base64 },
         } as const);
   const r = await cliente.messages.create({
     model: p.modelo,
@@ -77,13 +85,22 @@ async function llamarAnthropic(p: PeticionExtraccion): Promise<RespuestaProveedo
     system: p.sistema,
     tools: [
       {
-        name: HERRAMIENTA,
-        description: "Registra los datos extraídos del documento.",
+        name: herramienta,
+        description: archivo
+          ? "Registra los datos extraídos del documento."
+          : "Registra el resultado con la estructura indicada.",
         input_schema: p.esquema as Anthropic.Tool.InputSchema,
       },
     ],
-    tool_choice: { type: "tool", name: HERRAMIENTA },
-    messages: [{ role: "user", content: [adjunto, { type: "text", text: p.instruccion }] }],
+    tool_choice: { type: "tool", name: herramienta },
+    messages: [
+      {
+        role: "user",
+        content: adjunto
+          ? [adjunto, { type: "text", text: p.instruccion }]
+          : [{ type: "text", text: p.instruccion }],
+      },
+    ],
   });
   const uso = r.content.find((b) => b.type === "tool_use");
   const tokens = { tokensEntrada: r.usage.input_tokens, tokensSalida: r.usage.output_tokens };
@@ -109,10 +126,14 @@ async function llamarOpenAI(p: PeticionExtraccion): Promise<RespuestaProveedor> 
     maxRetries: 0,
     timeout: TIEMPO_LIMITE_MS,
   });
-  const dataUrl = `data:${p.archivo.mime};base64,${Buffer.from(p.archivo.bytes).toString("base64")}`;
+  const archivo = p.archivo;
+  const dataUrl = archivo
+    ? `data:${archivo.mime};base64,${Buffer.from(archivo.bytes).toString("base64")}`
+    : "";
   // PDF → `input_file` con `file_data`; imágenes → `input_image` (docs: guides/file-inputs).
-  const adjunto =
-    p.archivo.mime === "application/pdf"
+  const adjunto = !archivo
+    ? null
+    : archivo.mime === "application/pdf"
       ? ({ type: "input_file", filename: "documento.pdf", file_data: dataUrl } as const)
       : ({ type: "input_image", image_url: dataUrl, detail: "high" } as const);
   const esfuerzo = esfuerzoOpenAI();
@@ -124,8 +145,22 @@ async function llamarOpenAI(p: PeticionExtraccion): Promise<RespuestaProveedor> 
     max_output_tokens: esfuerzo ? MAX_TOKENS_SALIDA * 4 : MAX_TOKENS_SALIDA,
     ...(esfuerzo ? { reasoning: { effort: esfuerzo } } : {}),
     store: false,
-    input: [{ role: "user", content: [adjunto, { type: "input_text", text: p.instruccion }] }],
-    text: { format: { type: "json_schema", name: HERRAMIENTA, schema: p.esquema, strict: true } },
+    input: [
+      {
+        role: "user",
+        content: adjunto
+          ? [adjunto, { type: "input_text", text: p.instruccion }]
+          : [{ type: "input_text", text: p.instruccion }],
+      },
+    ],
+    text: {
+      format: {
+        type: "json_schema",
+        name: p.herramienta ?? HERRAMIENTA,
+        schema: p.esquema,
+        strict: true,
+      },
+    },
   });
   const tokens = {
     tokensEntrada: r.usage?.input_tokens ?? 0,
@@ -142,7 +177,7 @@ const MARCA = "%SIGMA_IA_SIMULADA ";
 
 /** Respuesta de prueba leída del propio archivo. Permite simular fallos por proveedor. */
 function llamarSimulada(proveedor: ProveedorIA, p: PeticionExtraccion): RespuestaProveedor {
-  const texto = Buffer.from(p.archivo.bytes).toString("latin1");
+  const texto = Buffer.from(p.archivo?.bytes ?? new Uint8Array()).toString("latin1");
   const linea = texto.split(/\r?\n/).find((l) => l.startsWith(MARCA));
   let guion: Record<string, unknown> = {};
   try {
@@ -169,7 +204,7 @@ function llamarSimulada(proveedor: ProveedorIA, p: PeticionExtraccion): Respuest
     datos: guion.invalida
       ? { campos: "inválida" }
       : { campos, moneda: guion.moneda ?? "MXN", involucrados: guion.involucrados ?? [] },
-    tokensEntrada: Math.ceil(p.archivo.bytes.length / 4) + 500,
+    tokensEntrada: Math.ceil((p.archivo?.bytes.length ?? 0) / 4) + 500,
     tokensSalida: 200,
   };
 }
@@ -180,7 +215,16 @@ export async function llamarProveedor(
   p: PeticionExtraccion,
 ): Promise<RespuestaProveedor> {
   try {
-    if (iaSimulada()) return llamarSimulada(proveedor, p);
+    if (iaSimulada()) {
+      if (p.simulacion) {
+        return {
+          datos: p.simulacion(proveedor),
+          tokensEntrada: Math.ceil(p.instruccion.length / 4) + 500,
+          tokensSalida: 300,
+        };
+      }
+      return llamarSimulada(proveedor, p);
+    }
     return proveedor === "anthropic" ? await llamarAnthropic(p) : await llamarOpenAI(p);
   } catch (e) {
     throw errorDe(e);
