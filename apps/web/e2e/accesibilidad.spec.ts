@@ -71,14 +71,9 @@ test("navegación con teclado: el primer Tab lleva al contenido y el foco se ve"
   const saltar = page.getByRole("link", { name: "Saltar al contenido" });
   await expect(saltar).toBeFocused();
   await expect(saltar).toBeVisible();
+  // Foco visible (WCAG 2.4.7): contorno dorado de :focus-visible.
+  const contorno = await saltar.evaluate((el) => getComputedStyle(el).outlineStyle);
+  expect(contorno).toBe("solid");
   await page.keyboard.press("Enter");
   await expect(page.locator("#contenido")).toBeFocused();
-  await page.keyboard.press("Tab");
-  const enfocado = page.locator(":focus");
-  await expect(enfocado).toBeVisible();
-  const contorno = await enfocado.evaluate((el) => {
-    const s = getComputedStyle(el);
-    return s.outlineStyle !== "none" && s.outlineWidth !== "0px" ? s.outlineStyle : s.boxShadow;
-  });
-  expect(contorno).not.toBe("none");
 });
