@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, type ReactNode } from "react";
+import { useActionState, useId, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { ESTADO_INICIAL, type EstadoFormulario } from "@/lib/formulario";
 
@@ -72,15 +72,24 @@ type PropsCampo = {
   requerido?: boolean;
 };
 
+/**
+ * Id del control: único por instancia. Una misma página puede tener dos formularios con un campo
+ * del mismo nombre (p. ej. «nombre» en categorías y en tipos), y un id repetido liga la etiqueta al
+ * control equivocado.
+ */
+function useIdCampo(nombre: string): string {
+  return `${useId()}-${nombre}`;
+}
+
 function Envoltura({
-  nombre,
+  id,
   etiqueta,
   ayuda,
   errores,
   requerido,
   children,
 }: {
-  nombre: string;
+  id: string;
   etiqueta: string;
   ayuda?: string;
   errores?: string[];
@@ -89,18 +98,18 @@ function Envoltura({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={nombre} className="text-sm text-texto">
+      <label htmlFor={id} className="text-sm text-texto">
         {etiqueta}
         {requerido ? <span className="text-oro"> *</span> : null}
       </label>
       {children}
       {ayuda ? (
-        <p id={`${nombre}-ayuda`} className="text-xs text-tenue">
+        <p id={`${id}-ayuda`} className="text-xs text-tenue">
           {ayuda}
         </p>
       ) : null}
       {errores?.length ? (
-        <p id={`${nombre}-error`} className="text-xs text-peligro">
+        <p id={`${id}-error`} className="text-xs text-peligro">
           {errores.join(". ")}
         </p>
       ) : null}
@@ -112,11 +121,8 @@ function valorInicial(p: PropsCampo): string {
   return p.estado.valores?.[p.nombre] ?? (p.valor == null ? "" : String(p.valor));
 }
 
-function describe(p: PropsCampo): string | undefined {
-  const ids = [
-    p.ayuda ? `${p.nombre}-ayuda` : null,
-    p.estado.errores?.[p.nombre] ? `${p.nombre}-error` : null,
-  ];
+function describe(p: PropsCampo, id: string): string | undefined {
+  const ids = [p.ayuda ? `${id}-ayuda` : null, p.estado.errores?.[p.nombre] ? `${id}-error` : null];
   const r = ids.filter(Boolean).join(" ");
   return r || undefined;
 }
@@ -125,10 +131,11 @@ export function Campo(
   props: PropsCampo & { tipo?: "text" | "date" | "number" | "email" | "password"; paso?: string },
 ) {
   const errores = props.estado.errores?.[props.nombre];
+  const id = useIdCampo(props.nombre);
   return (
-    <Envoltura {...props} errores={errores}>
+    <Envoltura {...props} id={id} errores={errores}>
       <input
-        id={props.nombre}
+        id={id}
         name={props.nombre}
         type={props.tipo ?? "text"}
         step={props.paso}
@@ -136,7 +143,7 @@ export function Campo(
         key={valorInicial(props)}
         required={props.requerido}
         aria-invalid={errores ? true : undefined}
-        aria-describedby={describe(props)}
+        aria-describedby={describe(props, id)}
         className={claseControl}
       />
     </Envoltura>
@@ -145,16 +152,17 @@ export function Campo(
 
 export function AreaTexto(props: PropsCampo) {
   const errores = props.estado.errores?.[props.nombre];
+  const id = useIdCampo(props.nombre);
   return (
-    <Envoltura {...props} errores={errores}>
+    <Envoltura {...props} id={id} errores={errores}>
       <textarea
-        id={props.nombre}
+        id={id}
         name={props.nombre}
         rows={4}
         defaultValue={valorInicial(props)}
         key={valorInicial(props)}
         aria-invalid={errores ? true : undefined}
-        aria-describedby={describe(props)}
+        aria-describedby={describe(props, id)}
         className={claseControl}
       />
     </Envoltura>
@@ -165,15 +173,16 @@ export function Selector(
   props: PropsCampo & { opciones: { valor: string; texto: string }[]; vacio?: string },
 ) {
   const errores = props.estado.errores?.[props.nombre];
+  const id = useIdCampo(props.nombre);
   return (
-    <Envoltura {...props} errores={errores}>
+    <Envoltura {...props} id={id} errores={errores}>
       <select
-        id={props.nombre}
+        id={id}
         name={props.nombre}
         defaultValue={valorInicial(props)}
         key={valorInicial(props)}
         aria-invalid={errores ? true : undefined}
-        aria-describedby={describe(props)}
+        aria-describedby={describe(props, id)}
         className={claseControl}
       >
         {props.vacio !== undefined ? <option value="">{props.vacio}</option> : null}
