@@ -24,6 +24,11 @@ export function estadoProveedor(proveedor: ProveedorIA) {
     variableLlave: VARIABLE_LLAVE[proveedor],
     modelo: process.env[VARIABLE_MODELO[proveedor]] || (simulada ? "simulado" : null),
     variableModelo: VARIABLE_MODELO[proveedor],
+    /** Solo OpenAI: esfuerzo de razonamiento configurado, si lo hay. */
+    esfuerzo:
+      proveedor === "openai"
+        ? process.env.OPENAI_REASONING_EFFORT?.trim().toLowerCase() || null
+        : null,
   };
 }
 
