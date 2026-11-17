@@ -216,5 +216,5 @@ test("el lector no exporta", async ({ page }) => {
   expect(r.status()).toBe(403);
   await page.goto("/encargos/c0000000-0000-4000-8000-000000000001/registros");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Registros del encargo");
-  await expect(page.getByRole("link", { name: "Exportar CSV" }).filter(visible)).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Exportar CSV" })).toHaveCount(0);
 });
