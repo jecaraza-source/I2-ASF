@@ -41,7 +41,9 @@ test("admin agrega un tipo de documento al catálogo", async ({ page }) => {
     await page.getByRole("textbox", { name: /^Clave/ }).fill(clave);
     await page.getByRole("combobox", { name: /^Categoría/ }).selectOption({ label: "Contractual" });
     await page.getByRole("button", { name: "Agregar tipo" }).click();
+    await page.waitForTimeout(3000);
+    console.log("DIAG", page.url(), JSON.stringify(await page.locator("form").filter({ hasText: "Agregar tipo" }).innerText()));
     await expect(tipos).toContainText(nombre, { timeout: 5_000 });
-  }).toPass({ timeout: 25_000 });
+  }).toPass({ timeout: 12_000 });
   await expect(tipos).toContainText(clave);
 });
