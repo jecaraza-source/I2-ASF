@@ -21,3 +21,23 @@ test("admin agrega una categoría al catálogo de la organización", async ({ pa
   await page.getByRole("button", { name: "Agregar categoría" }).click();
   await expect(categorias).toContainText(nombre);
 });
+
+test("admin agrega un tipo de documento al catálogo", async ({ page }) => {
+  await ingresar(page, "admin");
+  await page.getByRole("link", { name: "Encargo de prueba" }).click();
+  await page
+    .getByRole("navigation", { name: "Módulos" })
+    .getByRole("link", { name: "Configuración" })
+    .click();
+
+  const tipos = page.getByRole("list", { name: "Tipos de documento" });
+  await expect(tipos).toContainText("Convenio modificatorio");
+  const nombre = unico("Identificación");
+  const clave = `id_${Date.now().toString(36)}`;
+  await page.getByLabel("Nombre del tipo").fill(nombre);
+  await page.getByLabel("Clave", { exact: true }).fill(clave);
+  await page.getByLabel("Categoría", { exact: true }).selectOption({ label: "Contractual" });
+  await page.getByRole("button", { name: "Agregar tipo" }).click();
+  await expect(tipos).toContainText(nombre);
+  await expect(tipos).toContainText(clave);
+});

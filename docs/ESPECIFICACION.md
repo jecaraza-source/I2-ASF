@@ -99,6 +99,8 @@ Decisiones de implementación (tarea 01):
 - **Integridad entre organizaciones en la base:** las referencias usan claves foráneas compuestas
   (`organizacion_id, encargo_id` → `encargo`; `encargo_id, x_id` → tabla del encargo), así que no se
   puede ligar un objeto a un encargo de otra organización.
+- **Disparadores que usan el esquema `privado`:** van como `security definer`, porque los usuarios no
+  tienen permiso de ejecución en ese esquema. RLS sigue decidiendo quién escribe la tabla.
 - **Sin DELETE en la evidencia:** ningún usuario borra `documento_origen`, `registro`, `extraccion`,
   `evidencia`, `entidad`, `vinculo`, `evento`, redes, calificaciones, alertas ni hallazgos; lo erróneo
   se marca (`rechazado`, `descartada`). `documento_origen`, `evidencia`, `red_*` y `hallazgo_alerta`
