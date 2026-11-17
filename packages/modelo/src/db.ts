@@ -9,6 +9,61 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      afirmacion: {
+        Row: {
+          creado_en: string
+          creado_por: string | null
+          encargo_id: string
+          id: string
+          orden: number
+          organizacion_id: string
+          registros: string[]
+          sintesis_id: string
+          texto: string
+          version: string
+        }
+        ComputedFields: never
+        Insert: {
+          creado_en?: string
+          creado_por?: string | null
+          encargo_id: string
+          id?: string
+          orden: number
+          organizacion_id: string
+          registros: string[]
+          sintesis_id: string
+          texto: string
+          version: string
+        }
+        Update: {
+          creado_en?: string
+          creado_por?: string | null
+          encargo_id?: string
+          id?: string
+          orden?: number
+          organizacion_id?: string
+          registros?: string[]
+          sintesis_id?: string
+          texto?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "afirmacion_encargo_id_sintesis_id_fkey"
+            columns: ["encargo_id", "sintesis_id"]
+            isOneToOne: false
+            referencedRelation: "sintesis"
+            referencedColumns: ["encargo_id", "id"]
+          },
+          {
+            foreignKeyName: "afirmacion_organizacion_id_encargo_id_fkey"
+            columns: ["organizacion_id", "encargo_id"]
+            isOneToOne: false
+            referencedRelation: "encargo"
+            referencedColumns: ["organizacion_id", "id"]
+          },
+        ]
+      }
       alerta: {
         Row: {
           creado_en: string
@@ -1057,6 +1112,59 @@ export type Database = {
           },
         ]
       }
+      hallazgo_sintesis: {
+        Row: {
+          creado_en: string
+          creado_por: string | null
+          encargo_id: string
+          hallazgo_id: string
+          id: string
+          organizacion_id: string
+          sintesis_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          creado_en?: string
+          creado_por?: string | null
+          encargo_id: string
+          hallazgo_id: string
+          id?: string
+          organizacion_id: string
+          sintesis_id: string
+        }
+        Update: {
+          creado_en?: string
+          creado_por?: string | null
+          encargo_id?: string
+          hallazgo_id?: string
+          id?: string
+          organizacion_id?: string
+          sintesis_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hallazgo_sintesis_encargo_id_hallazgo_id_fkey"
+            columns: ["encargo_id", "hallazgo_id"]
+            isOneToOne: false
+            referencedRelation: "hallazgo"
+            referencedColumns: ["encargo_id", "id"]
+          },
+          {
+            foreignKeyName: "hallazgo_sintesis_encargo_id_sintesis_id_fkey"
+            columns: ["encargo_id", "sintesis_id"]
+            isOneToOne: false
+            referencedRelation: "sintesis"
+            referencedColumns: ["encargo_id", "id"]
+          },
+          {
+            foreignKeyName: "hallazgo_sintesis_organizacion_id_encargo_id_fkey"
+            columns: ["organizacion_id", "encargo_id"]
+            isOneToOne: false
+            referencedRelation: "encargo"
+            referencedColumns: ["organizacion_id", "id"]
+          },
+        ]
+      }
       lista_69b: {
         Row: {
           carga_id: string
@@ -1692,6 +1800,69 @@ export type Database = {
           },
         ]
       }
+      sintesis: {
+        Row: {
+          alcance_id: string
+          alcance_tipo: string
+          aprobada_en: string | null
+          aprobada_por: string | null
+          creado_en: string
+          creado_por: string | null
+          encargo_id: string
+          estado: string
+          generada_en: string | null
+          id: string
+          modelo: string | null
+          motivo: string | null
+          organizacion_id: string
+          proveedor: string | null
+          registros: string[]
+        }
+        ComputedFields: never
+        Insert: {
+          alcance_id: string
+          alcance_tipo: string
+          aprobada_en?: string | null
+          aprobada_por?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          encargo_id: string
+          estado?: string
+          generada_en?: string | null
+          id?: string
+          modelo?: string | null
+          motivo?: string | null
+          organizacion_id: string
+          proveedor?: string | null
+          registros: string[]
+        }
+        Update: {
+          alcance_id?: string
+          alcance_tipo?: string
+          aprobada_en?: string | null
+          aprobada_por?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          encargo_id?: string
+          estado?: string
+          generada_en?: string | null
+          id?: string
+          modelo?: string | null
+          motivo?: string | null
+          organizacion_id?: string
+          proveedor?: string | null
+          registros?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sintesis_organizacion_id_encargo_id_fkey"
+            columns: ["organizacion_id", "encargo_id"]
+            isOneToOne: false
+            referencedRelation: "encargo"
+            referencedColumns: ["organizacion_id", "id"]
+          },
+        ]
+      }
       tipo_documento: {
         Row: {
           campos_esperados: NonNullable<Json>
@@ -2082,6 +2253,12 @@ export type Database = {
       }
       capturar_registro: { Args: { p: Json }; Returns: string }
       cerrar_carga_fuente: { Args: { p_carga: string }; Returns: number }
+      crear_hallazgo: { Args: { p: Json }; Returns: string }
+      crear_sintesis: { Args: { p: Json }; Returns: string }
+      descartar_sintesis: {
+        Args: { p_motivo: string; p_sintesis: string }
+        Returns: undefined
+      }
       encolar_consulta_fuentes: {
         Args: { p_encargo: string; p_entidad?: string }
         Returns: string
@@ -2139,6 +2316,15 @@ export type Database = {
         }[]
       }
       guardar_alertas: { Args: { p: Json }; Returns: Json }
+      guardar_borrador_sintesis: {
+        Args: {
+          p_afirmaciones: Json
+          p_aprobar?: boolean
+          p_registros?: string[]
+          p_sintesis: string
+        }
+        Returns: undefined
+      }
       guardar_configuracion_ia: {
         Args: {
           p_activa: boolean
@@ -2151,6 +2337,7 @@ export type Database = {
       guardar_extraccion_ia: { Args: { p: Json }; Returns: Json }
       guardar_red: { Args: { p: Json }; Returns: string }
       guardar_resultados_consulta: { Args: { p: Json }; Returns: number }
+      guardar_sintesis_ia: { Args: { p: Json }; Returns: undefined }
       guardar_tope_proveedor_ia: {
         Args: {
           p_organizacion: string
@@ -2188,6 +2375,7 @@ export type Database = {
       }
       registrar_documento: { Args: { p: Json }; Returns: Json }
       registrar_uso_ia: { Args: { p: Json }; Returns: string }
+      reintentar_sintesis: { Args: { p_sintesis: string }; Returns: undefined }
       resolver_alerta: {
         Args: { p_alerta: string; p_estado: string; p_motivo: string }
         Returns: undefined

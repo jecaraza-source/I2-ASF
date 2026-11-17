@@ -20,7 +20,8 @@ Todas las rutas cuelgan de `/encargos/[encargo]`.
 | Registro | `…/registros/[id]` | Un registro con sus datos y la hoja, fila, celda o página de origen | 05 |
 | Configuración | `…/configuracion` | Categorías, tipos de documento, reglas, fuentes | 02, 04, 11 |
 | Recorridos guiados | `…/recorridos`, `…/recorridos/[clave]` | Empezar por una tarea y seguir sus etapas, con el avance real del encargo | — |
-| Analizador | `…/analizador` | Síntesis de un expediente o entidad con cada afirmación ligada a su registro | 15 |
+| Analizador | `…/analizador`, `…/analizador/nueva`, `…/analizador/[id]` | Síntesis de un expediente o entidad con cada afirmación ligada a su registro (§15) | 15 |
+| Hallazgos | `…/hallazgos`, `…/hallazgos/[id]` | Redacción y firma del auditor; respaldo en alertas y síntesis aprobadas (§15) | 15 |
 | Usuarios y accesos | `/usuarios` (fuera del encargo) | Usuarios, roles, bitácora de acceso y control de cambios (§3.1) | — |
 
 ### 1.1 Navegación: menú por capacidad y recorridos por tarea
@@ -111,7 +112,9 @@ cuando pertenece a un encargo. No se repiten abajo.
 | Tabla | Columnas |
 |---|---|
 | `alerta` | `regla`, `severidad`, `estado` (`abierta`, `confirmada`, `descartada`), `detalle jsonb`, `huella`, `vigente`, `resuelta_por`, `resuelta_en`, `resolucion_motivo` |
-| `hallazgo`, `hallazgo_alerta` | `redaccion`, `firmado_por`, `firmado_en` |
+| `hallazgo`, `hallazgo_alerta`, `hallazgo_sintesis` | `redaccion`, `firmado_por`, `firmado_en` (firmado = inmutable) |
+| `sintesis` | `alcance_tipo` (`expediente`, `entidad`), `alcance_id`, `registros uuid[]` (validados del alcance), `estado` (`generando`, `en_espera`, `error`, `borrador`, `aprobada`, `descartada`), `motivo`, `proveedor`, `modelo`, `generada_en`, `aprobada_por`, `aprobada_en` |
+| `afirmacion` | `sintesis_id`, `version` (`ia`, `borrador`, `aprobada`), `orden`, `texto`, `registros uuid[]` (al menos uno) |
 | `fuente_consulta` | `nombre`, `tipo` (`interna`, `externa`), `conector`, `config jsonb`, `activa` |
 | `resultado_consulta` | `encargo_id`, `entidad_id`, `fuente_id`, `huella`, `coincidencia` (`exacta`, `propuesta`), `datos jsonb`, `consultado_en`, `estado` (`pendiente`, `confirmada`, `descartada`), `revisado_por`, `revisado_en`, `motivo`, `registro_id` (si se incorporó) |
 | `carga_fuente` | `fuente_id`, `nombre_archivo`, `formato` (`csv`, `xlsx`), `sha256`, `filas_esperadas`, `filas`, `estado` (`en_proceso`, `vigente`, `reemplazada`), `storage_path` (reservado), `vigente_desde` |
@@ -570,6 +573,44 @@ es `…/red/exportar/<archivo>`). Botón «Exportar» en Red de vínculos y en c
   `EXP-2026-0001-7F3A2B1C`. Va en el nombre del archivo.
 - **Bitácora:** `red.exportacion` con archivo, folio, expediente, conteos y SHA-256 (sin nombres ni
   montos). Si la bitácora no se puede escribir, no se entrega el archivo.
+
+## 15. Analizador y hallazgos
+
+- **Alcance:** un expediente (botón «Analizar» del expediente) o una entidad (botón «Analizar esta
+  entidad» de su ficha; incluye las entidades fusionadas en ella). Solo aparecen y solo pueden
+  entrar registros `validado` o `corregido` del alcance, hasta 300. El auditor elige cuáles entran.
+- **Generación:** trabajo `sintesis` en segundo plano. Cada llamada pasa por `iaPermitida` y queda
+  en `uso_ia` con función `sintesis`. Usa la misma política de respaldo que la extracción
+  (`llamarConRespaldo`). Si la IA está bloqueada, la síntesis queda `en_espera` con su motivo; tras
+  tres fallos del proveedor queda en `error`. Ambas se pueden reintentar.
+- **Lo que ve el modelo:** por registro, una referencia corta (R1, R2…, nunca el ID), tipo, fecha,
+  fuente, expediente, resumen, datos validados e involucrados. Todo va como JSON dentro de
+  `<registros>`, con un prompt de sistema que declara que ese contenido es dato y no instrucciones
+  (regla 8). Tope: unos 160,000 caracteres.
+- **Validación de la salida** (`interpretarSintesis`):
+  - Cada referencia se traduce a su ID.
+  - Las citas inexistentes se descartan, y la afirmación que se queda sin citas no se guarda.
+  - La base vuelve a verificar con un disparador que cada cita sea un registro validado del alcance.
+  - Así, un documento que da órdenes no puede meter afirmaciones sin sustento ni citas ajenas,
+    aunque el modelo obedezca. La prueba simula un modelo obediente.
+- **Versiones:**
+  - `ia`: la escribe solo el procesador y es inmutable.
+  - `borrador`: la edita el auditor, que puede cambiar texto y citas, eliminar o agregar
+    afirmaciones, y reducir el alcance. Quitar un registro del alcance quita sus citas, y las
+    afirmaciones sin cita desaparecen (`acotarAfirmaciones`).
+  - `aprobada`: se escribe al aprobar, con autor y fecha, y es inmutable.
+  - El alcance solo se reduce. Para ampliarlo, se genera otra síntesis.
+- **Bitácora:** `sintesis.alta`, `sintesis.borrador` (generada), `sintesis.alcance`,
+  `sintesis.aprobada`, `sintesis.descartada`, `sintesis.en_espera`, `sintesis.error`.
+- **Citas:** cada una abre el registro y, desde ahí, la página, hoja, fila o celda de origen.
+- **Hallazgos:**
+  - Los redacta un auditor; el texto de la síntesis no se copia.
+  - Una síntesis aprobada se adjunta a un hallazgo sin firmar, o se crea uno nuevo desde ella
+    (`crear_hallazgo`).
+  - Firmar fija `firmado_por` y `firmado_en`; desde ahí el hallazgo no cambia.
+  - Bitácora: `hallazgo.alta`, `hallazgo.cambio` y `hallazgo.sintesis`.
+  - Nada crea hallazgos automáticamente.
+- **Roles:** `admin` y `auditor` generan, editan, aprueban, redactan y firman; `lector` consulta.
 
 ## 13. Fixtures y valores esperados
 

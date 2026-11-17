@@ -9,6 +9,7 @@
     "./leer": "./src/leer.ts",
     "./captura": "./src/captura.ts",
     "./extraccion": "./src/extraccion.ts",
+    "./sintesis": "./src/sintesis.ts",
     "./validacion": "./src/validacion.ts",
     "./lista69b": "./src/lista69b.ts",
     "./leer-navegador": "./src/leer-navegador.ts",

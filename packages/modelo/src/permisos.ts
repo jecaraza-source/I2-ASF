@@ -16,6 +16,8 @@ export type Accion =
   | "red.generar"
   | "red.ajustar"
   | "red.exportar"
+  | "sintesis.generar"
+  | "hallazgo.editar"
   | "fusion.resolver"
   | "reglas.editar"
   | "reglas.ejecutar"
@@ -40,6 +42,8 @@ const PERMISOS: Record<Accion, readonly Rol[]> = {
   "red.generar": ["admin", "auditor"],
   "red.ajustar": ["admin", "auditor"],
   "red.exportar": ["admin", "auditor"],
+  "sintesis.generar": ["admin", "auditor"],
+  "hallazgo.editar": ["admin", "auditor"],
   "fusion.resolver": ["admin", "auditor"],
   "reglas.editar": ["admin"],
   "reglas.ejecutar": ["admin", "auditor"],
