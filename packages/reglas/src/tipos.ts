@@ -14,6 +14,11 @@ export type RegistroRegla = {
   hoja: string | null;
   resumen: string | null;
   extracciones: ExtraccionRegla[];
+  /**
+   * Solo en capturas con documento asociado: lo que la IA leyó del documento. No son datos del
+   * registro (no entran a `extracciones`); sirven para compararlos con lo capturado (R11).
+   */
+  lecturas_documento?: ExtraccionRegla[];
 };
 
 export type EntidadRegla = {

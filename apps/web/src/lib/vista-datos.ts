@@ -47,6 +47,12 @@ const fechaMexico = new Intl.DateTimeFormat("en-CA", {
 });
 
 /** Día (aaaa-mm-dd) en la zona de México de un timestamptz. */
+const valorOriginalSchema = z
+  .object({ valor_crudo: z.string().nullable().optional() })
+  .nullable()
+  .transform((v) => v ?? {})
+  .catch({});
+
 export function diaMexico(iso: string | null): string | null {
   if (!iso) return null;
   const d = new Date(iso);
@@ -580,7 +586,9 @@ export async function cargarRegistro(supabase: Cliente, encargoId: string, regis
     leerTodo((d, h) =>
       supabase
         .from("extraccion")
-        .select("id, campo, valor_crudo, valor_normalizado, confianza, ubicacion, metodo, estado")
+        .select(
+          "id, campo, valor_crudo, valor_normalizado, confianza, ubicacion, metodo, estado, valor_original",
+        )
         .eq("encargo_id", encargoId)
         .eq("registro_id", r.id)
         .order("creado_en")
@@ -597,6 +605,8 @@ export async function cargarRegistro(supabase: Cliente, encargoId: string, regis
     registro: r,
     extracciones: extracciones.map((x) => ({
       ...x,
+      // En una corrección, lo que había leído la IA.
+      valor_ia: valorOriginalSchema.parse(x.valor_original).valor_crudo ?? null,
       ubicacion_texto: describirUbicacion(x.ubicacion),
     })),
     entidades: (menciones.data ?? []).map((m) => ({ rol: m.rol, ...m.entidad })),

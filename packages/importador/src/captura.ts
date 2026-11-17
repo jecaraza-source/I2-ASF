@@ -102,6 +102,11 @@ export const involucradoSchema = z.object({
   rol: z.enum(ROLES_INVOLUCRADO),
   rfc: z.string().trim().max(20).optional().default(""),
   curp: z.string().trim().max(20).optional().default(""),
+  /** Solo en validación: la lectura de la IA de la que viene este involucrado. */
+  campoIa: z
+    .string()
+    .regex(/^involucrado_\d{1,3}$/)
+    .optional(),
 });
 export type Involucrado = z.infer<typeof involucradoSchema>;
 
@@ -189,6 +194,8 @@ function normalizar(campo: CampoEsperado, crudo: string): { valor: unknown; erro
 export function construirCaptura(
   entrada: unknown,
   tipo: { clave: string; nombre: string; campos_esperados: unknown },
+  /** `documento`: los datos vienen de validar la lectura de un archivo, no de una captura. */
+  origen: "captura" | "documento" = "captura",
 ): ResultadoCaptura {
   const p = capturaSchema.safeParse(entrada);
   if (!p.success) {
@@ -275,7 +282,7 @@ export function construirCaptura(
       ["numero", texto("numero_contrato")],
       ["monto_pagado", texto("monto_pagado")],
       ["tipo_operacion", texto("tipo_operacion")],
-      ["origen", "captura"],
+      ["origen", origen],
     ] as const)
       if (v) atributos[k] = v;
     evento = {
@@ -303,7 +310,11 @@ export function construirCaptura(
       expediente_id: d.expedienteId ?? null,
       fuente: d.fuente,
       fecha_documento: fecha,
-      resumen: `${tipo.nombre}${referencia ? ` ${referencia}` : ""} (captura manual)`.slice(0, 255),
+      resumen:
+        `${tipo.nombre}${referencia ? ` ${referencia}` : ""}${origen === "captura" ? " (captura manual)" : ""}`.slice(
+          0,
+          255,
+        ),
       campos: carga,
       involucrados,
       evento,

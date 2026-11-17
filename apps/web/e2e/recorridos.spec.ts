@@ -44,10 +44,10 @@ test("recorrido guiado: etapas con avance real, anterior y siguiente, y regreso 
     "step",
   );
 
-  // Siguiente y anterior; un módulo aún no construido se muestra deshabilitado.
+  // Siguiente y anterior.
   await page.getByRole("link", { name: /Siguiente: Validar/ }).click();
   await expect(page).toHaveURL(/etapa=3/);
-  await expect(page.getByText("Validación: próximamente")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ir a Validación" })).toBeVisible();
   await page.getByRole("link", { name: "← Anterior" }).click();
   await expect(page).toHaveURL(/etapa=2/);
   await expect(page.getByRole("link", { name: "Ingresar documentos" })).toBeVisible();

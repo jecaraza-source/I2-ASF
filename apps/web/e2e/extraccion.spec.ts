@@ -130,3 +130,159 @@ test("extracción con IA: espera con la IA apagada, lee al encenderla y usa Open
   await expect(consumo).toContainText(encargo);
   await expect(consumo).toContainText("Error 429");
 });
+
+test("validación: lo leído no cuenta hasta validarlo; corregir conserva lo que leyó la IA; y una captura que difiere de su documento genera R11", async ({
+  page,
+}) => {
+  test.skip(process.env.IA_SIMULADA !== "1", "Requiere IA_SIMULADA=1 en el servidor de pruebas");
+  test.setTimeout(300_000);
+  await ingresar(page, "admin");
+  await page.getByRole("link", { name: "Nuevo encargo" }).first().click();
+  const encargo = unico("Validación e2e");
+  await page.getByLabel("Nombre").fill(encargo);
+  await page.getByRole("button", { name: "Crear encargo" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(encargo);
+  const modulos = page.getByRole("navigation", { name: "Módulos" });
+
+  // IA permitida en el encargo desde el principio.
+  await modulos.getByRole("link", { name: "Configuración" }).click();
+  await page.getByLabel(`Anthropic (Claude) en ${encargo}`).check();
+  await page.getByRole("button", { name: `Guardar IA de ${encargo}` }).click();
+  await expect(
+    page.getByText(/^Guardado\. Los documentos de este encargo pueden enviarse/),
+  ).toBeVisible();
+
+  // 1. Un contrato leído por la IA: el monto queda bajo el umbral.
+  await modulos.getByRole("link", { name: "Ingreso de documentos" }).click();
+  await expect(page).toHaveURL(/\/ingreso\/importar/);
+  await page.getByLabel("Tipo de documento del lote").selectOption({ label: "Contrato" });
+  await page
+    .getByLabel("Expediente del lote", { exact: true })
+    .selectOption({ label: "Nuevo expediente…" });
+  await page.getByLabel("Identificador del expediente nuevo del lote").fill("EXP-VAL");
+  await page.getByLabel("Fuente del lote").fill("Entrega física");
+  await subir(page, pdf("contrato-val.pdf", contrato));
+  const tabla = page.getByRole("region", { name: "Documentos ingresados" });
+  await esperarFila(
+    page,
+    tabla.getByRole("row", { name: /contrato-val\.pdf/ }),
+    "Extraído · leído con Anthropic (Claude)",
+  );
+
+  // 2. Aparece en la cola con lo que falta revisar; el proveedor todavía no es entidad.
+  await modulos.getByRole("link", { name: "Validación" }).click();
+  await expect(page).toHaveURL(/\/validacion$/);
+  const cola = page.getByRole("region", { name: "Cola de validación" });
+  await expect(cola.getByRole("row", { name: /contrato-val\.pdf/ })).toContainText("por revisar");
+  await modulos.getByRole("link", { name: "Captura manual" }).click();
+  await expect(page.locator("datalist option[value='CONSTRUCTORA IA E2E SA DE CV']")).toHaveCount(
+    0,
+  );
+
+  // 3. Pantalla de validación: el formulario trae lo que propuso la IA, con confianza y página.
+  await modulos.getByRole("link", { name: "Validación" }).click();
+  await cola.getByRole("link", { name: "contrato-val.pdf" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Validar: Contrato");
+  await expect(page.getByRole("region", { name: "Documento original" })).toBeVisible();
+  // Con cacheComponents, la página anterior (Captura manual) sigue en el DOM, oculta: los campos
+  // se buscan dentro de la región visible.
+  const lectura = page.getByRole("region", { name: "Lectura de la IA" });
+  const numero = lectura.getByLabel("Número de contrato", { exact: true });
+  await expect(numero).toHaveValue("SOP-IA-001");
+  await expect(lectura.getByLabel(/^Tipo de documento/)).toBeDisabled();
+  await expect(lectura.getByLabel(/^Fuente declarada/)).toHaveCount(0);
+  const monto = lectura.getByLabel("Monto", { exact: true });
+  await expect(monto).toHaveValue("$1,500,000.00");
+  const notaMonto = page.locator(`#${await monto.getAttribute("aria-describedby")}`);
+  await expect(notaMonto).toContainText("IA · 50% · pág. 2 · por revisar");
+  await expect(notaMonto).toContainText("Se acepta");
+  await expect(lectura.getByLabel("Nombre del involucrado 1")).toHaveValue(
+    "CONSTRUCTORA IA E2E SA DE CV",
+  );
+
+  // Enfocar un campo lleva el documento a su página; Alt+↓ va al siguiente dato por revisar.
+  await numero.focus();
+  await expect(page.getByRole("region", { name: "Documento original" })).toContainText("Página 1");
+  await page.keyboard.press("Alt+ArrowDown");
+  await expect(monto).toBeFocused();
+  await expect(page.getByRole("region", { name: "Documento original" })).toContainText("Página 2");
+
+  // Corregir el monto y rechazar el objeto.
+  await monto.fill("1,800,000.00");
+  await expect(notaMonto).toContainText("Se corrige (la IA leyó «$1,500,000.00»)");
+  await lectura.getByRole("button", { name: /^Rechazar Objeto/ }).click();
+  await page.keyboard.press("Control+Enter");
+  await expect(page).toHaveURL(/\/validacion\?listo=1$/);
+  await expect(page.getByText("Listo. No queda nada por validar.")).toBeVisible();
+
+  // 4. El registro quedó corregido, conserva lo que leyó la IA y el proveedor ya es entidad.
+  await modulos.getByRole("link", { name: "Ingreso de documentos" }).click();
+  await expect(page).toHaveURL(/\/ingreso\/importar/);
+  await tabla.getByRole("link", { name: "contrato-val.pdf" }).click();
+  await expect(page).toHaveURL(/\/documentos\//);
+  await page.getByRole("link", { name: /^Contrato SOP-IA-001/ }).click();
+  const datos = page.getByRole("region", { name: "Datos de origen" });
+  const filaMonto = datos.getByRole("row", { name: /^monto/ });
+  await expect(filaMonto).toContainText("1,800,000.00");
+  await expect(filaMonto).toContainText("La IA leyó «$1,500,000.00»");
+  await expect(filaMonto).toContainText("corregido");
+  await expect(datos.getByRole("row", { name: /^objeto/ })).toContainText("rechazado");
+  await expect(datos.getByRole("row", { name: /numero_contrato/ })).toContainText("validado");
+  await expect(page.getByRole("link", { name: "CONSTRUCTORA IA E2E SA DE CV" })).toBeVisible();
+
+  // 5. R11: una captura con un monto y su documento con otro.
+  await modulos.getByRole("link", { name: "Captura manual" }).click();
+  const visible = { visible: true };
+  await page
+    .getByLabel(/^Tipo de documento/)
+    .filter(visible)
+    .selectOption({ label: "Contrato" });
+  await page
+    .getByLabel(/^Fuente declarada/)
+    .filter(visible)
+    .fill("Entrevista con el área contratante");
+  await page.getByLabel("Número de contrato", { exact: true }).filter(visible).fill("SOP-IA-001");
+  await page.getByLabel("Monto", { exact: true }).filter(visible).fill("1,000,000.00");
+  await page.getByRole("button", { name: "Guardar captura" }).click();
+  await expect(page.getByText("Sin soporte documental", { exact: true })).toBeVisible();
+  const soporte = pdf("soporte-r11.pdf", { ...contrato, involucrados: [] });
+  const asociar = page.getByRole("button", { name: "Asociar documento" });
+  await expect(async () => {
+    await page.getByLabel("Documento de soporte").setInputFiles(soporte);
+    await expect(asociar).toBeEnabled({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+  await asociar.click();
+  await expect(page.getByRole("link", { name: "soporte-r11.pdf" })).toBeVisible({
+    timeout: 60_000,
+  });
+  await modulos.getByRole("link", { name: "Alertas" }).click();
+  await expect(page).toHaveURL(/\/alertas$/);
+  await expect(async () => {
+    if (process.env.CRON_SECRET) {
+      await page.request.get("/api/trabajos/procesar", {
+        headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
+        timeout: 30_000,
+      });
+    }
+    await page.reload();
+    await expect(page.getByText("La captura y su documento difieren en monto")).toBeVisible({
+      timeout: 3_000,
+    });
+  }).toPass({ timeout: 90_000 });
+  // El número de contrato coincide: no hay alerta por él.
+  await expect(page.getByText("difieren en número de contrato")).toHaveCount(0);
+  // La cola de validación sigue vacía: la lectura del documento de una captura no se valida.
+  await modulos.getByRole("link", { name: "Validación" }).click();
+  await expect(page.getByText("No hay documentos por validar.")).toBeVisible();
+});
+
+test("lector consulta la cola de validación pero no valida", async ({ page }) => {
+  await ingresar(page, "lector");
+  await page.getByRole("link", { name: "Encargo de prueba" }).click();
+  await page
+    .getByRole("navigation", { name: "Módulos" })
+    .getByRole("link", { name: "Validación" })
+    .click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Validación");
+  await expect(page.getByText("Tu rol permite consultar la cola, no validar.")).toBeVisible();
+});

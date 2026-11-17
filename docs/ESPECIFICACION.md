@@ -14,7 +14,7 @@ Todas las rutas cuelgan de `/encargos/[encargo]`.
 | Alertas | `…/alertas`, `…/alertas/[id]` | Resultado de las reglas R01–R09; evidencias lado a lado; confirmar o descartar con motivo | 06 |
 | Ingreso de documentos | `…/ingreso/importar`, `…/documentos/[id]` | Subida con pre-clasificación; visor del original | 07 |
 | Captura manual | `…/ingreso/capturar` | Registro sin documento | 08 |
-| Validación | `…/validacion` | Cola de extracciones por confirmar | 09 |
+| Validación | `…/validacion`, `…/validacion/[registro]` | Cola de documentos leídos por la IA; aceptar, corregir o rechazar por campo y por registro (§7.2) | 09 |
 | Expediente documental | `…/expedientes/[exp]` | Tabla única con cuatro vistas | 10 |
 | Ficha de entidad | `…/entidades/[id]` | Todo lo que se sabe de una entidad | 05, 11 |
 | Registro | `…/registros/[id]` | Un registro con sus datos y la hoja, fila, celda o página de origen | 05 |
@@ -81,7 +81,7 @@ cuando pertenece a un encargo. No se repiten abajo.
 | `tipo_documento` | `clave`, `nombre`, `categoria_id`, `campos_esperados jsonb` |
 | `documento_origen` | `expediente_id`, `sha256`, `storage_path`, `nombre_archivo`, `mime`, `tamano`, `folio`, `fuente`, `recibido_por`, `recibido_en`, `original_id` (si es derivado); único (`encargo_id`, `sha256`) |
 | `registro` | `expediente_id`, `tipo_documento_id`, `origen` (`documento`, `captura`, `importacion`), `documento_id` (nulo en capturas), `fuente`, `fecha_documento`, `estado_validacion` (`pendiente`, `validado`, `corregido`, `rechazado`), `estado_extraccion`, `resumen` |
-| `extraccion` | `registro_id`, `campo`, `valor_crudo text`, `valor_normalizado jsonb`, `confianza numeric` (nulo si es manual), `ubicacion jsonb` (página, hoja, fila, celda), `metodo` (`ia`, `manual`, `importacion`), `estado`, `validado_por`, `validado_en` |
+| `extraccion` | `registro_id`, `campo`, `valor_crudo text`, `valor_normalizado jsonb`, `confianza numeric` (nulo si es manual), `ubicacion jsonb` (página, hoja, fila, celda), `metodo` (`ia`, `manual`, `importacion`), `estado`, `validado_por`, `validado_en`, `valor_original jsonb` (solo en corregidas: lo que leyó la IA) |
 
 **Entidades, vínculos y eventos**
 
@@ -308,6 +308,33 @@ domicilios, teléfonos. Cada tipo de documento añade los suyos en `campos_esper
   `tope_proveedor_ia`, no permitido en el encargo, sin llave o sin modelo) o el proveedor rechaza
   por cuota, saturación, crédito o credencial (429, 529, 402, 401, 403). Un fallo de otro tipo no
   cambia de proveedor: el trabajo se reintenta más tarde.
+
+### 7.2 Validación
+
+- **Cola** (`…/validacion`): documentos con `estado_extraccion = hecha` y
+  `estado_validacion = pendiente`. Todo documento leído por la IA pasa por la cola, también cuando
+  todos sus datos superaron el umbral: en ese caso llegan aceptados y basta confirmar. Las lecturas
+  del documento asociado a una captura no entran a la cola (sirven para R11).
+- **Pantalla** (`…/validacion/[registro]`): el original a la izquierda y el formulario de registro
+  único (§6) a la derecha, con lo que propuso la IA. Cada dato muestra su confianza, su página y si
+  está por revisar; enfocarlo lleva el documento a esa página. Atajos: Ctrl/⌘+Enter valida y pasa al
+  siguiente; Alt+↓ y Alt+↑ recorren los datos por revisar.
+- **Decisión por campo:** dejarlo igual lo **acepta** (`validado`); cambiarlo lo **corrige**
+  (`corregido`: el valor nuevo queda en la extracción y lo que leyó la IA en
+  `extraccion.valor_original`); vaciarlo o quitarlo lo **rechaza** (`rechazado`). Lo que agrega el
+  auditor entra como extracción `manual`. La decisión la calcula el servidor comparando lo
+  confirmado con lo leído (`construirValidacion`), no el navegador. Toda lectura recibe una decisión.
+- **Decisión por registro:** validar (`validar_registro`) o rechazar con motivo
+  (`rechazar_registro`). El registro queda `validado` si no hubo cambios, `corregido` si los hubo.
+- **Materialización:** solo al validar se crean entidades, evento y evidencias
+  (`privado.materializar_registro`, misma resolución que la captura manual). La evidencia de cada
+  entidad apunta a la extracción que la sostiene. Un registro rechazado no crea nada.
+- **Reglas:** después de validar se ejecutan las reglas del encargo. Todo queda en bitácora
+  (`registro.validacion`, `registro.rechazo`).
+- **R11:** en una captura con documento asociado, lo que la IA leyó del documento se compara campo
+  por campo con lo capturado (montos con su moneda; textos sin distinguir mayúsculas, acentos ni
+  puntuación). Una alerta por cada diferencia. Se ejecuta al terminar la lectura. Los involucrados
+  no se comparan.
 
 ## 8. Importador de Excel
 

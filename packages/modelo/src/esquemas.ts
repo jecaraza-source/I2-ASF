@@ -175,6 +175,10 @@ export const extraccionSchema = z
     estado: estadoValidacionSchema,
     validado_por: uuidSchema.nullable(),
     validado_en: marcaTiempoSchema.nullable(),
+    /** Solo en corregidas: lo que leyó la IA antes de la corrección. */
+    valor_original: z
+      .object({ valor_crudo: z.string().nullable(), valor_normalizado: z.unknown() })
+      .nullable(),
   })
   .refine((e) => e.metodo !== "manual" || e.confianza === null, {
     message: "La captura manual no lleva confianza",

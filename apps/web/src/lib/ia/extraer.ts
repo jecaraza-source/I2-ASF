@@ -8,6 +8,7 @@ import {
 import { PROVEEDORES_IA, type Json, type ProveedorIA } from "@sigma/modelo";
 import { z } from "zod";
 import { iaPermitida, registrarUsoIA } from "@/lib/ia/control";
+import { ejecutarYGuardarReglas } from "@/lib/reglas-datos";
 import {
   MAX_BYTES_LECTURA,
   MIMES_LEGIBLES,
@@ -44,7 +45,7 @@ export async function extraerDocumento(
   const { data: registro, error } = await servicio
     .from("registro")
     .select(
-      "id, organizacion_id, encargo_id, estado_extraccion, tipo_documento(nombre, campos_esperados), documento_origen(storage_path, mime, tamano, nombre_archivo)",
+      "id, organizacion_id, encargo_id, origen, estado_extraccion, tipo_documento(nombre, campos_esperados), documento_origen(storage_path, mime, tamano, nombre_archivo)",
     )
     .eq("id", p.registro_id)
     .maybeSingle();
@@ -139,6 +140,12 @@ export async function extraerDocumento(
       } as Json,
     });
     if (errorGuardar) throw new Error(`guardar ${errorGuardar.code ?? "?"}`);
+    // R11: el documento de una captura se compara con lo capturado en cuanto se lee. Si las reglas
+    // fallan, la lectura ya quedó guardada y se pueden ejecutar desde Alertas.
+    if (registro.origen === "captura") {
+      const reglas = await ejecutarYGuardarReglas(servicio, registro.encargo_id);
+      if (!reglas.ok) console.error(`[reglasTrasExtraer] error de base: ${reglas.codigo ?? "?"}`);
+    }
     return;
   }
   if (resultado.clase === "bloqueada") return esperar(servicio, registro.id, resultado.motivo);

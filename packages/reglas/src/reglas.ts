@@ -7,6 +7,7 @@ import type {
   DatosReglas,
   EventoRegla,
   EvidenciaAlerta,
+  ExtraccionRegla,
   Regla,
   RegistroRegla,
 } from "./tipos";
@@ -566,6 +567,80 @@ export function r09(datos: DatosReglas): Alerta[] {
 // ---------------------------------------------------------------------------
 // Catálogo y ejecución
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// R11 · Captura manual que difiere del documento asociado
+// ---------------------------------------------------------------------------
+const ETIQUETA_R11: Record<string, string> = {
+  fecha_documento: "fecha del documento",
+  numero_expediente: "número de expediente",
+  numero_contrato: "número de contrato",
+  numero_factura: "número de factura",
+  numero_cuenta: "número de cuenta",
+  monto: "monto",
+  domicilio: "domicilio",
+  telefono: "teléfono",
+};
+
+/** Valor comparable de una extracción: montos en centavos con moneda; lo demás, texto plano. */
+function comparable(x: ExtraccionRegla): string {
+  const v = x.valor_normalizado;
+  if (v && typeof v === "object" && !Array.isArray(v) && "monto" in v) {
+    const m = v as { monto?: unknown; moneda?: unknown };
+    const c = centavos(m.monto);
+    if (c !== null) return `${c} ${typeof m.moneda === "string" ? m.moneda : ""}`.trim();
+  }
+  const texto = typeof v === "string" || typeof v === "number" ? String(v) : (x.valor_crudo ?? "");
+  // Sin puntuación ni espacios: «SOP-001» y «SOP 001» son el mismo número.
+  return plano(texto).replace(/[^A-Z0-9]/g, "");
+}
+
+/**
+ * Compara, campo por campo, lo que se capturó a mano con lo que la IA leyó del documento que
+ * después se asoció a esa captura. Una alerta por cada diferencia. Los involucrados no se comparan
+ * aquí: su orden y forma de escribirse cambian entre fuentes.
+ */
+export function r11(datos: DatosReglas): Alerta[] {
+  const alertas: Alerta[] = [];
+  for (const r of datos.registros) {
+    for (const leida of r.lecturas_documento ?? []) {
+      if (/^involucrado_\d+$/.test(leida.campo)) continue;
+      const capturada = r.extracciones.find((x) => x.campo === leida.campo);
+      if (!capturada) continue;
+      const a = comparable(capturada);
+      const b = comparable(leida);
+      if (!a || !b || a === b) continue;
+      const etiqueta = ETIQUETA_R11[leida.campo] ?? plano(leida.campo).toLowerCase();
+      alertas.push({
+        regla: "R11",
+        severidad: leida.campo === "monto" ? "alta" : "media",
+        titulo: `La captura y su documento difieren en ${etiqueta}`,
+        descripcion: `Se capturó «${capturada.valor_crudo ?? ""}» y el documento asociado dice «${leida.valor_crudo ?? ""}». Revisa cuál es el dato correcto.`,
+        huella: `R11|${r.id}|${leida.campo}`,
+        entidades: [],
+        evidencias: [
+          {
+            lado: "a",
+            etiqueta: `Captura manual · ${etiqueta}`,
+            valor: capturada.valor_crudo ?? "",
+            registro_id: r.id,
+            extraccion_id: capturada.id,
+            ubicacion: capturada.ubicacion,
+          },
+          {
+            lado: "b",
+            etiqueta: `Documento asociado · ${etiqueta}`,
+            valor: leida.valor_crudo ?? "",
+            registro_id: r.id,
+            extraccion_id: leida.id,
+            ubicacion: leida.ubicacion,
+          },
+        ],
+      });
+    }
+  }
+  return alertas;
+}
+
 export const REGLAS: Regla[] = [
   {
     id: "R01",
@@ -621,9 +696,8 @@ export const REGLAS: Regla[] = [
   {
     id: "R11",
     nombre: "Captura manual que difiere del documento asociado",
-    activa: false,
-    nota: "Requiere la extracción con IA de la tarea 09.",
-    evaluar: () => [],
+    activa: true,
+    evaluar: r11,
   },
 ];
 

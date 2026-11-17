@@ -79,6 +79,7 @@ describe("extraccion", () => {
     estado: "validado" as const,
     validado_por: id,
     validado_en: "2026-11-16T12:00:00+00:00",
+    valor_original: null,
   };
 
   it("acepta una captura manual sin confianza", () => {
