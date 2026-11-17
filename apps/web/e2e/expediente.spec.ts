@@ -164,7 +164,7 @@ test("expediente documental: filtra por entidad y por categoría, cambia de vist
 
   // Línea de tiempo: de lo más antiguo a lo más reciente, por mes; lo que no tiene fecha al final.
   await page.getByRole("link", { name: "Línea de tiempo" }).filter(visible).click();
-  const grupos = tabla.getByRole("rowheader").filter({ hasText: /·/ });
+  const grupos = tabla.locator("th[scope=rowgroup]");
   await expect(grupos).toHaveText([/^marzo de 2022/, /^mayo de 2022/, /^Sin fecha/]);
 
   // El nodo «Sin expediente» cuenta lo mismo que la tabla al elegirlo.
