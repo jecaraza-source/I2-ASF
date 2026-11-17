@@ -34,16 +34,10 @@ test("admin agrega un tipo de documento al catálogo", async ({ page }) => {
   await expect(tipos).toContainText("Convenio modificatorio");
   const nombre = unico("Identificación");
   const clave = `id_${Date.now().toString(36)}`;
-  // Si el formulario se llena antes de que React hidrate la página, el selector vuelve a su valor
-  // inicial: se reintenta hasta que el alta se refleja en la lista.
-  await expect(async () => {
-    await page.getByLabel("Nombre del tipo").fill(nombre);
-    await page.getByRole("textbox", { name: /^Clave/ }).fill(clave);
-    await page.getByRole("combobox", { name: /^Categoría/ }).selectOption({ label: "Contractual" });
-    await page.getByRole("button", { name: "Agregar tipo" }).click();
-    await page.waitForTimeout(3000);
-    console.log("DIAG", page.url(), JSON.stringify(await page.locator("form").filter({ hasText: "Agregar tipo" }).innerText()));
-    await expect(tipos).toContainText(nombre, { timeout: 5_000 });
-  }).toPass({ timeout: 12_000 });
+  await page.getByLabel("Nombre del tipo").fill(nombre);
+  await page.getByRole("textbox", { name: /^Clave/ }).fill(clave);
+  await page.getByRole("combobox", { name: /^Categoría/ }).selectOption({ label: "Contractual" });
+  await page.getByRole("button", { name: "Agregar tipo" }).click();
+  await expect(tipos).toContainText(nombre);
   await expect(tipos).toContainText(clave);
 });
