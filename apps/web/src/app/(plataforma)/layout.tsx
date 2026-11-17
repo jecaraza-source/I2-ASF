@@ -36,10 +36,18 @@ async function ZonaUsuario() {
         </p>
       </div>
       {sesion.activa.rol === "admin" ? (
-        <Link href="/ia" className="text-azul-claro underline hover:text-texto">
-          Uso de IA
-        </Link>
+        <>
+          <Link href="/usuarios" className="text-azul-claro underline hover:text-texto">
+            Usuarios
+          </Link>
+          <Link href="/ia" className="text-azul-claro underline hover:text-texto">
+            Uso de IA
+          </Link>
+        </>
       ) : null}
+      <Link href="/acceso/contrasena" className="text-azul-claro underline hover:text-texto">
+        Mi contraseña
+      </Link>
       {sesion.membresias.length > 1 ? (
         <Link href="/organizacion" className="text-azul-claro underline hover:text-texto">
           Cambiar

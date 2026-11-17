@@ -999,8 +999,11 @@ export type Database = {
       }
       miembro: {
         Row: {
+          activo: boolean
           creado_en: string
           creado_por: string | null
+          desactivado_en: string | null
+          desactivado_por: string | null
           id: string
           organizacion_id: string
           rol: string
@@ -1008,16 +1011,22 @@ export type Database = {
         }
         ComputedFields: never
         Insert: {
+          activo?: boolean
           creado_en?: string
           creado_por?: string | null
+          desactivado_en?: string | null
+          desactivado_por?: string | null
           id?: string
           organizacion_id: string
           rol: string
           usuario_id: string
         }
         Update: {
+          activo?: boolean
           creado_en?: string
           creado_por?: string | null
+          desactivado_en?: string | null
+          desactivado_por?: string | null
           id?: string
           organizacion_id?: string
           rol?: string
@@ -1919,6 +1928,25 @@ export type Database = {
         Returns: undefined
       }
       asociar_documento: { Args: { p: Json }; Returns: Json }
+      bitacora_usuarios: {
+        Args: {
+          p_clase: string
+          p_desde?: string
+          p_hasta?: string
+          p_limite?: number
+          p_organizacion_id: string
+          p_usuario_id?: string
+        }
+        Returns: {
+          accion: string
+          actor_correo: string
+          detalle: Json
+          en: string
+          id: string
+          usuario_correo: string
+          usuario_id: string
+        }[]
+      }
       capturar_registro: { Args: { p: Json }; Returns: string }
       encolar_extraccion: { Args: { p_registro: string }; Returns: string }
       encolar_extracciones_en_espera: {
@@ -1959,6 +1987,14 @@ export type Database = {
         Args: { p_organizacion: string; p_reglas: Json }
         Returns: number
       }
+      registrar_acceso: {
+        Args: { p_ip?: string; p_navegador?: string; p_tipo: string }
+        Returns: undefined
+      }
+      registrar_acceso_fallido: {
+        Args: { p_correo: string; p_ip?: string; p_navegador?: string }
+        Returns: undefined
+      }
       registrar_documento: { Args: { p: Json }; Returns: Json }
       registrar_uso_ia: { Args: { p: Json }; Returns: string }
       resolver_alerta: {
@@ -1995,6 +2031,24 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      usuario_por_correo: {
+        Args: { p_correo: string; p_organizacion_id: string }
+        Returns: string
+      }
+      usuarios_organizacion: {
+        Args: { p_organizacion_id: string }
+        Returns: {
+          activo: boolean
+          correo: string
+          creado_en: string
+          desactivado_en: string
+          miembro_id: string
+          pendiente: boolean
+          rol: string
+          ultimo_acceso: string
+          usuario_id: string
+        }[]
       }
     }
     Enums: {

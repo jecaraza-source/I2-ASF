@@ -26,6 +26,7 @@ const TRAMOS: Record<string, { texto: string; enlace?: boolean }> = {
   categorias: { texto: "Categorías", enlace: false },
   configuracion: { texto: "Configuración" },
   ia: { texto: "Uso de IA" },
+  usuarios: { texto: "Usuarios y accesos" },
   organizacion: { texto: "Organización" },
 };
 

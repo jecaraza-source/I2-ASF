@@ -37,6 +37,20 @@ En cada proyecto remoto:
    Agrega las URLs de Vercel (producción y vistas previas) a las URLs de redirección.
 3. No crees tablas, buckets ni políticas a mano: todo llega por migraciones.
 
+### 3.1 Acceso de usuarios (invitaciones)
+
+Para que el alta de usuarios funcione en producción, en Supabase → Authentication:
+
+1. **URL Configuration → Site URL:** la URL pública de la plataforma (p. ej.
+   `https://i2-sigma-asf.vercel.app`).
+2. **URL Configuration → Redirect URLs:** agrega `https://<dominio>/acceso/contrasena`. Sin esto,
+   el enlace de la invitación no regresa a la pantalla donde el usuario define su contraseña.
+3. **Sign In / Providers:** el alta pública (`Allow new users to sign up`) queda desactivada; las
+   cuentas solo se crean desde la pantalla de Usuarios.
+4. **Correo:** el servicio integrado de Supabase envía muy pocos correos por hora y es solo para
+   pruebas. Para invitar con regularidad configura un SMTP propio (Authentication → Emails → SMTP
+   Settings). Mientras tanto, el alta con contraseña temporal no depende del correo.
+
 ## 4. Vercel
 
 1. Importa el repositorio. **Root Directory:** `apps/web`. Framework: Next.js.
@@ -50,7 +64,7 @@ En cada proyecto remoto:
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Cliente y servidor | URL del proyecto |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Cliente y servidor | Clave pública; la protección real es RLS |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Solo servidor** | Únicamente en el procesador de trabajos |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Solo servidor** | Procesador de trabajos y alta de cuentas de usuario (ESPECIFICACION §3.1) |
 | `ANTHROPIC_API_KEY` | Solo servidor | Extracción con IA |
 | `ANTHROPIC_MODEL` | Solo servidor | Modelo a usar; se cambia sin tocar código |
 | `OPENAI_API_KEY` | Solo servidor | Opcional. Proveedor de respaldo cuando Anthropic llega a su límite; solo en encargos que lo permitan |

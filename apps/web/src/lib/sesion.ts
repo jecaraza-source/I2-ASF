@@ -29,7 +29,8 @@ export const obtenerSesion = cache(async (): Promise<Sesion | null> => {
   const { data: filas } = await supabase
     .from("miembro")
     .select("organizacion_id, rol, organizacion:organizacion_id (nombre)")
-    .eq("usuario_id", data.user.id);
+    .eq("usuario_id", data.user.id)
+    .eq("activo", true);
 
   const membresias: Membresia[] = (filas ?? [])
     .map((f) => {

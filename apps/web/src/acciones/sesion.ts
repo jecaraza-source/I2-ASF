@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { EstadoFormulario } from "@/lib/formulario";
+import { datosAcceso } from "@/lib/peticion";
 import { COOKIE_ORGANIZACION, obtenerSesion } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
@@ -39,14 +40,50 @@ export async function iniciarSesion(
     email: datos.data.email,
     password: datos.data.password,
   });
+  const { ip, navegador } = await datosAcceso();
   if (error) {
+    // Bitácora de acceso: el intento fallido se atribuye al usuario si el correo existe.
+    await supabase.rpc("registrar_acceso_fallido", {
+      p_correo: datos.data.email,
+      p_ip: ip ?? undefined,
+      p_navegador: navegador ?? undefined,
+    });
     return { ok: false, mensaje: "Correo o contraseña incorrectos.", valores: { email } };
   }
+  await registrar(supabase, "inicio", ip, navegador);
   redirect(destinoSeguro(datos.data.siguiente));
+}
+
+type Cliente = Awaited<ReturnType<typeof clienteServidor>>;
+
+/** La bitácora de acceso nunca impide entrar o salir: si falla, se anota el código y se sigue. */
+async function registrar(
+  supabase: Cliente,
+  tipo: "inicio" | "cierre",
+  ip: string | null,
+  navegador: string | null,
+) {
+  const { error } = await supabase.rpc("registrar_acceso", {
+    p_tipo: tipo,
+    p_ip: ip ?? undefined,
+    p_navegador: navegador ?? undefined,
+  });
+  if (error) console.error(`[acceso] no se registró el ${tipo}: ${error.code ?? "desconocido"}`);
+}
+
+/** Primer acceso por enlace de invitación (la sesión se creó en el navegador). */
+export async function registrarAccesoPorEnlace(): Promise<void> {
+  const supabase = await clienteServidor();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) return;
+  const { ip, navegador } = await datosAcceso();
+  await registrar(supabase, "inicio", ip, navegador);
 }
 
 export async function cerrarSesion(): Promise<void> {
   const supabase = await clienteServidor();
+  const { ip, navegador } = await datosAcceso();
+  await registrar(supabase, "cierre", ip, navegador);
   await supabase.auth.signOut();
   (await cookies()).delete(COOKIE_ORGANIZACION);
   redirect("/ingresar");
