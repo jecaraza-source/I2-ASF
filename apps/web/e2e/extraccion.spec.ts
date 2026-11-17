@@ -47,6 +47,7 @@ async function esperarFila(page: Page, fila: Locator, texto: string | RegExp) {
     if (process.env.CRON_SECRET) {
       await page.request.get("/api/trabajos/procesar", {
         headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
+        timeout: 30_000,
       });
     }
     await page.reload();
@@ -87,10 +88,14 @@ test("extracción con IA: espera con la IA apagada, lee al encenderla y usa Open
   await page.getByRole("button", { name: `Guardar IA de ${encargo}` }).click();
   await expect(page.getByText("1 documento(s) en espera volvieron a la cola.")).toBeVisible();
   await modulos.getByRole("link", { name: "Ingreso de documentos" }).click();
+  // Sin esta espera, la recarga de `esperarFila` puede ganarle a la navegación y quedarse en Configuración.
+  await expect(page).toHaveURL(/\/ingreso\/importar/);
   await esperarFila(page, fila, "Extraído · leído con Anthropic (Claude)");
 
   // 3. Cada campo trae su confianza y su página; lo que no alcanza el umbral queda pendiente.
   await fila.getByRole("link", { name: "contrato-ia.pdf" }).click();
+  // El segundo enlace vive en la página del documento: hay que esperar a llegar a ella.
+  await expect(page).toHaveURL(/\/documentos\//);
   await page.getByRole("link", { name: "contrato-ia.pdf" }).last().click();
   const datos = page.getByRole("region", { name: "Datos de origen" });
   await expect(datos.getByRole("row", { name: /numero_contrato/ })).toContainText("SOP-IA-001");
@@ -106,6 +111,7 @@ test("extracción con IA: espera con la IA apagada, lee al encenderla y usa Open
 
   // 4. Anthropic rechaza por límite de uso (429): la lectura pasa a OpenAI.
   await modulos.getByRole("link", { name: "Ingreso de documentos" }).click();
+  await expect(page).toHaveURL(/\/ingreso\/importar/);
   await page.getByLabel("Tipo de documento del lote").selectOption({ label: "Contrato" });
   await page.getByLabel("Expediente del lote", { exact: true }).selectOption({ label: "EXP-IA" });
   await page.getByLabel("Fuente del lote").fill("Entrega física");
