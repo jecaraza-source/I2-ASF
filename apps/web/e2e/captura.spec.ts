@@ -62,7 +62,7 @@ test("captura un contrato sin documento, aparece en la red y deja de estar sin s
   await modulos.getByRole("link", { name: "Red de vínculos" }).click();
   await page.getByRole("button", { name: "Generar red" }).click();
   await expect(page.getByLabel("Indicadores")).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByTestId("indicador-Nodos")).toContainText("2");
+  await expect(page.getByTestId("indicador-Entidades")).toContainText("2");
   await expect(page.getByTestId("indicador-Eventos")).toContainText("1");
   await expect(page.getByRole("region", { name: "Entidades calificadas" })).toContainText(
     "CONSTRUCTORA CAPTURA E2E SA DE CV",

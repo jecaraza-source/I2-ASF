@@ -59,3 +59,26 @@ test("auditor no configura el catálogo", async ({ page }) => {
     .click();
   await expect(page.getByRole("alert").filter({ hasText: "Solo un administrador" })).toBeVisible();
 });
+
+test("la barra de navegación regresa a la pantalla anterior y muestra dónde estás", async ({
+  page,
+}) => {
+  await ingresar(page, "auditor");
+  await expect(page.getByRole("navigation", { name: "Navegación" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Encargo de prueba" }).click();
+  const modulos = page.getByRole("navigation", { name: "Módulos" });
+  await modulos.getByRole("link", { name: "Red de vínculos" }).click();
+  await expect(page).toHaveURL(/\/red$/);
+  const barra = page.getByRole("navigation", { name: "Navegación" });
+  await expect(barra.getByText("Red de vínculos")).toHaveAttribute("aria-current", "page");
+
+  await modulos.getByRole("link", { name: "Alertas" }).click();
+  await expect(page).toHaveURL(/\/alertas$/);
+  await barra.getByRole("button", { name: "Regresar" }).click();
+  await expect(page).toHaveURL(/\/red$/);
+
+  await barra.getByRole("link", { name: "Subir un nivel" }).click();
+  await expect(page).toHaveURL(/\/encargos\/[0-9a-f-]{36}$/);
+  await barra.getByRole("link", { name: "Encargos" }).click();
+  await expect(page).toHaveURL(/\/encargos$/);
+});

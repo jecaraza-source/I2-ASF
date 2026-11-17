@@ -42,7 +42,7 @@ export function FormularioGenerar({
       {!todas ? (
         <div className="flex flex-col gap-1.5">
           <label htmlFor="semillas" className="text-sm text-texto">
-            Entidades semilla
+            Entidades de partida
           </label>
           <select
             id="semillas"
@@ -57,16 +57,18 @@ export function FormularioGenerar({
               </option>
             ))}
           </select>
-          <p className="text-xs text-tenue">Ctrl o ⌘ para elegir varias.</p>
+          <p className="text-xs text-tenue">
+            La red se arma alrededor de estas entidades. Ctrl o ⌘ para elegir varias.
+          </p>
         </div>
       ) : null}
       <fieldset className="flex items-center gap-4 text-sm text-texto" disabled={todas}>
-        <legend className="mb-1 text-sm text-texto">Alcance</legend>
+        <legend className="mb-1 text-sm text-texto">Hasta dónde llega la red</legend>
         <label className="flex items-center gap-1.5">
-          <input type="radio" name="alcance" value="1" defaultChecked /> 1 salto
+          <input type="radio" name="alcance" value="1" defaultChecked /> Solo relaciones directas
         </label>
         <label className="flex items-center gap-1.5">
-          <input type="radio" name="alcance" value="2" /> 2 saltos
+          <input type="radio" name="alcance" value="2" /> También las relaciones de sus relacionados
         </label>
       </fieldset>
       <Mensaje ok={estado.ok} texto={estado.mensaje} />

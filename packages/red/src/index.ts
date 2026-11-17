@@ -3,3 +3,4 @@ export * from "./generacion";
 export * from "./calificacion";
 export * from "./analisis";
 export * from "./vista";
+export * from "./familia";

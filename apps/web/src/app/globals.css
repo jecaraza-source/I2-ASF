@@ -2,6 +2,9 @@
 
 /* Paleta y tipografía tomadas del prototipo (legacy/sigma_analisis_asf.html). */
 :root {
+  /* Tema oscuro también para los controles nativos: sin esto el ícono del calendario de los
+     campos de fecha se dibuja negro sobre fondo oscuro y no se ve. */
+  color-scheme: dark;
   --bg: #0a0e14;
   --bg2: #0d1320;
   --panel: #121a28;
