@@ -142,10 +142,7 @@ test("fuentes de consulta: carga de la lista 69-B, coincidencia exacta con alert
   await page.goto(registro);
   await page.getByRole("link", { name: HOMONIMO }).filter(visible).first().click();
   await esperar(page, externas, "Propuesta · por nombre");
-  await page
-    .getByRole("button", { name: /^Descartar: / })
-    .filter(visible)
-    .click();
+  await externas.getByRole("button", { name: /^Descartar: / }).click();
   await externas.getByRole("button", { name: "Confirmar descarte" }).click();
   await expect(externas.getByRole("alert")).toBeVisible();
   await externas.getByLabel("Motivo del descarte").fill("Homónimo: otro RFC");
