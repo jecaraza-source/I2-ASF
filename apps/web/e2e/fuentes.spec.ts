@@ -141,6 +141,8 @@ test("fuentes de consulta: carga de la lista 69-B, coincidencia exacta con alert
   // El homónimo: propuesta por nombre, sin alerta hasta que alguien la confirme; se descarta con motivo.
   await page.goto(registro);
   await page.getByRole("link", { name: HOMONIMO }).filter(visible).first().click();
+  // Esperar a la navegación antes de recargar: si no, se recarga el registro.
+  await expect(page).toHaveURL(/\/entidades\/[0-9a-f-]{36}$/);
   await esperar(page, externas, "Propuesta · por nombre");
   await externas.getByRole("button", { name: /^Descartar: / }).click();
   await externas.getByRole("button", { name: "Confirmar descarte" }).click();
