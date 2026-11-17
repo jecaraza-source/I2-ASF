@@ -49,6 +49,7 @@ export const lista69b: ConectorFuente = {
           coincidencia,
           datos: {
             resumen: `${x.nombre} · RFC ${x.rfc} · ${nombreSituacion(x.situacion)}`,
+            por: coincidencia === "exacta" ? "rfc" : "nombre",
             rfc: x.rfc,
             nombre: x.nombre,
             situacion: x.situacion,
