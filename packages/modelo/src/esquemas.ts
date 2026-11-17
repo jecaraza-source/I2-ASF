@@ -94,6 +94,9 @@ export const miembroSchema = z.object({
   ...comunes,
   usuario_id: uuidSchema,
   rol: rolSchema,
+  activo: z.boolean(),
+  desactivado_en: z.string().nullable(),
+  desactivado_por: uuidSchema.nullable(),
 });
 
 export const encargoSchema = z.object({

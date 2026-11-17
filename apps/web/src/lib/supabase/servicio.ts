@@ -3,8 +3,9 @@ import type { Database } from "@sigma/modelo";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * Cliente con la service role key: se salta RLS. Úsalo ÚNICAMENTE desde el procesador de trabajos
- * (`lib/trabajos.ts`). Nunca en páginas, acciones de usuario ni código que llegue al navegador.
+ * Cliente con la service role key: se salta RLS. Solo tiene dos usos autorizados: el procesador de
+ * trabajos (`lib/trabajos.ts`) y el alta de cuentas (`lib/usuarios-admin.ts`), que necesita la API
+ * de administración de Auth. Nunca en páginas, otras acciones ni código que llegue al navegador.
  * Devuelve null si la clave no está configurada.
  */
 export function clienteServicio() {

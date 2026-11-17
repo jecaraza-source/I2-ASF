@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // /api/trabajos se protege con CRON_SECRET en el propio route handler (lo llama el cron, sin sesión).
-const PUBLICAS = ["/ingresar", "/api/trabajos"];
+// `/acceso` recibe el enlace de invitación: la sesión se crea ahí mismo, en el navegador.
+const PUBLICAS = ["/ingresar", "/api/trabajos", "/acceso"];
 
 /**
  * Refresca la sesión de Supabase en cada navegación y manda a /ingresar a quien

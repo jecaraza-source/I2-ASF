@@ -91,6 +91,32 @@ Función `es_miembro(organizacion_id, roles text[])` (`security definer`, `searc
 todas las políticas. `bitacora`: solo INSERT y SELECT. Registro por invitación; el alta pública queda
 desactivada.
 
+### 3.1 Usuarios, accesos y control de cambios
+
+Pantalla `/usuarios` (solo `admin`), con tres secciones:
+
+- **Usuarios:** alta por **invitación por correo** (el usuario define su contraseña desde el enlace,
+  en `/acceso/contrasena`) o con **contraseña temporal** (la define el administrador; no se guarda
+  ni se registra). Si el correo ya tiene cuenta, solo se le da acceso a la organización. Cambio de
+  rol, baja y reactivación.
+- **Bitácora de acceso:** inicios y cierres de sesión e intentos fallidos, con IP y navegador
+  (`bitacora`, `objeto_tipo = 'sesion'`, acciones `sesion.inicio`, `sesion.cierre`, `sesion.fallo`).
+  A lo más 10 intentos fallidos por usuario y hora.
+- **Control de cambios:** `usuario.alta`, `usuario.rol` (con `antes` y `despues`), `usuario.baja` y
+  `usuario.reactivacion`, escritos por disparador en `miembro`: no dependen de la pantalla.
+
+Reglas en la base (migración 17):
+
+- **La baja es lógica** (`miembro.activo = false`); los miembros no se borran. `es_miembro` exige
+  miembro activo, así que la baja corta todas las políticas a la vez.
+- **Siempre queda un administrador activo** y **nadie cambia su propio rol ni se da de baja**.
+- La bitácora guarda IDs, roles, IP y navegador; los correos se resuelven al leer
+  (`usuarios_organizacion`, `bitacora_usuarios`, solo `admin`).
+- **Service role:** crear cuentas necesita la API de administración de Auth. Es el segundo uso
+  autorizado de la service role key (`lib/usuarios-admin.ts`, solo desde `acciones/usuarios.ts` y
+  después de verificar que quien pide es `admin`). La membresía se inserta con el cliente del
+  administrador: RLS decide y la bitácora registra.
+
 Decisiones de implementación (tarea 01):
 
 - **Catálogos por organización, sin `encargo_id`:** `categoria_documental`, `tipo_documento`,
