@@ -31,6 +31,11 @@ async function ZonaUsuario() {
           {sesion.usuario.email} · <span data-testid="rol-activo">{ROLES[sesion.activa.rol]}</span>
         </p>
       </div>
+      {sesion.activa.rol === "admin" ? (
+        <Link href="/ia" className="text-azul-claro underline hover:text-texto">
+          Uso de IA
+        </Link>
+      ) : null}
       {sesion.membresias.length > 1 ? (
         <Link href="/organizacion" className="text-azul-claro underline hover:text-texto">
           Cambiar

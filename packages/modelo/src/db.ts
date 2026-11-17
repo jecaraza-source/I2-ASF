@@ -279,6 +279,48 @@ export type Database = {
           },
         ]
       }
+      configuracion_ia: {
+        Row: {
+          activa: boolean
+          actualizado_en: string
+          actualizado_por: string | null
+          creado_en: string
+          creado_por: string | null
+          organizacion_id: string
+          tope_diario_tokens: number
+          tope_mensual_tokens: number
+        }
+        ComputedFields: never
+        Insert: {
+          activa?: boolean
+          actualizado_en?: string
+          actualizado_por?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          organizacion_id: string
+          tope_diario_tokens?: number
+          tope_mensual_tokens?: number
+        }
+        Update: {
+          activa?: boolean
+          actualizado_en?: string
+          actualizado_por?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          organizacion_id?: string
+          tope_diario_tokens?: number
+          tope_mensual_tokens?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuracion_ia_organizacion_id_fkey"
+            columns: ["organizacion_id"]
+            isOneToOne: true
+            referencedRelation: "organizacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documento_origen: {
         Row: {
           creado_en: string
@@ -371,6 +413,7 @@ export type Database = {
           creado_en: string
           creado_por: string | null
           estado: string
+          ia_proveedores: string[]
           id: string
           nombre: string
           organizacion_id: string
@@ -384,6 +427,7 @@ export type Database = {
           creado_en?: string
           creado_por?: string | null
           estado?: string
+          ia_proveedores?: string[]
           id?: string
           nombre: string
           organizacion_id: string
@@ -396,6 +440,7 @@ export type Database = {
           creado_en?: string
           creado_por?: string | null
           estado?: string
+          ia_proveedores?: string[]
           id?: string
           nombre?: string
           organizacion_id?: string
@@ -1049,6 +1094,48 @@ export type Database = {
           },
         ]
       }
+      precio_ia: {
+        Row: {
+          creado_en: string
+          creado_por: string | null
+          id: string
+          modelo: string
+          organizacion_id: string
+          proveedor: string
+          usd_millon_entrada: number
+          usd_millon_salida: number
+        }
+        ComputedFields: never
+        Insert: {
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          modelo: string
+          organizacion_id: string
+          proveedor: string
+          usd_millon_entrada: number
+          usd_millon_salida: number
+        }
+        Update: {
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          modelo?: string
+          organizacion_id?: string
+          proveedor?: string
+          usd_millon_entrada?: number
+          usd_millon_salida?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "precio_ia_organizacion_id_fkey"
+            columns: ["organizacion_id"]
+            isOneToOne: false
+            referencedRelation: "organizacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       red_generada: {
         Row: {
           alcance: number
@@ -1573,6 +1660,73 @@ export type Database = {
           },
         ]
       }
+      uso_ia: {
+        Row: {
+          codigo_error: string | null
+          creado_en: string
+          duracion_ms: number | null
+          encargo_id: string | null
+          funcion: string
+          id: string
+          modelo: string
+          organizacion_id: string
+          proveedor: string
+          registro_id: string | null
+          resultado: string
+          tokens_entrada: number
+          tokens_salida: number
+          trabajo_id: string | null
+        }
+        ComputedFields: never
+        Insert: {
+          codigo_error?: string | null
+          creado_en?: string
+          duracion_ms?: number | null
+          encargo_id?: string | null
+          funcion: string
+          id?: string
+          modelo: string
+          organizacion_id: string
+          proveedor: string
+          registro_id?: string | null
+          resultado: string
+          tokens_entrada?: number
+          tokens_salida?: number
+          trabajo_id?: string | null
+        }
+        Update: {
+          codigo_error?: string | null
+          creado_en?: string
+          duracion_ms?: number | null
+          encargo_id?: string | null
+          funcion?: string
+          id?: string
+          modelo?: string
+          organizacion_id?: string
+          proveedor?: string
+          registro_id?: string | null
+          resultado?: string
+          tokens_entrada?: number
+          tokens_salida?: number
+          trabajo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uso_ia_organizacion_id_encargo_id_fkey"
+            columns: ["organizacion_id", "encargo_id"]
+            isOneToOne: false
+            referencedRelation: "encargo"
+            referencedColumns: ["organizacion_id", "id"]
+          },
+          {
+            foreignKeyName: "uso_ia_organizacion_id_fkey"
+            columns: ["organizacion_id"]
+            isOneToOne: false
+            referencedRelation: "organizacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vinculo: {
         Row: {
           creado_en: string
@@ -1729,13 +1883,27 @@ export type Database = {
         Returns: boolean
       }
       guardar_alertas: { Args: { p: Json }; Returns: Json }
+      guardar_configuracion_ia: {
+        Args: {
+          p_activa: boolean
+          p_organizacion: string
+          p_tope_diario: number
+          p_tope_mensual: number
+        }
+        Returns: undefined
+      }
       guardar_red: { Args: { p: Json }; Returns: string }
+      ia_permitida: {
+        Args: { p_encargo: string; p_proveedor: string }
+        Returns: Json
+      }
       importar_excel: { Args: { p: Json }; Returns: Json }
       nueva_version_reglas: {
         Args: { p_organizacion: string; p_reglas: Json }
         Returns: number
       }
       registrar_documento: { Args: { p: Json }; Returns: Json }
+      registrar_uso_ia: { Args: { p: Json }; Returns: string }
       resolver_alerta: {
         Args: { p_alerta: string; p_estado: string; p_motivo: string }
         Returns: undefined
@@ -1744,6 +1912,7 @@ export type Database = {
         Args: { p_aceptar: boolean; p_fusion: string }
         Returns: undefined
       }
+      resumen_uso_ia: { Args: { p_organizacion: string }; Returns: Json }
       terminar_trabajo: {
         Args: { p_error?: string; p_ok: boolean; p_trabajo: string }
         Returns: string

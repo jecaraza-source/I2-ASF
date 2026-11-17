@@ -1,7 +1,8 @@
-import { puede } from "@sigma/modelo";
+import { PROVEEDORES_IA, puede, type ProveedorIA } from "@sigma/modelo";
 import Link from "next/link";
 import { SinPermiso } from "@/components/estados";
 import { FormularioCategoria, FormularioTipoDocumento } from "@/components/formularios/catalogo";
+import { FormularioIAEncargo } from "@/components/ia/formularios";
 import { FormularioReglas } from "@/components/red/formularios";
 import { Panel, Titulo } from "@/components/ui";
 import { obtenerEncargo } from "@/lib/datos";
@@ -37,6 +38,11 @@ export default async function Configuracion({ params }: { params: Promise<{ enca
       .order("nombre"),
   ]);
   const reglas = await cargarReglas(supabase, activa.organizacionId);
+  const { data: iaEncargo } = await supabase
+    .from("encargo")
+    .select("ia_proveedores")
+    .eq("id", encargo.id)
+    .maybeSingle();
   const cats = categorias ?? [];
   const nombreCategoria = new Map(cats.map((c) => [c.id, c.nombre]));
   const base = `/encargos/${encargo.id}/configuracion`;
@@ -89,6 +95,26 @@ export default async function Configuracion({ params }: { params: Promise<{ enca
             ))}
           </ul>
           <FormularioTipoDocumento encargoId={encargo.id} categorias={cats} />
+        </Panel>
+        <Panel>
+          <h2 className="mb-1 text-base font-semibold text-texto" id="ia">
+            IA en este encargo
+          </h2>
+          <p className="mb-3 text-xs text-tenue">
+            Proveedores a los que este encargo puede enviar documentos para leerlos. Sin marcas, la
+            IA está apagada aquí. El consumo y los topes están en{" "}
+            <Link href="/ia" className="text-azul-claro hover:underline">
+              Uso de IA
+            </Link>
+            .
+          </p>
+          <FormularioIAEncargo
+            encargoId={encargo.id}
+            nombre={encargo.nombre}
+            proveedores={(iaEncargo?.ia_proveedores ?? []).filter((p): p is ProveedorIA =>
+              (PROVEEDORES_IA as readonly string[]).includes(p),
+            )}
+          />
         </Panel>
         <Panel>
           <h2 className="mb-4 text-base font-semibold text-texto" id="reglas">
