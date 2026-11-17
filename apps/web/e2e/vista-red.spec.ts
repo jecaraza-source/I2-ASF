@@ -80,6 +80,27 @@ test("vista del 07734: centrar, 2 saltos, atrás del navegador y ficha", async (
   // Ficha completa, con enlace al registro y a la celda de origen.
   await page.getByLabel("Buscar entidad").fill("ANA TORRES");
   await page.getByRole("button", { name: "Centrar", exact: true }).click();
+
+  // Ícono a mano desde la paleta: se guarda en el navegador y sobrevive a recargar.
+  await page.getByRole("button", { name: "Cambiar ícono" }).click();
+  const paleta = page.getByRole("region", { name: "Paleta de íconos" });
+  await paleta.getByRole("tab", { name: "Finanzas" }).click();
+  await paleta.getByRole("button", { name: "Banco" }).click();
+  await expect(page.getByText("1 entidad(es) con ícono personalizado.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("1 entidad(es) con ícono personalizado.")).toBeVisible({
+    timeout: 30_000,
+  });
+
+  // Menú contextual: clic derecho sobre el fondo de la red.
+  await page
+    .getByRole("img", { name: "Red de vínculos" })
+    .click({ button: "right", position: { x: 6, y: 6 } });
+  const menu = page.getByRole("menu", { name: "Acciones de la red" });
+  await expect(menu.getByRole("menuitem", { name: "Ajustar la vista" })).toBeVisible();
+  await menu.getByRole("menuitem", { name: "Quitar todos los íconos personalizados" }).click();
+  await expect(page.getByText("con ícono personalizado")).toHaveCount(0);
+  await expect(menu).toHaveCount(0);
   await ficha.getByRole("link", { name: "Abrir ficha completa" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("ANA TORRES");
   await expect(page.getByText("Registros y documentos")).toBeVisible();

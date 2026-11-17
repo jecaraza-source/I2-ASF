@@ -31,6 +31,15 @@ import { abrirCalendario } from "@/lib/calendario";
 import type { EvidenciaArista, Ficha as DatosFicha } from "@/lib/vista-datos";
 import { Ficha, Origenes } from "./ficha";
 import {
+  MenuContextual,
+  PaletaIconos,
+  guardarIconos,
+  imagenEmoji,
+  leerIconos,
+  type AccionMenu,
+  type IconoManual,
+} from "./iconos";
+import {
   COLOR_FAMILIA,
   COLOR_NIVEL,
   COLOR_SIN_NIVEL,
@@ -80,6 +89,15 @@ function estilos(tipos: string[]): StylesheetJson {
       selector: `node[nivel = "${n}"]`,
       style: { "background-color": COLOR_NIVEL[n], "border-color": COLOR_NIVEL[n] },
     })),
+    {
+      // Ícono elegido a mano en la paleta (menú contextual).
+      selector: "node[icono]",
+      style: {
+        "background-image": "data(icono)",
+        "background-width": "78%",
+        "background-height": "78%",
+      },
+    },
     {
       selector: "node.foco",
       style: {
@@ -260,6 +278,25 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
   const [arista, setArista] = useState<AristaVista | null>(null);
   const aristaRef = useRef<(a: AristaVista | null) => void>(setArista);
 
+  // --- Menú contextual e íconos elegidos a mano ----------------------------------------------
+  type Menu = { x: number; y: number; entidadId: string | null };
+  const [menu, setMenu] = useState<Menu | null>(null);
+  const menuRef = useRef<(m: Menu | null) => void>(setMenu);
+  const [iconos, setIconos] = useState<Record<string, IconoManual>>({});
+  const [paletaDe, setPaletaDe] = useState<string | null>(null);
+  useEffect(() => {
+    // Preferencia local del navegador: se lee después de montar para no romper la hidratación.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIconos(leerIconos(encargoId));
+  }, [encargoId]);
+  const ponerIcono = (entidadId: string, icono: IconoManual | null) => {
+    const nuevos = { ...iconos };
+    if (icono) nuevos[entidadId] = icono;
+    else delete nuevos[entidadId];
+    setIconos(nuevos);
+    guardarIconos(encargoId, nuevos);
+  };
+
   useEffect(() => {
     let vivo = true;
     let cy: Core | null = null;
@@ -285,6 +322,16 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
       cy.on("tap", (ev) => {
         if (ev.target === cy) aristaRef.current(null);
       });
+      // Clic derecho (o pulsación larga): menú contextual sobre la entidad o sobre el fondo.
+      cy.on("cxttap", (ev) => {
+        const p = ev.renderedPosition;
+        menuRef.current({
+          x: p.x,
+          y: p.y,
+          entidadId: ev.target !== cy && ev.target.isNode() ? ev.target.id() : null,
+        });
+      });
+      cy.on("tapstart", () => menuRef.current(null));
       // Resalta la entidad bajo el cursor con sus líneas y vecinas, y atenúa el resto.
       cy.on("mouseover", "node", (ev) => {
         const cerca = ev.target.closedNeighborhood();
@@ -316,6 +363,18 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
     });
     cy.layout(opcionesDiseno(estado.diseno, visible, estado.foco, distancia)).run();
   }, [listo, visible, estado.foco, estado.diseno, distancia]);
+
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy || !listo) return;
+    cy.batch(() => {
+      cy.nodes().forEach((n) => {
+        const icono = iconos[n.id()];
+        if (icono) n.data("icono", imagenEmoji(icono.e));
+        else n.removeData("icono");
+      });
+    });
+  }, [iconos, listo, visible, estado.foco, estado.diseno]);
 
   useEffect(() => {
     const cy = cyRef.current;
@@ -378,6 +437,34 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
     });
   };
   const ajustar = () => cyRef.current?.fit(undefined, 40);
+  const accionesMenu = (m: Menu): AccionMenu[] =>
+    m.entidadId
+      ? [
+          { clave: "centrar", texto: "Centrar aquí" },
+          { clave: "icono", texto: "Cambiar ícono…" },
+          ...(iconos[m.entidadId]
+            ? [{ clave: "automatico", texto: "Volver al ícono automático" }]
+            : []),
+        ]
+      : [
+          { clave: "ajustar", texto: "Ajustar la vista" },
+          ...(estado.foco ? [{ clave: "general", texto: "Volver a la vista general" }] : []),
+          ...(Object.keys(iconos).length
+            ? [{ clave: "sin-iconos", texto: "Quitar todos los íconos personalizados" }]
+            : []),
+        ];
+  const ejecutarMenu = (clave: string, entidadId: string | null) => {
+    if (clave === "ajustar") ajustar();
+    else if (clave === "general") navegar(volverA(estado, null));
+    else if (clave === "sin-iconos") {
+      setIconos({});
+      guardarIconos(encargoId, {});
+    } else if (!entidadId) return;
+    else if (clave === "centrar") navegar(centrar(estado, entidadId));
+    else if (clave === "icono") setPaletaDe(entidadId);
+    else if (clave === "automatico") ponerIcono(entidadId, null);
+  };
+
   const evidencia = arista && evidenciaDe?.id === arista.id ? evidenciaDe.datos : null;
   const focoFiltrado = estado.foco && !visible.nodos.some((n) => n.id === estado.foco);
 
@@ -498,6 +585,16 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
             <button type="button" onClick={ajustar} className={claseBoton}>
               Ajustar
             </button>
+            {estado.foco ? (
+              <button
+                type="button"
+                onClick={() => setPaletaDe(estado.foco)}
+                className={claseBoton}
+                aria-pressed={paletaDe === estado.foco}
+              >
+                Cambiar ícono
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -594,12 +691,39 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
             Los filtros ocultan la entidad central.
           </p>
         ) : null}
-        <div
-          ref={contenedor}
-          role="img"
-          aria-label="Red de vínculos"
-          className="h-[680px] w-full rounded-lg border border-linea-2 bg-[#0b1220] bg-[radial-gradient(ellipse_at_50%_0%,rgba(212,175,55,0.07),transparent_60%)]"
-        />
+        {paletaDe ? (
+          <PaletaIconos
+            entidad={nombre.get(paletaDe) ?? "Entidad"}
+            actual={iconos[paletaDe] ?? null}
+            alElegir={(icono) => ponerIcono(paletaDe, icono)}
+            alRestablecer={() => ponerIcono(paletaDe, null)}
+            alCerrar={() => setPaletaDe(null)}
+          />
+        ) : null}
+        <div className="relative" onContextMenu={(ev) => ev.preventDefault()}>
+          <div
+            ref={contenedor}
+            role="img"
+            aria-label="Red de vínculos"
+            className="h-[680px] w-full rounded-lg border border-linea-2 bg-[#0b1220] bg-[radial-gradient(ellipse_at_50%_0%,rgba(212,175,55,0.07),transparent_60%)]"
+          />
+          {menu ? (
+            <MenuContextual
+              x={menu.x}
+              y={menu.y}
+              titulo={menu.entidadId ? (nombre.get(menu.entidadId) ?? "Entidad") : null}
+              acciones={accionesMenu(menu)}
+              alElegir={(clave) => ejecutarMenu(clave, menu.entidadId)}
+              alCerrar={() => setMenu(null)}
+            />
+          ) : null}
+        </div>
+        <p className="text-xs text-tenue-2">
+          Clic derecho sobre una entidad para centrarla o cambiar su ícono.
+          {Object.keys(iconos).length
+            ? ` ${Object.keys(iconos).length} entidad(es) con ícono personalizado.`
+            : ""}
+        </p>
         <Leyenda tipos={tipos} familias={familias} />
       </div>
 
