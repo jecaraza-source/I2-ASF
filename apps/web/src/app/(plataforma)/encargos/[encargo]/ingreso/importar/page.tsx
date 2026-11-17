@@ -1,6 +1,7 @@
-import { puede } from "@sigma/modelo";
+import { MOTIVO_BLOQUEO_IA, NOMBRE_PROVEEDOR_IA, puede } from "@sigma/modelo";
 import Link from "next/link";
 import { z } from "zod";
+import { reencolarExtraccion } from "@/acciones/ingreso";
 import { EstadoVacio } from "@/components/estados";
 import { ZonaIngreso } from "@/components/ingreso/zona";
 import { Etiqueta, Panel, Titulo } from "@/components/ui";
@@ -16,6 +17,18 @@ const EXTRACCION: Record<string, string> = {
   error: "Extracción con error",
   no_aplica: "—",
 };
+/** Texto para la nota de extracción: motivo de espera, proveedor que leyó o código del error. */
+function notaDe(estado: string, nota: string | null): string {
+  if (!nota) return "";
+  if (estado === "hecha") {
+    return nota === "anthropic" || nota === "openai"
+      ? ` · leído con ${NOMBRE_PROVEEDOR_IA[nota]}`
+      : "";
+  }
+  if (estado === "error") return ` · código ${nota}`;
+  return MOTIVO_BLOQUEO_IA[nota] ? ` · ${MOTIVO_BLOQUEO_IA[nota]}` : "";
+}
+
 const MOTIVO: Record<string, string> = {
   sha256_no_coincide: "La huella del servidor no coincide con la del navegador",
   tipo_no_coincide: "El contenido no corresponde al tipo de archivo",
@@ -25,6 +38,9 @@ const rechazoSchema = z
   .object({ motivo: z.string(), nombre_archivo: z.string(), sha256_declarado: z.string() })
   .partial()
   .catch({});
+
+/** Las acciones de esta página procesan el documento después de responder (lectura con IA). */
+export const maxDuration = 300;
 
 export default async function IngresoDocumentos({
   params,
@@ -50,7 +66,7 @@ export default async function IngresoDocumentos({
       supabase
         .from("registro")
         .select(
-          "id, estado_validacion, estado_extraccion, fuente, creado_en, documento_origen(id, nombre_archivo), tipo_documento(nombre), expediente(identificador)",
+          "id, estado_validacion, estado_extraccion, extraccion_nota, fuente, creado_en, documento_origen(id, nombre_archivo), tipo_documento(nombre), expediente(identificador)",
         )
         .eq("encargo_id", encargo.id)
         .eq("origen", "documento")
@@ -150,7 +166,22 @@ export default async function IngresoDocumentos({
                     </Etiqueta>
                     <span className="ml-2 text-xs text-tenue">
                       {EXTRACCION[r.estado_extraccion] ?? r.estado_extraccion}
+                      {notaDe(r.estado_extraccion, r.extraccion_nota)}
                     </span>
+                    {puedeIngresar &&
+                    (r.estado_extraccion === "en_espera" || r.estado_extraccion === "error") ? (
+                      <form action={reencolarExtraccion} className="mt-1">
+                        <input type="hidden" name="encargo_id" value={encargo.id} />
+                        <input type="hidden" name="registro_id" value={r.id} />
+                        <button
+                          type="submit"
+                          className="text-xs text-azul-claro hover:underline"
+                          aria-label={`Reintentar lectura de ${r.documento_origen?.nombre_archivo ?? "documento"}`}
+                        >
+                          Reintentar lectura
+                        </button>
+                      </form>
+                    ) : null}
                   </td>
                   <td className="px-4 py-2 text-tenue">{formatoFecha(r.creado_en)}</td>
                 </tr>

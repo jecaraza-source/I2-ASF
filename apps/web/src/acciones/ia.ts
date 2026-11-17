@@ -2,11 +2,13 @@
 
 import { PROVEEDORES_IA, puede } from "@sigma/modelo";
 import { refresh, revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { mensajeDeError } from "@/lib/errores-db";
 import type { EstadoFormulario } from "@/lib/formulario";
 import { requerirOrganizacion } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
+import { procesarTrabajos } from "@/lib/trabajos";
 
 const SIN_PERMISO: EstadoFormulario = {
   ok: false,
@@ -134,12 +136,77 @@ export async function configurarIAEncargo(
     .select("id");
   if (error) return { ok: false, mensaje: mensajeDeError(error, "configurarIAEncargo") };
   if (!data?.length) return { ok: false, mensaje: "El encargo no existe o no tienes acceso." };
+  // Al encender la IA, los documentos que estaban esperando vuelven a la cola.
+  let reencolados = 0;
+  if (d.data.proveedores.length) {
+    const r = await c.supabase.rpc("encolar_extracciones_en_espera", {
+      p_encargo: d.data.encargo_id,
+    });
+    reencolados = typeof r.data === "number" ? r.data : 0;
+    if (reencolados) {
+      after(async () => {
+        try {
+          await procesarTrabajos({ limite: 5 });
+        } catch {
+          console.error(
+            `[configurarIAEncargo] los trabajos del encargo ${d.data.encargo_id} quedan para el cron`,
+          );
+        }
+      });
+    }
+  }
   revalidatePath("/ia");
   refresh();
   return {
     ok: true,
     mensaje: d.data.proveedores.length
-      ? "Guardado. Los documentos de este encargo pueden enviarse a los proveedores marcados."
+      ? `Guardado. Los documentos de este encargo pueden enviarse a los proveedores marcados.${reencolados ? ` ${reencolados} documento(s) en espera volvieron a la cola.` : ""}`
       : "Guardado. La IA queda apagada en este encargo.",
   };
+}
+
+const topeOpcional = z.preprocess(
+  (v) =>
+    typeof v === "string" && v.trim() === ""
+      ? null
+      : typeof v === "string"
+        ? Number(v.replace(/[,\s_]/g, ""))
+        : v,
+  z
+    .number("Escribe un número o deja vacío")
+    .int("Sin decimales")
+    .min(0)
+    .max(100_000_000_000)
+    .nullable(),
+);
+const topeProveedorSchema = z.object({
+  proveedor: z.enum(PROVEEDORES_IA),
+  tope_diario_tokens: topeOpcional,
+  tope_mensual_tokens: topeOpcional,
+});
+
+/** Tope propio de un proveedor. Al agotarse el del principal, la lectura pasa al de respaldo. */
+export async function guardarTopeProveedorIA(
+  _e: EstadoFormulario,
+  f: FormData,
+): Promise<EstadoFormulario> {
+  const c = await admin();
+  if (!c) return SIN_PERMISO;
+  const d = topeProveedorSchema.safeParse({
+    proveedor: f.get("proveedor"),
+    tope_diario_tokens: f.get("tope_diario_tokens"),
+    tope_mensual_tokens: f.get("tope_mensual_tokens"),
+  });
+  if (!d.success) return { ok: false, mensaje: d.error.issues[0]?.message ?? "Datos inválidos." };
+  const { error } = await c.supabase.rpc("guardar_tope_proveedor_ia", {
+    p_organizacion: c.organizacionId,
+    p_proveedor: d.data.proveedor,
+    // La función acepta nulos (sin tope propio); los tipos generados no lo reflejan.
+    p_tope_diario: d.data.tope_diario_tokens as number,
+    p_tope_mensual: d.data.tope_mensual_tokens as number,
+  });
+  if (error) return { ok: false, mensaje: mensajeDeError(error, "guardarTopeProveedorIA") };
+  revalidatePath("/ia");
+  refresh();
+  return { ok: true, mensaje: "Tope guardado." };
 }

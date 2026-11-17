@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./leer": "./src/leer.ts",
     "./captura": "./src/captura.ts",
+    "./extraccion": "./src/extraccion.ts",
     "./plantillas/*": "./plantillas/*"
   },
   "scripts": {

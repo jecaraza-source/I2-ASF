@@ -1305,6 +1305,7 @@ export type Database = {
           estado_extraccion: string
           estado_validacion: string
           expediente_id: string | null
+          extraccion_nota: string | null
           fecha_documento: string | null
           fuente: string | null
           id: string
@@ -1322,6 +1323,7 @@ export type Database = {
           estado_extraccion?: string
           estado_validacion?: string
           expediente_id?: string | null
+          extraccion_nota?: string | null
           fecha_documento?: string | null
           fuente?: string | null
           id?: string
@@ -1338,6 +1340,7 @@ export type Database = {
           estado_extraccion?: string
           estado_validacion?: string
           expediente_id?: string | null
+          extraccion_nota?: string | null
           fecha_documento?: string | null
           fuente?: string | null
           id?: string
@@ -1599,6 +1602,45 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categoria_documental"
             referencedColumns: ["organizacion_id", "id"]
+          },
+        ]
+      }
+      tope_proveedor_ia: {
+        Row: {
+          actualizado_en: string
+          creado_en: string
+          creado_por: string | null
+          organizacion_id: string
+          proveedor: string
+          tope_diario_tokens: number | null
+          tope_mensual_tokens: number | null
+        }
+        ComputedFields: never
+        Insert: {
+          actualizado_en?: string
+          creado_en?: string
+          creado_por?: string | null
+          organizacion_id: string
+          proveedor: string
+          tope_diario_tokens?: number | null
+          tope_mensual_tokens?: number | null
+        }
+        Update: {
+          actualizado_en?: string
+          creado_en?: string
+          creado_por?: string | null
+          organizacion_id?: string
+          proveedor?: string
+          tope_diario_tokens?: number | null
+          tope_mensual_tokens?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tope_proveedor_ia_organizacion_id_fkey"
+            columns: ["organizacion_id"]
+            isOneToOne: false
+            referencedRelation: "organizacion"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1878,6 +1920,11 @@ export type Database = {
       }
       asociar_documento: { Args: { p: Json }; Returns: Json }
       capturar_registro: { Args: { p: Json }; Returns: string }
+      encolar_extraccion: { Args: { p_registro: string }; Returns: string }
+      encolar_extracciones_en_espera: {
+        Args: { p_encargo: string }
+        Returns: number
+      }
       es_miembro: {
         Args: { p_organizacion_id: string; p_roles?: string[] }
         Returns: boolean
@@ -1892,7 +1939,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      guardar_extraccion_ia: { Args: { p: Json }; Returns: Json }
       guardar_red: { Args: { p: Json }; Returns: string }
+      guardar_tope_proveedor_ia: {
+        Args: {
+          p_organizacion: string
+          p_proveedor: string
+          p_tope_diario: number
+          p_tope_mensual: number
+        }
+        Returns: undefined
+      }
       ia_permitida: {
         Args: { p_encargo: string; p_proveedor: string }
         Returns: Json

@@ -9,6 +9,8 @@ import {
   tipoPorNombre,
   type Json,
 } from "@sigma/modelo";
+import { refresh } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { mensajeDeError } from "@/lib/errores-db";
 import { requerirOrganizacion } from "@/lib/sesion";
@@ -179,13 +181,18 @@ const resultadoRpc = z.object({
   trabajo_id: z.uuid(),
 });
 
-/** Se intenta procesar el trabajo de una vez; si no se puede, lo toma el cron. */
-async function procesarAhora(trabajoId: string, origen: string) {
-  try {
-    await procesarTrabajos({ trabajoId });
-  } catch {
-    console.error(`[${origen}] el trabajo ${trabajoId} queda para el cron`);
-  }
+/**
+ * Procesa el trabajo en cuanto se responde al usuario (la lectura con IA puede tardar); si no
+ * se puede, lo toma el cron.
+ */
+function procesarAhora(trabajoId: string, origen: string) {
+  after(async () => {
+    try {
+      await procesarTrabajos({ trabajoId });
+    } catch {
+      console.error(`[${origen}] el trabajo ${trabajoId} queda para el cron`);
+    }
+  });
 }
 
 /**
@@ -223,7 +230,7 @@ export async function registrarDocumento(entrada: unknown): Promise<Registro> {
   }
   const r = resultadoRpc.safeParse(data);
   if (!r.success) return { ok: false, mensaje: "El registro no devolvió un documento." };
-  await procesarAhora(r.data.trabajo_id, "registrarDocumento");
+  procesarAhora(r.data.trabajo_id, "registrarDocumento");
   return { ok: true, documentoId: r.data.documento_id, registroId: r.data.registro_id };
 }
 
@@ -263,6 +270,28 @@ export async function asociarDocumento(entrada: unknown): Promise<Registro> {
   }
   const r = resultadoRpc.safeParse(data);
   if (!r.success) return { ok: false, mensaje: "La asociación no devolvió un documento." };
-  await procesarAhora(r.data.trabajo_id, "asociarDocumento");
+  procesarAhora(r.data.trabajo_id, "asociarDocumento");
   return { ok: true, documentoId: r.data.documento_id, registroId: r.data.registro_id };
+}
+
+const reencolarSchema = z.object({ encargoId: z.uuid(), registroId: z.uuid() });
+
+/** Vuelve a poner en la cola de lectura un documento que quedó en espera o con error. */
+export async function reencolarExtraccion(f: FormData): Promise<void> {
+  const p = reencolarSchema.safeParse({
+    encargoId: f.get("encargo_id"),
+    registroId: f.get("registro_id"),
+  });
+  if (!p.success) return;
+  const c = await contexto(p.data.encargoId);
+  if (!c) return;
+  const { data, error } = await c.supabase.rpc("encolar_extraccion", {
+    p_registro: p.data.registroId,
+  });
+  if (error) {
+    console.error(`[reencolarExtraccion] error de base: ${error.code ?? "desconocido"}`);
+    return;
+  }
+  if (typeof data === "string") procesarAhora(data, "reencolarExtraccion");
+  refresh();
 }

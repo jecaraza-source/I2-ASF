@@ -14,6 +14,7 @@ import {
   FormularioConfiguracionIA,
   FormularioIAEncargo,
   FormularioPrecioIA,
+  FormularioTopeProveedor,
 } from "@/components/ia/formularios";
 import { Etiqueta, Panel, Titulo } from "@/components/ui";
 import { formatoFecha } from "@/lib/datos";
@@ -60,6 +61,8 @@ const dinero = (v: number | null) =>
   v === null
     ? "sin precio"
     : `US$${v.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const numeroONulo = (v: number | null | undefined) =>
+  v === null || v === undefined ? null : Number(v);
 const TOPES = { diario: 2_000_000, mensual: 30_000_000 };
 
 function Barra({ valor, tope, etiqueta }: { valor: number; tope: number; etiqueta: string }) {
@@ -104,27 +107,36 @@ async function Contenido() {
     );
   }
   const supabase = await clienteServidor();
-  const [{ data: crudo }, { data: config }, { data: precios }, { data: encargos }] =
-    await Promise.all([
-      supabase.rpc("resumen_uso_ia", { p_organizacion: activa.organizacionId }),
-      supabase
-        .from("configuracion_ia")
-        .select("activa, tope_diario_tokens, tope_mensual_tokens, actualizado_en")
-        .eq("organizacion_id", activa.organizacionId)
-        .maybeSingle(),
-      supabase
-        .from("precio_ia")
-        .select("id, proveedor, modelo, usd_millon_entrada, usd_millon_salida")
-        .eq("organizacion_id", activa.organizacionId)
-        .order("proveedor")
-        .order("modelo"),
-      supabase
-        .from("encargo")
-        .select("id, nombre, estado, ia_proveedores")
-        .eq("organizacion_id", activa.organizacionId)
-        .order("creado_en", { ascending: false })
-        .limit(200),
-    ]);
+  const [
+    { data: crudo },
+    { data: config },
+    { data: precios },
+    { data: encargos },
+    { data: topes },
+  ] = await Promise.all([
+    supabase.rpc("resumen_uso_ia", { p_organizacion: activa.organizacionId }),
+    supabase
+      .from("configuracion_ia")
+      .select("activa, tope_diario_tokens, tope_mensual_tokens, actualizado_en")
+      .eq("organizacion_id", activa.organizacionId)
+      .maybeSingle(),
+    supabase
+      .from("precio_ia")
+      .select("id, proveedor, modelo, usd_millon_entrada, usd_millon_salida")
+      .eq("organizacion_id", activa.organizacionId)
+      .order("proveedor")
+      .order("modelo"),
+    supabase
+      .from("encargo")
+      .select("id, nombre, estado, ia_proveedores")
+      .eq("organizacion_id", activa.organizacionId)
+      .order("creado_en", { ascending: false })
+      .limit(200),
+    supabase
+      .from("tope_proveedor_ia")
+      .select("proveedor, tope_diario_tokens, tope_mensual_tokens")
+      .eq("organizacion_id", activa.organizacionId),
+  ]);
   const r = resumenSchema.safeParse(crudo);
   if (!r.success) {
     return (
@@ -197,7 +209,7 @@ async function Contenido() {
       </section>
 
       <section aria-label="Proveedores" className="grid gap-3 md:grid-cols-2">
-        {proveedores.map((p) => (
+        {proveedores.map((p, i) => (
           <Panel key={p.proveedor}>
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-texto">
@@ -215,6 +227,20 @@ async function Contenido() {
               Modelo (<span className="font-mono">{p.variableModelo}</span>):{" "}
               <span className="font-mono text-texto">{p.modelo ?? "sin definir"}</span>
             </p>
+            <p className="mt-2 text-xs text-tenue">
+              {i === 0
+                ? "Proveedor principal: lee todos los documentos mientras no llegue a su límite."
+                : "Respaldo: solo se usa cuando el principal llegó a su límite (tope propio, saturación, cuota o crédito) y el encargo lo permite."}
+            </p>
+            <FormularioTopeProveedor
+              proveedor={p.proveedor}
+              topeDiario={numeroONulo(
+                topes?.find((t) => t.proveedor === p.proveedor)?.tope_diario_tokens,
+              )}
+              topeMensual={numeroONulo(
+                topes?.find((t) => t.proveedor === p.proveedor)?.tope_mensual_tokens,
+              )}
+            />
           </Panel>
         ))}
       </section>

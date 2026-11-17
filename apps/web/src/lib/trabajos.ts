@@ -1,27 +1,14 @@
 import "server-only";
 import { z } from "zod";
+import { extraerDocumento } from "@/lib/ia/extraer";
 import { clienteServicio } from "@/lib/supabase/servicio";
 
 type Servicio = NonNullable<ReturnType<typeof clienteServicio>>;
 
-const payloadExtraccion = z.object({ registro_id: z.uuid(), documento_id: z.uuid() });
+type Trabajo = { id: string; tipo: string; payload: unknown; intentos: number };
 
-/**
- * Trabajo de extracción. En la tarea 07 solo deja el registro «en espera de extracción»; la IA
- * llega en la tarea 09. Idempotente: repetirlo no cambia nada.
- */
-async function extraccion(servicio: Servicio, payload: unknown): Promise<void> {
-  const p = payloadExtraccion.parse(payload);
-  const { error } = await servicio
-    .from("registro")
-    .update({ estado_extraccion: "en_espera" })
-    .eq("id", p.registro_id)
-    .in("estado_extraccion", ["en_cola", "en_espera"]);
-  if (error) throw new Error(`registro ${error.code ?? "?"}`);
-}
-
-const MANEJADORES: Record<string, (s: Servicio, payload: unknown) => Promise<void>> = {
-  extraccion,
+const MANEJADORES: Record<string, (s: Servicio, trabajo: Trabajo) => Promise<void>> = {
+  extraccion: extraerDocumento,
 };
 
 export type ResultadoTrabajos =
@@ -58,7 +45,7 @@ export async function procesarTrabajos(
     try {
       const manejador = MANEJADORES[t.tipo];
       if (!manejador) throw new Error("tipo de trabajo desconocido");
-      await manejador(servicio, t.payload);
+      await manejador(servicio, t);
     } catch (e) {
       ok = false;
       // Mensajes propios o códigos de la base: nunca contenido de documentos.

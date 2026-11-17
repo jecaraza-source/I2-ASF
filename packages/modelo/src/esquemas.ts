@@ -148,6 +148,7 @@ export const registroSchema = z
       "hecha",
       "error",
     ]),
+    extraccion_nota: z.string().nullable(),
   })
   .refine((r) => r.origen !== "documento" || r.documento_id !== null, {
     message: "Un registro de documento debe apuntar a su documento",

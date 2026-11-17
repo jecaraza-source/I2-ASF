@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { procesarTrabajos } from "@/lib/trabajos";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 /** Compara en tiempo constante (sobre hashes, para no filtrar el largo del secreto). */
 function autorizado(request: NextRequest): boolean {
@@ -25,7 +25,7 @@ async function procesar(request: NextRequest) {
   }
   if (!autorizado(request)) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   try {
-    const r = await procesarTrabajos({ limite: 25 });
+    const r = await procesarTrabajos({ limite: 5 });
     if (!r.configurado) {
       return NextResponse.json(
         { error: "SUPABASE_SERVICE_ROLE_KEY no está configurada" },

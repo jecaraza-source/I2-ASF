@@ -201,7 +201,22 @@ domicilios, teléfonos. Cada tipo de documento añade los suyos en `campos_esper
   registro en `pendiente` para captura manual.
 - Extracciones con `confianza ≥ umbral` quedan `validado` con `validado_por` nulo (automáticas);
   las demás entran a la cola de validación. Solo lo validado alimenta entidades y vínculos.
-- Formato de envío de PDF e imágenes: verificar en la documentación vigente del SDK al implementar.
+- Formato de envío (verificado en la documentación de cada proveedor al implementar): el archivo va
+  completo en base64. Anthropic: bloque `document` para PDF y bloque `image` para PNG, JPG y WEBP,
+  con respuesta forzada por herramienta. OpenAI (Responses API): `input_file` con `file_data` para
+  PDF e `input_image` para imágenes, con salida estructurada estricta. Límite de 20 MB por archivo;
+  TIFF, Excel y correos no se leen con IA y quedan para captura manual.
+- **Qué se pide:** por cada campo (comunes + `campos_esperados`) `valor`, `confianza` y `pagina`; la
+  moneda; y la lista de involucrados con tipo, rol, RFC, CURP, confianza y página.
+- **Qué se guarda** (`guardar_extraccion_ia`): una extracción `ia` por campo con dato y una por
+  involucrado. Queda `validado` (automática) si la confianza alcanza el umbral y el valor se pudo
+  normalizar; un RFC o CURP con formato inválido, o una fecha o monto ilegible, siempre va a la cola.
+  La extracción no crea entidades ni eventos: eso ocurre al validar el registro.
+- **Estados:** si ningún proveedor está permitido el registro queda `en_espera` con el motivo en
+  `extraccion_nota` (no es un fallo) y vuelve a la cola al encender la IA del encargo o con
+  «Reintentar lectura». Tras tres intentos fallidos queda `error`, disponible para captura manual.
+- **Pruebas:** con `IA_SIMULADA=1` la respuesta sale de una línea de guion dentro del archivo de
+  prueba; ningún proveedor recibe nada. Se ignora en producción.
 
 ### 7.1 Administrador de uso de IA
 
@@ -221,7 +236,11 @@ domicilios, teléfonos. Cada tipo de documento añade los suyos en `campos_esper
 - **Pantalla `/ia`** (solo administradores): estado, consumo de hoy y del mes contra los topes, costo
   estimado, desglose por modelo, encargo y función, errores y bloqueos recientes, estado de las llaves
   (sin mostrarlas) y los controles.
-- El papel de OpenAI (proveedor alterno de extracción, respaldo o búsqueda) está por definir (§14).
+- **Respaldo:** Anthropic es el proveedor principal y OpenAI el de respaldo. Se cambia al respaldo
+  solo cuando el principal llegó a su límite: la plataforma lo bloquea (tope propio en
+  `tope_proveedor_ia`, no permitido en el encargo, sin llave o sin modelo) o el proveedor rechaza
+  por cuota, saturación, crédito o credencial (429, 529, 402, 401, 403). Un fallo de otro tipo no
+  cambia de proveedor: el trabajo se reintenta más tarde.
 
 ## 8. Importador de Excel
 
