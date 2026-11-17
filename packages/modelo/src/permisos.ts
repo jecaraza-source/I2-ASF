@@ -21,6 +21,7 @@ export type Accion =
   | "alerta.resolver"
   | "documento.ingresar"
   | "registro.capturar"
+  | "registro.validar"
   | "ia.administrar"
   | "usuarios.administrar";
 
@@ -40,6 +41,7 @@ const PERMISOS: Record<Accion, readonly Rol[]> = {
   "alerta.resolver": ["admin", "auditor"],
   "documento.ingresar": ["admin", "auditor"],
   "registro.capturar": ["admin", "auditor"],
+  "registro.validar": ["admin", "auditor"],
   "ia.administrar": ["admin"],
   "usuarios.administrar": ["admin"],
 };

@@ -11,7 +11,7 @@ import {
   type EntradaCaptura,
   type Involucrado,
 } from "@sigma/importador/captura";
-import { useId, useState, useTransition } from "react";
+import { useId, useRef, useState, useTransition } from "react";
 import { abrirCalendario } from "@/lib/calendario";
 
 export type TipoParaCaptura = {
@@ -28,7 +28,29 @@ type FilaInvolucrado = Required<Pick<Involucrado, "tipo" | "nombre" | "rol">> & 
   rfc: string;
   curp: string;
   clave: number;
+  /** Validación: la lectura de la IA de la que viene (p. ej. `involucrado_2`). */
+  campoIa?: string;
 };
+
+/** Lo que propuso la IA para un campo: se muestra junto al control al validar. */
+export type Anotacion = { confianza: number; pagina: number | null; porRevisar: boolean };
+/** Valores con los que arranca el formulario (validación de una lectura de la IA). */
+export type InicialRegistro = {
+  tipoId: string;
+  expedienteId: string;
+  moneda: (typeof MONEDAS)[number];
+  valores: Record<string, string>;
+  involucrados: Omit<FilaInvolucrado, "clave">[];
+};
+
+function TextoAnotacion({ a }: { a: Anotacion }) {
+  return (
+    <span className={a.porRevisar ? "text-oro" : "text-tenue"}>
+      IA · {Math.round(a.confianza * 100)}%{a.pagina ? ` · pág. ${a.pagina}` : ""} ·{" "}
+      {a.porRevisar ? "por revisar" : "sobre el umbral"}
+    </span>
+  );
+}
 
 const claseControl =
   "w-full rounded-md border border-linea-2 bg-fondo-2 px-3 py-2 text-sm text-texto focus:border-oro focus:outline-none aria-invalid:border-peligro";
@@ -51,6 +73,10 @@ export function FormularioRegistro({
   guardar,
   alGuardar,
   textoGuardar = "Guardar captura",
+  inicial,
+  anotaciones,
+  alEnfocar,
+  acciones,
 }: {
   encargoId: string;
   tipos: TipoParaCaptura[];
@@ -59,15 +85,27 @@ export function FormularioRegistro({
   guardar: (entrada: EntradaCaptura) => Promise<Resultado>;
   alGuardar: (registroId: string) => void;
   textoGuardar?: string;
+  /** Con `inicial` el formulario valida una lectura de la IA: tipo fijo y sin fuente declarada. */
+  inicial?: InicialRegistro;
+  /** Por clave de campo o de lectura (`involucrado_N`). */
+  anotaciones?: Record<string, Anotacion>;
+  /** Se llama al enfocar un campo anotado, para llevar el documento a su página. */
+  alEnfocar?: (anotacion: Anotacion) => void;
+  /** Acciones adicionales junto al botón de guardar. */
+  acciones?: React.ReactNode;
 }) {
+  const validando = Boolean(inicial);
   const idLista = useId();
-  const [tipoId, setTipoId] = useState("");
-  const [expedienteId, setExpedienteId] = useState("");
+  const [tipoId, setTipoId] = useState(inicial?.tipoId ?? "");
+  const [expedienteId, setExpedienteId] = useState(inicial?.expedienteId ?? "");
   const [fuente, setFuente] = useState("");
-  const [moneda, setMoneda] = useState<(typeof MONEDAS)[number]>("MXN");
-  const [valores, setValores] = useState<Record<string, string>>({});
-  const [involucrados, setInvolucrados] = useState<FilaInvolucrado[]>([]);
-  const [consecutivo, setConsecutivo] = useState(1);
+  const [moneda, setMoneda] = useState<(typeof MONEDAS)[number]>(inicial?.moneda ?? "MXN");
+  const [valores, setValores] = useState<Record<string, string>>(inicial?.valores ?? {});
+  const [involucrados, setInvolucrados] = useState<FilaInvolucrado[]>(
+    () => inicial?.involucrados.map((f, i) => ({ ...f, clave: i + 1 })) ?? [],
+  );
+  const [consecutivo, setConsecutivo] = useState((inicial?.involucrados.length ?? 0) + 1);
+  const formulario = useRef<HTMLFormElement>(null);
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [enviando, iniciar] = useTransition();
 
@@ -98,25 +136,52 @@ export function FormularioRegistro({
         fuente,
         moneda,
         valores,
-        involucrados: involucrados.map(({ tipo, nombre, rol, rfc, curp }) => ({
+        involucrados: involucrados.map(({ tipo, nombre, rol, rfc, curp, campoIa }) => ({
           tipo,
           nombre,
           rol,
           rfc,
           curp,
+          ...(campoIa ? { campoIa } : {}),
         })),
       });
       setResultado(r);
       if (r.ok) alGuardar(r.registroId);
     });
 
+  /** Atajos de validación: Ctrl/⌘+Enter valida; Alt+↓/↑ va al siguiente o anterior campo por revisar. */
+  const alTeclear = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (!validando) return;
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      enviar();
+      return;
+    }
+    if (e.altKey && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+      const lista = [
+        ...(formulario.current?.querySelectorAll<HTMLElement>("[data-por-revisar='true']") ?? []),
+      ];
+      if (!lista.length) return;
+      e.preventDefault();
+      const i = lista.indexOf(document.activeElement as HTMLElement);
+      const paso = e.key === "ArrowDown" ? 1 : -1;
+      lista[(i + paso + lista.length) % lista.length]?.focus();
+    }
+  };
+
   const campo = (c: CampoEsperado) => {
     const error = errores[`valores.${c.clave}`];
+    const nota = anotaciones?.[c.clave];
+    const leido = inicial?.valores[c.clave] ?? "";
+    const actual = valores[c.clave] ?? "";
     const comunes = {
       id: `${idLista}-${c.clave}`,
-      value: valores[c.clave] ?? "",
+      value: actual,
       "aria-invalid": error ? true : undefined,
-      className: claseControl,
+      "aria-describedby": nota ? `${idLista}-${c.clave}-ia` : undefined,
+      "data-por-revisar": nota?.porRevisar ? "true" : undefined,
+      onFocus: nota && alEnfocar ? () => alEnfocar(nota) : undefined,
+      className: `${claseControl} ${nota?.porRevisar ? "border-oro-tenue" : ""}`,
     };
     const cambiar = (v: string) => setValores((x) => ({ ...x, [c.clave]: v }));
     return (
@@ -164,6 +229,40 @@ export function FormularioRegistro({
             onClick={c.tipo === "fecha" ? abrirCalendario : undefined}
           />
         )}
+        {nota ? (
+          <p
+            id={`${idLista}-${c.clave}-ia`}
+            className="flex flex-wrap items-center gap-x-2 text-xs"
+          >
+            <TextoAnotacion a={nota} />
+            <span className="text-tenue">
+              {actual.trim() === ""
+                ? "· Se rechaza"
+                : actual.trim() === leido.trim()
+                  ? "· Se acepta"
+                  : `· Se corrige (la IA leyó «${leido}»)`}
+            </span>
+            {actual.trim() === "" || actual.trim() !== leido.trim() ? (
+              <button
+                type="button"
+                onClick={() => cambiar(leido)}
+                className="text-azul-claro underline"
+                aria-label={`Restaurar ${c.etiqueta}`}
+              >
+                Restaurar
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => cambiar("")}
+                className="text-azul-claro underline"
+                aria-label={`Rechazar ${c.etiqueta}`}
+              >
+                Rechazar
+              </button>
+            )}
+          </p>
+        ) : null}
         <ErrorCampo texto={error} />
       </div>
     );
@@ -171,7 +270,9 @@ export function FormularioRegistro({
 
   return (
     <form
+      ref={formulario}
       noValidate
+      onKeyDown={alTeclear}
       onSubmit={(e) => {
         e.preventDefault();
         enviar();
@@ -188,6 +289,7 @@ export function FormularioRegistro({
             <select
               id={`${idLista}-tipo`}
               value={tipoId}
+              disabled={validando}
               onChange={(e) => setTipoId(e.target.value)}
               aria-invalid={errores.tipoDocumentoId ? true : undefined}
               className={claseControl}
@@ -225,21 +327,23 @@ export function FormularioRegistro({
               ))}
             </select>
           </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor={`${idLista}-fuente`} className="text-xs text-tenue">
-              Fuente declarada *
-            </label>
-            <input
-              id={`${idLista}-fuente`}
-              value={fuente}
-              maxLength={200}
-              placeholder="Quién lo dijo o de dónde se tomó"
-              onChange={(e) => setFuente(e.target.value)}
-              aria-invalid={errores.fuente ? true : undefined}
-              className={claseControl}
-            />
-            <ErrorCampo texto={errores.fuente} />
-          </div>
+          {validando ? null : (
+            <div className="flex flex-col gap-1">
+              <label htmlFor={`${idLista}-fuente`} className="text-xs text-tenue">
+                Fuente declarada *
+              </label>
+              <input
+                id={`${idLista}-fuente`}
+                value={fuente}
+                maxLength={200}
+                placeholder="Quién lo dijo o de dónde se tomó"
+                onChange={(e) => setFuente(e.target.value)}
+                aria-invalid={errores.fuente ? true : undefined}
+                className={claseControl}
+              />
+              <ErrorCampo texto={errores.fuente} />
+            </div>
+          )}
         </div>
       </fieldset>
 
@@ -270,11 +374,22 @@ export function FormularioRegistro({
             {involucrados.map((f, i) => {
               const n = i + 1;
               const error = errores[`involucrados.${i}.nombre`];
+              const nota = f.campoIa ? anotaciones?.[f.campoIa] : undefined;
               return (
                 <li
                   key={f.clave}
+                  onFocus={nota && alEnfocar ? () => alEnfocar(nota) : undefined}
                   className="grid gap-2 md:grid-cols-[9rem_minmax(0,1fr)_12rem_10rem_10rem_auto]"
                 >
+                  {validando ? (
+                    <p className="text-xs md:col-span-6">
+                      {nota ? (
+                        <TextoAnotacion a={nota} />
+                      ) : (
+                        <span className="text-tenue">Agregado por ti</span>
+                      )}
+                    </p>
+                  ) : null}
                   <select
                     aria-label={`Tipo del involucrado ${n}`}
                     value={f.tipo}
@@ -300,7 +415,8 @@ export function FormularioRegistro({
                       maxLength={200}
                       onChange={(e) => alEscribirNombre(f, e.target.value)}
                       aria-invalid={error ? true : undefined}
-                      className={claseControl}
+                      data-por-revisar={nota?.porRevisar ? "true" : undefined}
+                      className={`${claseControl} ${nota?.porRevisar ? "border-oro-tenue" : ""}`}
                     />
                     <ErrorCampo texto={error} />
                   </div>
@@ -384,6 +500,7 @@ export function FormularioRegistro({
         >
           {enviando ? "Guardando…" : textoGuardar}
         </button>
+        {acciones}
         {resultado && !resultado.ok ? (
           <p role="alert" className="text-sm text-peligro">
             {resultado.mensaje}

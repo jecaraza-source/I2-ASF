@@ -742,6 +742,7 @@ export type Database = {
           validado_por: string | null
           valor_crudo: string | null
           valor_normalizado: Json | null
+          valor_original: Json | null
         }
         ComputedFields: never
         Insert: {
@@ -760,6 +761,7 @@ export type Database = {
           validado_por?: string | null
           valor_crudo?: string | null
           valor_normalizado?: Json | null
+          valor_original?: Json | null
         }
         Update: {
           campo?: string
@@ -777,6 +779,7 @@ export type Database = {
           validado_por?: string | null
           valor_crudo?: string | null
           valor_normalizado?: Json | null
+          valor_original?: Json | null
         }
         Relationships: [
           {
@@ -1987,6 +1990,10 @@ export type Database = {
         Args: { p_organizacion: string; p_reglas: Json }
         Returns: number
       }
+      rechazar_registro: {
+        Args: { p_motivo: string; p_registro: string }
+        Returns: undefined
+      }
       registrar_acceso: {
         Args: { p_ip?: string; p_navegador?: string; p_tipo: string }
         Returns: undefined
@@ -2050,6 +2057,7 @@ export type Database = {
           usuario_id: string
         }[]
       }
+      validar_registro: { Args: { p: Json }; Returns: Json }
     }
     Enums: {
       [_ in never]: never

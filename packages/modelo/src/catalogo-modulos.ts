@@ -96,7 +96,7 @@ export const MODULOS = [
     descripcion: "Revisa lo que leyó la IA: acepta, corrige o rechaza antes de que cuente.",
     ruta: "/validacion",
     categoria: "integracion",
-    listo: false,
+    listo: true,
   },
   {
     clave: "analizador",

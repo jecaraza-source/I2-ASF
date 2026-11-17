@@ -22,6 +22,7 @@ import {
   r07,
   r08,
   r09,
+  r11,
 } from "./reglas";
 import type { DatosReglas } from "./tipos";
 
@@ -312,8 +313,76 @@ describe("casos sintéticos", () => {
   });
 });
 
+describe("R11: captura contra su documento asociado", () => {
+  const x = (
+    id: string,
+    campo: string,
+    crudo: string,
+    normalizado: unknown,
+    ubicacion: string,
+  ) => ({
+    id,
+    campo,
+    valor_crudo: crudo,
+    valor_normalizado: normalizado,
+    ubicacion,
+  });
+  const datos = (lecturas: ReturnType<typeof x>[]): DatosReglas => ({
+    entidades: [],
+    vinculos: [],
+    eventos: [],
+    registros: [
+      {
+        id: "cap",
+        hoja: null,
+        resumen: "Contrato (captura manual)",
+        extracciones: [
+          x("m1", "monto", "1,500,000", { monto: "1500000.00", moneda: "MXN" }, "Captura manual"),
+          x("m2", "numero_contrato", "SOP-001", "SOP-001", "Captura manual"),
+          x("m3", "fecha_documento", "15/03/2022", "2022-03-15", "Captura manual"),
+          x("m4", "involucrado_1", "ACME · Proveedor", { nombre: "ACME" }, "Captura manual"),
+        ],
+        lecturas_documento: lecturas,
+      },
+      {
+        id: "sin-documento",
+        hoja: null,
+        resumen: null,
+        extracciones: [x("z", "monto", "1", "1", "")],
+      },
+    ],
+  });
+
+  it("una alerta por cada campo distinto, con captura y documento lado a lado", () => {
+    const a = r11(
+      datos([
+        x("i1", "monto", "$1,800,000.00", { monto: "1800000.00", moneda: "MXN" }, "Página 2"),
+        x("i2", "numero_contrato", "sop 001", "sop 001", "Página 1"),
+        x("i3", "fecha_documento", "16 de marzo de 2022", "2022-03-16", "Página 1"),
+        x("i4", "involucrado_1", "OTRA · Proveedor", { nombre: "OTRA" }, "Página 1"),
+        x("i5", "objeto", "Carretera", "Carretera", "Página 1"),
+      ]),
+    );
+    expect(a.map((al) => [al.huella, al.severidad])).toEqual([
+      ["R11|cap|monto", "alta"],
+      ["R11|cap|fecha_documento", "media"],
+    ]);
+    expect(a[0]?.evidencias.map((e) => [e.lado, e.valor, e.extraccion_id, e.ubicacion])).toEqual([
+      ["a", "1,500,000", "m1", "Captura manual"],
+      ["b", "$1,800,000.00", "i1", "Página 2"],
+    ]);
+  });
+
+  it("misma cifra en otra moneda sí difiere; sin lecturas no hay alertas", () => {
+    expect(
+      r11(datos([x("i1", "monto", "1,500,000 USD", { monto: "1500000.00", moneda: "USD" }, "")])),
+    ).toHaveLength(1);
+    expect(r11(datos([]))).toEqual([]);
+  });
+});
+
 describe("catálogo", () => {
-  it("R01–R09 activas; R10 y R11 declaradas y desactivadas", () => {
+  it("R01–R09 y R11 activas; R10 declarada y desactivada", () => {
     expect(REGLAS.map((r) => r.id)).toEqual([
       "R01",
       "R02",
@@ -327,12 +396,12 @@ describe("catálogo", () => {
       "R10",
       "R11",
     ]);
-    expect(REGLAS.filter((r) => !r.activa).map((r) => r.id)).toEqual(["R10", "R11"]);
+    expect(REGLAS.filter((r) => !r.activa).map((r) => r.id)).toEqual(["R10"]);
   });
   it("las huellas son únicas y estables entre ejecuciones", () => {
     const a = ejecutarReglas(asf).alertas.map((x) => x.huella);
     expect(new Set(a).size).toBe(a.length);
     expect(ejecutarReglas(asf).alertas.map((x) => x.huella)).toEqual(a);
-    expect(ejecutarReglas(asf).reglas).toHaveLength(9);
+    expect(ejecutarReglas(asf).reglas).toHaveLength(10);
   });
 });

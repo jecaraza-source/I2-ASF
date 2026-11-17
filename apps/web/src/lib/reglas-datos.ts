@@ -22,7 +22,7 @@ export async function cargarDatosReglas(
     leerTodo((d, h) =>
       supabase
         .from("registro")
-        .select("id, resumen")
+        .select("id, resumen, origen")
         .eq("encargo_id", encargoId)
         .in("estado_validacion", VALIDADOS)
         .order("id")
@@ -32,10 +32,11 @@ export async function cargarDatosReglas(
       supabase
         .from("extraccion")
         .select(
-          "id, registro_id, campo, valor_crudo, valor_normalizado, ubicacion, registro!inner(estado_validacion)",
+          "id, registro_id, campo, valor_crudo, valor_normalizado, ubicacion, metodo, estado, registro!inner(estado_validacion)",
         )
         .eq("encargo_id", encargoId)
-        .in("estado", VALIDADOS)
+        // Las pendientes solo se usan como lectura del documento de una captura (R11).
+        .in("estado", [...VALIDADOS, "pendiente"])
         .in("registro.estado_validacion", VALIDADOS)
         .order("id")
         .range(d, h),
@@ -84,11 +85,17 @@ export async function cargarDatosReglas(
   const porRegistro = new Map<string, DatosReglas["registros"][number]>(
     registros.map((r) => [r.id, { id: r.id, hoja: null, resumen: r.resumen, extracciones: [] }]),
   );
+  const esCaptura = new Set(registros.filter((r) => r.origen === "captura").map((r) => r.id));
   for (const x of extracciones) {
     const r = porRegistro.get(x.registro_id);
     if (!r) continue;
+    // En una captura, lo que la IA leyó del documento asociado no es dato del registro: se compara
+    // con lo capturado (R11). En cualquier otro registro, lo pendiente todavía no cuenta (regla 4).
+    const lectura = x.metodo === "ia" && esCaptura.has(x.registro_id);
+    if (!lectura && x.estado === "pendiente") continue;
+    const destino = lectura ? (r.lecturas_documento ??= []) : r.extracciones;
     r.hoja ??= hojaSchema.parse(x.ubicacion).hoja ?? null;
-    r.extracciones.push({
+    destino.push({
       id: x.id,
       campo: x.campo,
       valor_crudo: x.valor_crudo,
@@ -186,7 +193,7 @@ const resultadoSchema = z.object({
   no_vigentes: z.number(),
 });
 
-/** Ejecuta R01–R09 sobre el encargo y guarda las alertas con sus evidencias. */
+/** Ejecuta las reglas activas sobre el encargo y guarda las alertas con sus evidencias. */
 export async function ejecutarYGuardarReglas(supabase: Cliente, encargoId: string) {
   const datos = await cargarDatosReglas(supabase, encargoId);
   const { alertas, reglas } = ejecutarReglas(datos);
