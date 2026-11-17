@@ -1,4 +1,5 @@
 import { puede } from "@sigma/modelo";
+import { TarjetasRecorridos } from "@/components/recorridos";
 import { EnlaceBoton, Panel, Titulo } from "@/components/ui";
 import { formatoFecha, obtenerEncargo } from "@/lib/datos";
 import { requerirOrganizacion } from "@/lib/sesion";
@@ -54,6 +55,13 @@ export default async function ResumenEncargo({ params }: { params: Promise<{ enc
           </EnlaceBoton>
         </Panel>
       </div>
+      <section aria-label="Por dónde empezar" className="mt-8">
+        <h2 className="mb-1 text-base font-semibold text-texto">¿Qué quieres hacer?</h2>
+        <p className="mb-4 text-sm text-tenue">
+          Empieza por una tarea y sigue sus etapas, o entra directo a un módulo desde el menú.
+        </p>
+        <TarjetasRecorridos encargoId={encargo.id} />
+      </section>
     </main>
   );
 }

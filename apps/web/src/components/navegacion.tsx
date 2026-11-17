@@ -1,5 +1,6 @@
 "use client";
 
+import { recorridoPorClave } from "@sigma/modelo";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -27,6 +28,7 @@ const TRAMOS: Record<string, { texto: string; enlace?: boolean }> = {
   configuracion: { texto: "Configuración" },
   ia: { texto: "Uso de IA" },
   usuarios: { texto: "Usuarios y accesos" },
+  recorridos: { texto: "Recorridos guiados" },
   organizacion: { texto: "Organización" },
 };
 
@@ -39,6 +41,9 @@ export function migajas(pathname: string): Migaja[] {
     if (UUID.test(p)) {
       const texto = partes[i - 1] === "encargos" ? "Encargo" : "Detalle";
       return { ruta, texto, enlace: true };
+    }
+    if (partes[i - 1] === "recorridos") {
+      return { ruta, texto: recorridoPorClave(p)?.nombre ?? "Recorrido", enlace: true };
     }
     const t = TRAMOS[p];
     return { ruta, texto: t?.texto ?? p, enlace: t?.enlace !== false };
