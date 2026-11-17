@@ -1,17 +1,8 @@
+import { MODULOS } from "@sigma/modelo";
 import Link from "next/link";
 
-/** Módulos de docs/ESPECIFICACION.md §1. Los que aún no existen se muestran deshabilitados. */
-const MODULOS = [
-  { ruta: "", texto: "Resumen", listo: true },
-  { ruta: "/expedientes", texto: "Expedientes", listo: true },
-  { ruta: "/importaciones", texto: "Importación de Excel", listo: true },
-  { ruta: "/red", texto: "Red de vínculos", listo: true },
-  { ruta: "/alertas", texto: "Alertas", listo: true },
-  { ruta: "/ingreso/importar", texto: "Ingreso de documentos", listo: true },
-  { ruta: "/ingreso/capturar", texto: "Captura manual", listo: true },
-  { ruta: "/validacion", texto: "Validación", listo: false },
-  { ruta: "/configuracion", texto: "Configuración", listo: true },
-] as const;
+/** Los módulos salen del catálogo único (`@sigma/modelo`); los no construidos van deshabilitados. */
+const MODULOS_LATERAL = MODULOS.filter((m) => !("lateral" in m && m.lateral === false));
 
 export function BarraLateral({
   encargo,
@@ -36,21 +27,21 @@ export function BarraLateral({
       </div>
       <nav aria-label="Módulos">
         <ul className="flex flex-col gap-0.5">
-          {MODULOS.map((m) => (
-            <li key={m.texto}>
+          {MODULOS_LATERAL.map((m) => (
+            <li key={m.clave}>
               {m.listo ? (
                 <Link
                   href={`${base}${m.ruta}`}
                   className="block rounded-md px-2 py-1.5 text-sm text-texto hover:bg-panel hover:text-oro-suave"
                 >
-                  {m.texto}
+                  {m.nombre}
                 </Link>
               ) : (
                 <span
                   aria-disabled="true"
                   className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-tenue-2"
                 >
-                  {m.texto}
+                  {m.nombre}
                   <span className="text-[10px]">próximamente</span>
                 </span>
               )}

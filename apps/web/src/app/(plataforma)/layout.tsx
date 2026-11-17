@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { cerrarSesion } from "@/acciones/sesion";
 import { BarraMarca } from "@/components/marca";
+import { MenuModulos } from "@/components/menu-modulos";
 import { BarraNavegacion } from "@/components/navegacion";
 import { requerirOrganizacion } from "@/lib/sesion";
 
@@ -10,7 +11,13 @@ const ROLES = { admin: "Administrador", auditor: "Auditor", lector: "Lector" } a
 export default function LayoutPlataforma({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
-      <BarraMarca>
+      <BarraMarca
+        centro={
+          <Suspense fallback={null}>
+            <MenuModulos />
+          </Suspense>
+        }
+      >
         <Suspense fallback={<span className="text-xs text-azul-medio">…</span>}>
           <ZonaUsuario />
         </Suspense>

@@ -23,6 +23,7 @@ solo dicen qué construir y cómo saber que quedó.
 | 12 | Exportaciones | 05 | |
 | 13 | Endurecimiento | todas | **C — listo para el cliente** |
 | 14 | App de campo | 13 | Fase posterior |
+| 15 | Analizador (síntesis con origen) | 09, 10 | |
 
 06 puede ir en paralelo con 04–05, y 07–09 en paralelo con 04–06, en ramas separadas.
 
@@ -340,6 +341,27 @@ alerta por una discrepancia.
 ```
 
 ---
+
+## 15 — Analizador (síntesis con origen)
+
+```
+Tarea 15 — Analizador. Rama: feat/15-analizador. Requiere 09 (validación) y 10 (expediente).
+Lee CLAUDE.md (reglas 1, 4, 7 y 8) y docs/ESPECIFICACION.md §1, §1.2, §7.
+
+Construye:
+- …/analizador: el auditor elige el alcance (un expediente o una entidad) y qué registros entran;
+  solo cuentan registros validados.
+- Síntesis generada por IA (pasa por iaPermitida y queda en uso_ia) en la que cada afirmación
+  cita el o los registros que la sostienen; una afirmación sin registro no se guarda.
+- La síntesis nace como borrador: el auditor la revisa, edita y aprueba. Se guardan la versión de
+  la IA y la aprobada, con autor y fecha; todo va a bitácora.
+- Cada cita abre el registro y, desde ahí, la página, hoja, fila o celda de origen.
+- La síntesis aprobada puede adjuntarse a un hallazgo, pero nunca crea hallazgos sola.
+
+Listo cuando: una síntesis del fixture cita solo registros validados; quitar un registro del
+alcance quita sus afirmaciones; el texto dentro de un documento no cambia las instrucciones del
+modelo (prueba con un documento que intenta dar órdenes); lector no genera ni aprueba.
+```
 
 ## Prompts de apoyo
 

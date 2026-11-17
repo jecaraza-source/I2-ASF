@@ -19,6 +19,45 @@ Todas las rutas cuelgan de `/encargos/[encargo]`.
 | Ficha de entidad | `…/entidades/[id]` | Todo lo que se sabe de una entidad | 05, 11 |
 | Registro | `…/registros/[id]` | Un registro con sus datos y la hoja, fila, celda o página de origen | 05 |
 | Configuración | `…/configuracion` | Categorías, tipos de documento, reglas, fuentes | 02, 04, 11 |
+| Recorridos guiados | `…/recorridos`, `…/recorridos/[clave]` | Empezar por una tarea y seguir sus etapas, con el avance real del encargo | — |
+| Analizador | `…/analizador` | Síntesis de un expediente o entidad con cada afirmación ligada a su registro | 15 |
+| Usuarios y accesos | `/usuarios` (fuera del encargo) | Usuarios, roles, bitácora de acceso y control de cambios (§3.1) | — |
+
+### 1.1 Navegación: menú por capacidad y recorridos por tarea
+
+La plataforma ofrece dos entradas al mismo espacio de trabajo:
+
+- **Menú superior por capacidad** (dentro de un encargo): tres categorías —Integración de fuentes,
+  Análisis, Gestión del encargo—; cada desplegable muestra el nombre y la descripción de sus
+  módulos. El cursor previsualiza; clic, Enter o Espacio abren y cierran; Escape cierra y devuelve
+  el foco; clic o foco fuera cierran. Los módulos no construidos aparecen deshabilitados.
+- **Recorridos guiados por tarea** (resumen del encargo y `…/recorridos`): Integrar un expediente,
+  Analizar documentos existentes, Analizar comunicaciones, Investigar una entidad y Cerrar el
+  análisis. Cada uno tiene cuatro etapas con indicador (número, texto y estado: hecha, pendiente o
+  de consulta), botón al módulo donde se hace, «Anterior» y «Siguiente», y la guía «¿Qué sigue?».
+  El estado de cada etapa sale de conteos reales del encargo (`lib/avance.ts`), nunca de contenido.
+  Las etapas no son obligatorias ni ordenadas: se puede empezar con información parcial.
+- **Catálogo único** (`packages/modelo/src/catalogo-modulos.ts`): nombres, descripciones, rutas,
+  categorías y recorridos. Lo comparten el menú, la barra lateral, la barra de navegación y los
+  recorridos.
+- **Barra de navegación:** Regresar, Subir un nivel y la ruta de dónde estás.
+
+Reglas de experiencia para toda pantalla nueva: etiquetas siempre visibles (el ejemplo va como
+texto de ayuda); lo capturado se conserva si hay un error; estados de carga, vacío, error y éxito
+junto a la acción; el estado nunca se comunica solo con color; todo se opera con teclado; una
+propuesta de la IA o una coincidencia sin revisar se distingue siempre de lo validado por una
+persona.
+
+### 1.2 Fuera de alcance
+
+La plataforma integra y cruza la evidencia que entra a una auditoría; **no consulta información de
+personas en fuentes externas**. No se construyen búsquedas de personas (nacional, internacional,
+fiscal, por teléfono o correo), localización de actas del registro civil o de constancias fiscales,
+ni reconocimiento facial. Cuando el auditor obtiene uno de esos documentos por el canal oficial, lo
+ingresa como documento con su fuente (regla 1) y la plataforma lo cruza con lo demás. Las únicas
+fuentes de consulta previstas son las de la tarea 11 (otros expedientes de la organización y la
+lista 69-B publicada por el SAT). Tampoco se editan los originales (regla 2): el Analizador produce
+síntesis y notas del auditor, no modifica documentos.
 
 ## 2. Modelo de datos
 

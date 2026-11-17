@@ -1,7 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export function BarraMarca({ children }: { children?: React.ReactNode }) {
+export function BarraMarca({
+  children,
+  centro,
+}: {
+  children?: React.ReactNode;
+  /** Contenido entre la marca y la zona del usuario (el menú de módulos). */
+  centro?: React.ReactNode;
+}) {
   return (
     <header className="flex h-[58px] flex-none items-center gap-4 border-b border-azul-borde bg-linear-135 from-azul-profundo to-azul-header px-6 shadow-[0_2px_16px_rgba(0,0,0,0.6)]">
       <Link href="/encargos" className="flex items-center gap-3">
@@ -22,6 +29,7 @@ export function BarraMarca({ children }: { children?: React.ReactNode }) {
           </span>
         </span>
       </Link>
+      {centro}
       <div className="ml-auto">{children}</div>
     </header>
   );

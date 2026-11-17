@@ -1,4 +1,5 @@
 export * from "./archivos";
+export * from "./catalogo-modulos";
 export * from "./esquemas";
 export * from "./formularios";
 export * from "./ia";
