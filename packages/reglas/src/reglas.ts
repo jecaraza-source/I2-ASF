@@ -1,3 +1,4 @@
+import { PREGUNTAS_CAMPO } from "./campo";
 /**
  * Reglas de validación cruzada (§10). Funciones puras `(datos) => Alerta[]`.
  * Generan alertas, nunca hallazgos (regla 4 de CLAUDE.md): el auditor confirma o descarta.
@@ -692,6 +693,52 @@ export function r11(datos: DatosReglas): Alerta[] {
   return alertas;
 }
 
+// ---------------------------------------------------------------------------
+// R12 · Verificación en campo: el proveedor no existe donde dice
+// ---------------------------------------------------------------------------
+const fechaCampo = new Intl.DateTimeFormat("es-MX", {
+  timeZone: "America/Mexico_City",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+/**
+ * Cada «no» de una cédula de campo es una alerta (no un hallazgo): la confirma o descarta un
+ * auditor. «No se pudo verificar» no alerta. La evidencia es el registro de la cédula, que a su vez
+ * lleva las fotos con ubicación, hora y SHA-256.
+ */
+export function r12(datos: DatosReglas): Alerta[] {
+  const alertas: Alerta[] = [];
+  for (const c of datos.verificaciones_campo ?? []) {
+    const cuando = Number.isNaN(Date.parse(c.capturada_en))
+      ? c.capturada_en
+      : fechaCampo.format(new Date(c.capturada_en));
+    for (const p of PREGUNTAS_CAMPO) {
+      if (c.respuestas[p.clave] !== "no") continue;
+      alertas.push({
+        regla: "R12",
+        severidad: p.severidad,
+        titulo: `${c.entidad}: ${p.hallazgo}`,
+        descripcion: `Verificación en campo del ${cuando} (${c.evidencias} foto(s) con ubicación y huella). Respuesta «No coincide» a: ${p.pregunta}`,
+        huella: `R12|${c.entidad_id}|${p.clave}`,
+        entidades: [c.entidad_id],
+        evidencias: [
+          {
+            lado: "a",
+            etiqueta: "Cédula de verificación en campo",
+            valor: p.hallazgo,
+            registro_id: c.registro_id,
+            extraccion_id: null,
+            ubicacion: null,
+          },
+        ],
+      });
+    }
+  }
+  return alertas;
+}
+
 export const REGLAS: Regla[] = [
   {
     id: "R01",
@@ -748,6 +795,12 @@ export const REGLAS: Regla[] = [
     nombre: "Captura manual que difiere del documento asociado",
     activa: true,
     evaluar: r11,
+  },
+  {
+    id: "R12",
+    nombre: "Verificación en campo: el proveedor no existe donde declara",
+    activa: true,
+    evaluar: r12,
   },
 ];
 

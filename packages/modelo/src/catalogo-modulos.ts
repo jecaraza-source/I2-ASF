@@ -123,6 +123,15 @@ export const MODULOS = [
     listo: true,
   },
   {
+    clave: "verificacion",
+    nombre: "Verificación en campo",
+    descripcion:
+      "Programa visitas a proveedores de riesgo y recibe cédulas con fotos desde el celular.",
+    ruta: "/verificacion",
+    categoria: "analisis",
+    listo: true,
+  },
+  {
     clave: "recorridos",
     nombre: "Recorridos guiados",
     descripcion: "Empieza por una tarea y sigue sus etapas paso a paso.",

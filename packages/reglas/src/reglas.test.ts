@@ -24,6 +24,7 @@ import {
   r09,
   r10,
   r11,
+  r12,
 } from "./reglas";
 import type { DatosReglas } from "./tipos";
 
@@ -433,8 +434,63 @@ describe("R11: captura contra su documento asociado", () => {
   });
 });
 
+describe("R12: verificación en campo", () => {
+  const cedula = (respuestas: Record<string, string>) => ({
+    registros: [],
+    entidades: [],
+    vinculos: [],
+    eventos: [],
+    verificaciones_campo: [
+      {
+        cedula_id: "c1",
+        registro_id: "reg-campo",
+        entidad_id: "e1",
+        entidad: "PROVEEDOR CAMPO SA",
+        capturada_en: "2026-11-17T18:30:00Z",
+        respuestas,
+        evidencias: 2,
+      },
+    ],
+  });
+  it("cada «no» es una alerta con su severidad; «no se pudo verificar» no alerta", () => {
+    const a = r12(
+      cedula({
+        domicilio_existe: "si",
+        inmueble_existe: "no",
+        proveedor_presente: "no",
+        actividad_visible: "no",
+        persona_confirma: "no_verificable",
+      }),
+    );
+    expect(a.map((x) => [x.huella, x.severidad])).toEqual([
+      ["R12|e1|inmueble_existe", "critica"],
+      ["R12|e1|proveedor_presente", "critica"],
+      ["R12|e1|actividad_visible", "alta"],
+    ]);
+    expect(a[0]?.titulo).toBe(
+      "PROVEEDOR CAMPO SA: no existe un inmueble en el domicilio declarado",
+    );
+    expect(a[0]?.descripcion).toContain("17/11/2026");
+    expect(a[0]?.evidencias[0]?.registro_id).toBe("reg-campo");
+    expect(a[0]?.entidades).toEqual(["e1"]);
+  });
+  it("todo coincide: sin alertas", () => {
+    expect(
+      r12(
+        cedula({
+          domicilio_existe: "si",
+          inmueble_existe: "si",
+          proveedor_presente: "si",
+          actividad_visible: "si",
+          persona_confirma: "si",
+        }),
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe("catálogo", () => {
-  it("R01–R11 activas", () => {
+  it("R01–R12 activas", () => {
     expect(REGLAS.map((r) => r.id)).toEqual([
       "R01",
       "R02",
@@ -447,6 +503,7 @@ describe("catálogo", () => {
       "R09",
       "R10",
       "R11",
+      "R12",
     ]);
     expect(REGLAS.filter((r) => !r.activa).map((r) => r.id)).toEqual([]);
   });
@@ -454,6 +511,6 @@ describe("catálogo", () => {
     const a = ejecutarReglas(asf).alertas.map((x) => x.huella);
     expect(new Set(a).size).toBe(a.length);
     expect(ejecutarReglas(asf).alertas.map((x) => x.huella)).toEqual(a);
-    expect(ejecutarReglas(asf).reglas).toHaveLength(11);
+    expect(ejecutarReglas(asf).reglas).toHaveLength(12);
   });
 });

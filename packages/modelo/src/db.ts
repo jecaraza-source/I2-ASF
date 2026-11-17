@@ -180,6 +180,42 @@ export type Database = {
           },
         ]
       }
+      aviso_aceptacion: {
+        Row: {
+          aceptado_en: string
+          aviso: string
+          id: string
+          organizacion_id: string
+          usuario_id: string
+          version: string
+        }
+        ComputedFields: never
+        Insert: {
+          aceptado_en?: string
+          aviso: string
+          id?: string
+          organizacion_id: string
+          usuario_id: string
+          version: string
+        }
+        Update: {
+          aceptado_en?: string
+          aviso?: string
+          id?: string
+          organizacion_id?: string
+          usuario_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aviso_aceptacion_organizacion_id_fkey"
+            columns: ["organizacion_id"]
+            isOneToOne: false
+            referencedRelation: "organizacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bitacora: {
         Row: {
           accion: string
@@ -388,6 +424,80 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizacion"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      cedula_campo: {
+        Row: {
+          autor: string
+          capturada_en: string
+          domicilio_observado: string | null
+          encargo_id: string
+          id: string
+          latitud: number | null
+          longitud: number | null
+          observaciones: string | null
+          organizacion_id: string
+          precision_m: number | null
+          recibida_en: string
+          registro_id: string
+          respuestas: NonNullable<Json>
+          visita_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          autor: string
+          capturada_en: string
+          domicilio_observado?: string | null
+          encargo_id: string
+          id: string
+          latitud?: number | null
+          longitud?: number | null
+          observaciones?: string | null
+          organizacion_id: string
+          precision_m?: number | null
+          recibida_en?: string
+          registro_id: string
+          respuestas: NonNullable<Json>
+          visita_id: string
+        }
+        Update: {
+          autor?: string
+          capturada_en?: string
+          domicilio_observado?: string | null
+          encargo_id?: string
+          id?: string
+          latitud?: number | null
+          longitud?: number | null
+          observaciones?: string | null
+          organizacion_id?: string
+          precision_m?: number | null
+          recibida_en?: string
+          registro_id?: string
+          respuestas?: NonNullable<Json>
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cedula_campo_encargo_id_registro_id_fkey"
+            columns: ["encargo_id", "registro_id"]
+            isOneToOne: false
+            referencedRelation: "registro"
+            referencedColumns: ["encargo_id", "id"]
+          },
+          {
+            foreignKeyName: "cedula_campo_encargo_id_visita_id_fkey"
+            columns: ["encargo_id", "visita_id"]
+            isOneToOne: false
+            referencedRelation: "visita_campo"
+            referencedColumns: ["encargo_id", "id"]
+          },
+          {
+            foreignKeyName: "cedula_campo_organizacion_id_encargo_id_fkey"
+            columns: ["organizacion_id", "encargo_id"]
+            isOneToOne: false
+            referencedRelation: "encargo"
+            referencedColumns: ["organizacion_id", "id"]
           },
         ]
       }
@@ -788,6 +898,83 @@ export type Database = {
           },
           {
             foreignKeyName: "evidencia_organizacion_id_encargo_id_fkey"
+            columns: ["organizacion_id", "encargo_id"]
+            isOneToOne: false
+            referencedRelation: "encargo"
+            referencedColumns: ["organizacion_id", "id"]
+          },
+        ]
+      }
+      evidencia_campo: {
+        Row: {
+          autor: string
+          bytes: number
+          capturada_en: string
+          cedula_id: string | null
+          encargo_id: string
+          id: string
+          latitud: number | null
+          longitud: number | null
+          mime: string
+          organizacion_id: string
+          precision_m: number | null
+          recibida_en: string
+          ruta: string
+          sha256: string
+          visita_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          autor: string
+          bytes: number
+          capturada_en: string
+          cedula_id?: string | null
+          encargo_id: string
+          id: string
+          latitud?: number | null
+          longitud?: number | null
+          mime: string
+          organizacion_id: string
+          precision_m?: number | null
+          recibida_en?: string
+          ruta: string
+          sha256: string
+          visita_id: string
+        }
+        Update: {
+          autor?: string
+          bytes?: number
+          capturada_en?: string
+          cedula_id?: string | null
+          encargo_id?: string
+          id?: string
+          latitud?: number | null
+          longitud?: number | null
+          mime?: string
+          organizacion_id?: string
+          precision_m?: number | null
+          recibida_en?: string
+          ruta?: string
+          sha256?: string
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidencia_campo_encargo_id_cedula_id_fkey"
+            columns: ["encargo_id", "cedula_id"]
+            isOneToOne: false
+            referencedRelation: "cedula_campo"
+            referencedColumns: ["encargo_id", "id"]
+          },
+          {
+            foreignKeyName: "evidencia_campo_encargo_id_visita_id_fkey"
+            columns: ["encargo_id", "visita_id"]
+            isOneToOne: false
+            referencedRelation: "visita_campo"
+            referencedColumns: ["encargo_id", "id"]
+          },
+          {
+            foreignKeyName: "evidencia_campo_organizacion_id_encargo_id_fkey"
             columns: ["organizacion_id", "encargo_id"]
             isOneToOne: false
             referencedRelation: "encargo"
@@ -2137,6 +2324,73 @@ export type Database = {
           },
         ]
       }
+      visita_campo: {
+        Row: {
+          creado_en: string
+          creado_por: string | null
+          documentos: NonNullable<Json>
+          domicilios: string[]
+          encargo_id: string
+          entidad_id: string
+          estado: string
+          id: string
+          instrucciones: string | null
+          motivo: string | null
+          nivel: string | null
+          organizacion_id: string
+          puntaje: number | null
+          verificador_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          creado_en?: string
+          creado_por?: string | null
+          documentos?: NonNullable<Json>
+          domicilios?: string[]
+          encargo_id: string
+          entidad_id: string
+          estado?: string
+          id?: string
+          instrucciones?: string | null
+          motivo?: string | null
+          nivel?: string | null
+          organizacion_id: string
+          puntaje?: number | null
+          verificador_id: string
+        }
+        Update: {
+          creado_en?: string
+          creado_por?: string | null
+          documentos?: NonNullable<Json>
+          domicilios?: string[]
+          encargo_id?: string
+          entidad_id?: string
+          estado?: string
+          id?: string
+          instrucciones?: string | null
+          motivo?: string | null
+          nivel?: string | null
+          organizacion_id?: string
+          puntaje?: number | null
+          verificador_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visita_campo_encargo_id_entidad_id_fkey"
+            columns: ["encargo_id", "entidad_id"]
+            isOneToOne: false
+            referencedRelation: "entidad"
+            referencedColumns: ["encargo_id", "id"]
+          },
+          {
+            foreignKeyName: "visita_campo_organizacion_id_encargo_id_fkey"
+            columns: ["organizacion_id", "encargo_id"]
+            isOneToOne: false
+            referencedRelation: "encargo"
+            referencedColumns: ["organizacion_id", "id"]
+          },
+        ]
+      }
     }
     Views: {
       importacion_resumen: {
@@ -2214,6 +2468,10 @@ export type Database = {
       }
     }
     Functions: {
+      aceptar_aviso_campo: {
+        Args: { p_organizacion: string; p_version: string }
+        Returns: undefined
+      }
       actualizar_estadisticas: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2251,10 +2509,36 @@ export type Database = {
           usuario_id: string
         }[]
       }
+      campo_guardar_cedula: { Args: { p: Json }; Returns: string }
+      campo_mis_visitas: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          aviso_aceptado: boolean
+          documentos: Json
+          domicilios: string[]
+          encargo: string
+          encargo_id: string
+          entidad: string
+          entidad_id: string
+          entidad_tipo: string
+          instrucciones: string
+          nivel: string
+          organizacion: string
+          organizacion_id: string
+          rfc: string
+          visita_id: string
+        }[]
+      }
+      campo_registrar_evidencia: { Args: { p: Json }; Returns: undefined }
+      cancelar_visita: {
+        Args: { p_motivo: string; p_visita: string }
+        Returns: undefined
+      }
       capturar_registro: { Args: { p: Json }; Returns: string }
       cerrar_carga_fuente: { Args: { p_carga: string }; Returns: number }
       crear_hallazgo: { Args: { p: Json }; Returns: string }
       crear_sintesis: { Args: { p: Json }; Returns: string }
+      crear_visitas: { Args: { p: Json }; Returns: number }
       descartar_sintesis: {
         Args: { p_motivo: string; p_sintesis: string }
         Returns: undefined
@@ -2430,6 +2714,14 @@ export type Database = {
         }[]
       }
       validar_registro: { Args: { p: Json }; Returns: Json }
+      verificadores_organizacion: {
+        Args: { p_organizacion: string }
+        Returns: {
+          correo: string
+          rol: string
+          usuario_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

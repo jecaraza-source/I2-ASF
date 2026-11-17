@@ -11,7 +11,7 @@ Todas las rutas cuelgan de `/encargos/[encargo]`.
 | Encargos y expedientes | `/encargos`, `…/expedientes` | Alta y navegación | 02 |
 | Importación de Excel | `…/importaciones` | Plantillas de mapeo, vista previa, carga | 03 |
 | Red de vínculos | `…/red`, `…/red/vista` | Generar, regenerar, calificar; explorar en el visor | 04, 05 |
-| Alertas | `…/alertas`, `…/alertas/[id]` | Resultado de las reglas R01–R09; evidencias lado a lado; confirmar o descartar con motivo | 06 |
+| Alertas | `…/alertas`, `…/alertas/[id]` | Resultado de las reglas R01–R12; evidencias lado a lado; confirmar o descartar con motivo | 06 |
 | Ingreso de documentos | `…/ingreso/importar`, `…/documentos/[id]` | Subida con pre-clasificación; visor del original | 07 |
 | Captura manual | `…/ingreso/capturar` | Registro sin documento | 08 |
 | Validación | `…/validacion`, `…/validacion/[registro]` | Cola de documentos leídos por la IA; aceptar, corregir o rechazar por campo y por registro (§7.2) | 09 |
@@ -22,6 +22,8 @@ Todas las rutas cuelgan de `/encargos/[encargo]`.
 | Recorridos guiados | `…/recorridos`, `…/recorridos/[clave]` | Empezar por una tarea y seguir sus etapas, con el avance real del encargo | — |
 | Analizador | `…/analizador`, `…/analizador/nueva`, `…/analizador/[id]` | Síntesis de un expediente o entidad con cada afirmación ligada a su registro (§15) | 15 |
 | Hallazgos | `…/hallazgos`, `…/hallazgos/[id]` | Redacción y firma del auditor; respaldo en alertas y síntesis aprobadas (§15) | 15 |
+| Verificación en campo | `…/verificacion` | Programa de visitas a proveedores de riesgo; cédulas, fotos y resultado (§16) | 14 |
+| App de campo | `/campo` (fuera del encargo) | Celular del auditor o verificador: aviso, cédula, fotos, funciona sin señal (§16) | 14 |
 | Usuarios y accesos | `/usuarios` (fuera del encargo) | Usuarios, roles, bitácora de acceso y control de cambios (§3.1) | — |
 
 ### 1.1 Navegación: menú por capacidad y recorridos por tarea
@@ -70,7 +72,7 @@ cuando pertenece a un encargo. No se repiten abajo.
 | Tabla | Columnas |
 |---|---|
 | `organizacion` | `nombre` |
-| `miembro` | `usuario_id → auth.users`, `rol` (`admin`, `auditor`, `lector`); único por organización y usuario |
+| `miembro` | `usuario_id → auth.users`, `rol` (`admin`, `auditor`, `lector`, `verificador`); único por organización y usuario |
 | `encargo` | `ia_proveedores`, `nombre`, `tipo_auditoria`, `umbral_confianza numeric default 0.85`, `periodo_inicio`, `periodo_fin`, `estado` |
 
 **Expediente y registros**
@@ -123,13 +125,21 @@ cuando pertenece a un encargo. No se repiten abajo.
 | `trabajo` | `tipo`, `payload jsonb`, `estado` (`pendiente`, `en_proceso`, `hecho`, `error`), `intentos`, `error`, `bloqueado_hasta` |
 | `bitacora` | `actor`, `accion`, `objeto_tipo`, `objeto_id`, `detalle jsonb`, `en` |
 
-`evidencia_campo` (auditoría física) se define en la tarea 14.
+| `visita_campo` | `encargo_id`, `entidad_id`, `verificador_id`, `estado` (`asignada`, `verificada`, `cancelada`), `nivel`, `puntaje` (de la red), `domicilios text[]` y `documentos jsonb` (prellenado), `instrucciones`, `motivo`; una sola visita asignada por entidad |
+| `cedula_campo` | `id` (generado en el teléfono), `visita_id` (única), `registro_id` (origen `campo`), `respuestas jsonb` (5 preguntas: `si`, `no`, `no_verificable`), `domicilio_observado`, `observaciones`, `latitud`, `longitud`, `precision_m`, `capturada_en`, `recibida_en`, `autor` |
+| `evidencia_campo` | `id` (generado en el teléfono), `visita_id`, `cedula_id`, `ruta`, `sha256`, `bytes` (≤ 15 MB), `mime` (JPG, PNG, WEBP, HEIC), coordenadas, `capturada_en`, `recibida_en`, `autor` |
+| `aviso_aceptacion` | `usuario_id`, `aviso` (`campo_confidencialidad`), `version`, `aceptado_en` |
+
+`registro.origen` admite `campo` (cédula de verificación); como la captura, exige `fuente`.
 
 ## 3. Roles y RLS
 
 - `admin`: todo dentro de su organización, incluida la configuración.
 - `auditor`: crea y valida registros, genera redes, resuelve alertas, firma hallazgos.
 - `lector`: solo lectura.
+- `verificador`: verificador de campo (celular personal). No ve encargos, registros ni entidades:
+  solo las visitas que se le asignan, por funciones (`campo_mis_visitas`), y únicamente después de
+  aceptar el aviso de confidencialidad. `es_miembro` y `mis_organizaciones` sin roles lo excluyen.
 
 Las políticas comparan `organizacion_id = any ((select privado.mis_organizaciones(roles))::uuid[])`:
 la lista de organizaciones activas del usuario (con el rol pedido) se calcula **una vez por consulta**,
@@ -485,9 +495,10 @@ Funciones puras `(datos) => Alerta[]`. Cada alerta enlaza las evidencias que se 
 | R09 | Empresa constituida pocos días antes del contrato |
 | R10 | Proveedor en lista 69-B del SAT como presunto (alta) o definitivo (crítica) |
 | R11 | Captura manual que difiere del documento asociado después |
+| R12 | Verificación en campo: un «no» en la cédula (domicilio o inmueble inexistente, proveedor no establecido, sin actividad, nadie confirma) |
 
 - **Ejecución:** al terminar cada importación y a demanda desde `…/alertas`. Solo leen registros
-  validados. Las 11 reglas están activas. R10 cuenta la
+  validados. Las 12 reglas están activas. R10 cuenta la
   coincidencia exacta por RFC y la propuesta por nombre solo si un auditor la confirmó; desvirtuado y
   sentencia favorable no alertan.
 - **Identidad:** cada alerta lleva una `huella` (regla + evidencias). Volver a ejecutar no duplica
@@ -612,6 +623,44 @@ es `…/red/exportar/<archivo>`). Botón «Exportar» en Red de vínculos y en c
   - Nada crea hallazgos automáticamente.
 - **Roles:** `admin` y `auditor` generan, editan, aprueban, redactan y firman; `lector` consulta.
 
+## 16. Verificación en campo
+
+Solo confirma la **existencia** del proveedor en su domicilio; no es una inspección del bien o del
+servicio.
+
+- **Programa de trabajo (`…/verificacion`):** propone las entidades `persona_moral` o
+  `persona_fisica` de nivel crítico o alto en la red más reciente sin visita abierta (los críticos
+  vienen marcados). El auditor elige, asigna a un auditor o verificador activo
+  (`verificadores_organizacion`) y escribe instrucciones. `crear_visitas` prellena los domicilios
+  (entidades `domicilio` vinculadas y el dato `domicilio` validado) y hasta 20 documentos validados
+  con su monto. Cancelar exige motivo.
+- **App (`/campo`):** PWA para el celular personal del verificador.
+  - Primero, el **aviso de confidencialidad y protección de datos** (`AVISO_CONFIDENCIALIDAD`,
+    versión en `privado.version_aviso_campo()`); sin aceptarlo no se ven documentos ni se puede
+    subir nada. Cambiar el texto exige subir la versión: todos lo vuelven a aceptar.
+  - El **aviso de privacidad simplificado** (`AVISO_PRIVACIDAD_SITIO`) se muestra a quien atiende,
+    con el nombre de la organización como responsable. Pendiente de revisión jurídica (§14).
+  - Cédula con 5 preguntas (`PREGUNTAS_CAMPO`), domicilio observado, observaciones y de 1 a 10 fotos
+    con hora, ubicación y SHA-256 calculado en el teléfono.
+- **Sin señal:** las visitas se descargan a IndexedDB y caducan a las **24 h** sin volver a
+  descargarse. La cédula y sus fotos quedan en el teléfono hasta enviarse; pasadas 24 h se advierte.
+  El envío es automático al volver la conexión (evento `online` y reintento cada minuto). Al enviarse
+  se borran del teléfono; «Borrar datos de este teléfono» y «Salir» borran todo, incluida la caché del
+  service worker. El service worker (`/sw.js`) solo guarda la página `/campo` (sin datos) y los
+  estáticos; nunca respuestas de la API, de Supabase ni fotos.
+- **Envío:** cada foto sube directo al bucket privado `campo`
+  (`{organizacion}/{encargo}/{visita}/{evidencia}.{ext}`, 15 MB, solo imágenes, sin UPDATE ni
+  DELETE). `POST /api/campo/evidencia` la descarga, recalcula el SHA-256, revisa los primeros bytes y
+  llama a `campo_registrar_evidencia`. `POST /api/campo/cedula` llama a `campo_guardar_cedula`, que
+  crea el registro de origen `campo` (validado por quien verificó, fuente «Verificación en campo ·
+  visita …»), lo liga a la entidad (rol `verificado`), cierra la visita y encola las reglas. Todo es
+  idempotente por los IDs generados en el teléfono.
+- **Alertas:** R12, una por cada «no», con la cédula como evidencia. Severidad: crítica para
+  domicilio, inmueble y proveedor; alta para actividad; media para confirmación. «No se pudo
+  verificar» no alerta. El hallazgo lo decide el auditor.
+- **Bitácora:** `campo.visita`, `campo.visita_cambio`, `campo.aviso`, `campo.evidencia`,
+  `campo.cedula`.
+
 ## 13. Fixtures y valores esperados
 
 Si un cambio altera estos valores, la prueba falla.
@@ -631,6 +680,8 @@ Si un cambio altera estos valores, la prueba falla.
 
 **`Red_Lavado_Dinero_LDN2024047.xlsx`**
 - 20 entidades, 25 vínculos, 20 flujos.
+- Verificación en campo (R12): 3 entidades críticas (Atlantic Trade Panama, Golden Gate Ltd Suiza,
+  Inversiones Aurora BVI) y 8 altas de tipo persona se proponen para visita.
 
 ## 14. Decisiones pendientes con el cliente
 
@@ -643,3 +694,5 @@ Cada una tiene un valor provisional para no detener el desarrollo.
 | Pesos y umbrales de la calificación | Tabla de §9 | `regla_calificacion` |
 | Inventario de bases de datos para la ficha | Otros expedientes + lista 69-B (CSV o Excel) | `fuente_consulta` (§11.1) |
 | Umbral de confianza de la IA | 0.85 | `encargo.umbral_confianza` |
+| Texto del aviso de confidencialidad y del aviso de privacidad en sitio (revisión jurídica) | Borrador de §16 | `packages/modelo/src/campo.ts` + `privado.version_aviso_campo()` |
+| Ventana sin señal de la app de campo | 24 h | `HORAS_MAXIMAS_SIN_ENVIAR` |

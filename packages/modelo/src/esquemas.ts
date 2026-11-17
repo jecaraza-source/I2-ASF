@@ -39,9 +39,9 @@ const jsonObjetoSchema = z.record(z.string(), z.unknown());
 // Catálogos de valores (checks de la base)
 // ---------------------------------------------------------------------------
 
-export const rolSchema = z.enum(["admin", "auditor", "lector"]);
+export const rolSchema = z.enum(["admin", "auditor", "lector", "verificador"]);
 export const estadoEncargoSchema = z.enum(["activo", "cerrado", "archivado"]);
-export const origenRegistroSchema = z.enum(["documento", "captura", "importacion"]);
+export const origenRegistroSchema = z.enum(["documento", "captura", "importacion", "campo"]);
 export const estadoValidacionSchema = z.enum(["pendiente", "validado", "corregido", "rechazado"]);
 export const metodoExtraccionSchema = z.enum(["ia", "manual", "importacion"]);
 export const tipoEntidadSchema = z.enum([
@@ -159,6 +159,10 @@ export const registroSchema = z
   })
   .refine((r) => r.origen !== "captura" || (r.fuente ?? "").trim().length > 0, {
     message: "Una captura requiere fuente declarada",
+    path: ["fuente"],
+  })
+  .refine((r) => r.origen !== "campo" || (r.fuente ?? "").trim().length > 0, {
+    message: "Una verificación en campo requiere fuente declarada",
     path: ["fuente"],
   });
 

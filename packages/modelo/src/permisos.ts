@@ -18,6 +18,8 @@ export type Accion =
   | "red.exportar"
   | "sintesis.generar"
   | "hallazgo.editar"
+  | "campo.programar"
+  | "campo.verificar"
   | "fusion.resolver"
   | "reglas.editar"
   | "reglas.ejecutar"
@@ -44,6 +46,8 @@ const PERMISOS: Record<Accion, readonly Rol[]> = {
   "red.exportar": ["admin", "auditor"],
   "sintesis.generar": ["admin", "auditor"],
   "hallazgo.editar": ["admin", "auditor"],
+  "campo.programar": ["admin", "auditor"],
+  "campo.verificar": ["admin", "auditor", "verificador"],
   "fusion.resolver": ["admin", "auditor"],
   "reglas.editar": ["admin"],
   "reglas.ejecutar": ["admin", "auditor"],

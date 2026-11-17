@@ -13,6 +13,7 @@ const ORIGEN: Record<string, string> = {
   documento: "Documento",
   captura: "Captura manual",
   importacion: "Importación de Excel",
+  campo: "Verificación en campo",
 };
 
 const fechaHora = new Intl.DateTimeFormat("es-MX", {

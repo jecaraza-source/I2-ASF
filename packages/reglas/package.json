@@ -2,7 +2,7 @@
   "name": "@sigma/reglas",
   "version": "0.0.0",
   "private": true,
-  "description": "Reglas de validación cruzada R01–R11 (funciones puras).",
+  "description": "Reglas de validación cruzada R01–R12 (funciones puras).",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
