@@ -46,7 +46,7 @@ test("admin da de alta con contraseña temporal, cambia el rol, da de baja y tod
   await expect(fila).toContainText("Sin primer acceso");
 
   // Cambio de rol.
-  await fila.getByLabel(`Rol de ${correo}`).selectOption({ label: "Auditor" });
+  await fila.getByRole("combobox", { name: `Rol de ${correo}` }).selectOption({ label: "Auditor" });
   await fila.getByRole("button", { name: `Guardar rol de ${correo}` }).click();
   await expect(fila.getByText("Rol actualizado.")).toBeVisible();
 
@@ -120,6 +120,8 @@ test("auditor y lector no gestionan usuarios", async ({ page }) => {
 test("la página de contraseña pide iniciar sesión si no hay sesión ni enlace", async ({ page }) => {
   await page.goto("/acceso/contrasena");
   await expect(page.getByText(/primero inicia sesión/)).toBeVisible();
+  // Solo cambia el fragmento: hay que recargar para que la página lo lea como al abrir el enlace.
   await page.goto("/acceso/contrasena#error=access_denied&error_code=otp_expired");
+  await page.reload();
   await expect(page.getByText(/El enlace ya se usó o venció/)).toBeVisible();
 });
