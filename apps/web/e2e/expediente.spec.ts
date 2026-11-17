@@ -44,9 +44,9 @@ async function capturar(
     if (inv.rfc) await page.getByLabel(`RFC del involucrado ${n}`).fill(inv.rfc);
   }
   await page.getByRole("button", { name: "Guardar captura" }).filter(visible).click();
-  await expect(page.getByText("Sin soporte documental", { exact: true })).toBeVisible({
-    timeout: 30_000,
-  });
+  // Al guardar se abre el registro creado.
+  await expect(page).toHaveURL(/\/registros\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(new RegExp(datos.numero[1]));
 }
 
 test("expediente documental: filtra por entidad y por categoría, cambia de vista, abre un registro hasta su documento y exporta", async ({
