@@ -103,6 +103,9 @@ test("expediente documental: filtra por entidad y por categoría, cambia de vist
   });
   await modulos.getByRole("link", { name: "Captura manual" }).click();
   await expect(page).toHaveURL(/\/ingreso\/capturar/);
+  // Al volver, el formulario está vacío: no arrastra la captura anterior.
+  await expect(page.getByLabel(/^Tipo de documento/).filter({ visible: true })).toHaveValue("");
+  await expect(page.getByLabel("Nombre del involucrado 1")).toHaveCount(0);
   await capturar(page, {
     tipo: "CFDI",
     numero: ["Número de factura", "F-DOC-9"],

@@ -71,6 +71,9 @@ select is(pg_temp.total(jsonb_build_object('entidad_id', pg_temp.proveedor(), 'c
           2::bigint, 'por entidad y categoría');
 select is(pg_temp.total('{"categoria_id":"sin"}'), 0::bigint, 'ninguno sin categoría');
 select is(pg_temp.total('{"q":"c-1"}'), 1::bigint, 'busca por referencia');
+-- Los IDs internos no se buscan: un fragmento de UUID de una entidad no debe coincidir.
+select is(pg_temp.total(jsonb_build_object('q', substr(pg_temp.proveedor(), 10, 6))), 0::bigint,
+          'no busca en IDs internos');
 select is(pg_temp.total('{"q":"arbol secretaria uno"}'), 1::bigint,
           'busca sin acentos y exige todos los términos');
 select is(pg_temp.total('{"q":"CAR200101AB1"}'), 3::bigint, 'busca por RFC');

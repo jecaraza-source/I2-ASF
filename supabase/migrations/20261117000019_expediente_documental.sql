@@ -104,6 +104,10 @@ as $$
                       'rol', re.rol)), '[]'::jsonb)
               from public.registro_entidad re join public.entidad e on e.id = re.entidad_id
              where re.registro_id = r.id) as involucrados,
+           -- Texto buscable de los involucrados: nombres e identificadores, nunca IDs internos.
+           (select string_agg(concat_ws(' ', e.nombre, e.identificadores ->> 'rfc', e.identificadores ->> 'curp'), ' ')
+              from public.registro_entidad re join public.entidad e on e.id = re.entidad_id
+             where re.registro_id = r.id) as nombres,
            array(select distinct coalesce(e.fusionada_en, e.id)
                    from public.registro_entidad re join public.entidad e on e.id = re.entidad_id
                   where re.registro_id = r.id) as entidades,
@@ -171,13 +175,14 @@ as $$
     cross join parametros
    where (parametros.desde is null or coalesce(r.fecha_documento, d.fecha_evento) >= parametros.desde)
      and (parametros.hasta is null or coalesce(r.fecha_documento, d.fecha_evento) <= parametros.hasta)
-     -- Búsqueda: todos los términos deben aparecer en el resumen, el archivo, los involucrados,
-     -- sus identificadores, las referencias o algún dato validado del registro.
+     -- Búsqueda: todos los términos deben aparecer en el resumen, el archivo, la fuente, el
+     -- expediente, los nombres e identificadores de los involucrados, las referencias o algún dato
+     -- validado del registro. Nunca en IDs internos (un UUID contiene fragmentos como «c-1»).
      and (cardinality(parametros.terminos) = 0 or not exists (
        select 1 from unnest(parametros.terminos) t
         where position(t in privado.plano(concat_ws(' ', r.resumen, r.nombre_archivo, r.fuente,
-                                                    r.exp_identificador, d.involucrados::text,
-                                                    d.identificadores::text, array_to_string(d.referencias, ' ')))) = 0
+                                                    r.exp_identificador, d.nombres,
+                                                    array_to_string(d.referencias, ' ')))) = 0
           and not exists (select 1 from public.extraccion x
                            where x.registro_id = r.id and x.estado in ('validado', 'corregido')
                              and position(t in privado.plano(x.valor_crudo)) > 0)));
