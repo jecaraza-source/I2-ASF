@@ -2,6 +2,7 @@
 
 import { useActionState, useId, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
+import { abrirCalendario } from "@/lib/calendario";
 import { ESTADO_INICIAL, type EstadoFormulario } from "@/lib/formulario";
 
 type Accion = (estado: EstadoFormulario, formData: FormData) => Promise<EstadoFormulario>;
@@ -139,6 +140,7 @@ export function Campo(
         name={props.nombre}
         type={props.tipo ?? "text"}
         step={props.paso}
+        onClick={props.tipo === "date" ? abrirCalendario : undefined}
         defaultValue={valorInicial(props)}
         key={valorInicial(props)}
         required={props.requerido}

@@ -2,11 +2,14 @@
 
 import {
   DISENOS,
+  FAMILIAS_ARISTA,
   NIVELES,
+  NOMBRE_FAMILIA,
   NOMBRE_DISENO,
   centrar,
   escribirEstado,
   etiquetaArista,
+  familiaArista,
   filtrar,
   leerEstado,
   posiciones,
@@ -15,6 +18,7 @@ import {
   type AristaVista,
   type Diseno,
   type EstadoVista,
+  type FamiliaArista,
   type GrafoVista,
   type Nivel,
 } from "@sigma/red";
@@ -23,9 +27,18 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { obtenerEvidencia, obtenerFicha } from "@/acciones/vista";
+import { abrirCalendario } from "@/lib/calendario";
 import type { EvidenciaArista, Ficha as DatosFicha } from "@/lib/vista-datos";
 import { Ficha, Origenes } from "./ficha";
-import { COLOR_NIVEL, FORMA_TIPO, NOMBRE_NIVEL, NOMBRE_TIPO, iconoTipo } from "./presentacion";
+import {
+  COLOR_FAMILIA,
+  COLOR_NIVEL,
+  COLOR_SIN_NIVEL,
+  FORMA_TIPO,
+  NOMBRE_NIVEL,
+  NOMBRE_TIPO,
+  iconoTipo,
+} from "./presentacion";
 
 const claseControl =
   "rounded-md border border-linea-2 bg-fondo px-2 py-1 text-xs text-texto focus-visible:outline-2 focus-visible:outline-oro";
@@ -35,23 +48,27 @@ const claseBoton =
 function estilos(tipos: string[]): StylesheetJson {
   return [
     {
+      // Como en el prototipo: relleno translúcido y contorno del color del nivel, nombre debajo.
       selector: "node",
       style: {
-        width: 34,
-        height: 34,
-        "background-color": "#5a6a8a",
+        width: 38,
+        height: 38,
+        "background-color": COLOR_SIN_NIVEL,
+        "background-opacity": 0.28,
         "background-image": iconoTipo("otro"),
-        "background-width": "60%",
-        "background-height": "60%",
-        "border-width": 1.5,
-        "border-color": "#0b1220",
+        "background-width": "58%",
+        "background-height": "58%",
+        "border-width": 2,
+        "border-color": COLOR_SIN_NIVEL,
         label: "data(label)",
-        color: "#c9d3e3",
-        "font-size": 9,
+        color: "#dce4ec",
+        "font-size": 10,
         "text-valign": "bottom",
-        "text-margin-y": 4,
+        "text-margin-y": 5,
         "text-wrap": "ellipsis",
-        "text-max-width": "130px",
+        "text-max-width": "140px",
+        "text-outline-color": "#0b1220",
+        "text-outline-width": 2,
         "min-zoomed-font-size": 6,
       },
     },
@@ -61,44 +78,65 @@ function estilos(tipos: string[]): StylesheetJson {
     })),
     ...NIVELES.map((n) => ({
       selector: `node[nivel = "${n}"]`,
-      style: { "background-color": COLOR_NIVEL[n] },
+      style: { "background-color": COLOR_NIVEL[n], "border-color": COLOR_NIVEL[n] },
     })),
     {
       selector: "node.foco",
-      style: { "border-width": 4, "border-color": "#f2d27a", width: 44, height: 44 },
+      style: {
+        "border-width": 4,
+        "border-color": "#f0d572",
+        "background-opacity": 0.5,
+        width: 50,
+        height: 50,
+        "font-size": 12,
+        "font-weight": 600,
+        color: "#ffffff",
+      },
     },
-    { selector: "node:selected", style: { "border-width": 3, "border-color": "#7fb3d8" } },
+    { selector: "node:selected", style: { "border-width": 4 } },
     {
+      // Las líneas llevan el color de su familia; el texto solo aparece al resaltarlas.
       selector: "edge",
       style: {
-        width: "mapData(fuerza, 1, 10, 1, 7)",
-        "line-color": "#4a5a78",
+        width: "mapData(fuerza, 1, 10, 1.6, 7)",
+        "line-color": COLOR_FAMILIA.otro,
+        "line-opacity": 0.85,
         "curve-style": "bezier",
-        label: "data(label)",
-        "font-size": 7,
-        color: "#8a96ad",
+        "font-size": 9,
+        "font-weight": 600,
+        color: "#f0d572",
         "text-rotation": "autorotate",
-        "text-background-color": "#0b1220",
-        "text-background-opacity": 0.8,
-        "text-background-padding": "1px",
-        "min-zoomed-font-size": 7,
+        "text-background-color": "#0d1a2e",
+        "text-background-opacity": 0.9,
+        "text-background-padding": "3px",
+        "text-background-shape": "roundrectangle",
+        "min-zoomed-font-size": 6,
       },
     },
-    {
-      selector: "edge[clase = 'evento']",
-      style: { "line-style": "dashed", "line-color": "#6a7fa8" },
-    },
+    ...FAMILIAS_ARISTA.map((f) => ({
+      selector: `edge[familia = "${f}"]`,
+      style: { "line-color": COLOR_FAMILIA[f], "target-arrow-color": COLOR_FAMILIA[f] },
+    })),
+    { selector: "edge[clase = 'evento']", style: { "line-style": "dashed" } },
     {
       selector: "edge[?dirigido]",
+      style: { "target-arrow-shape": "triangle", "arrow-scale": 1.1 },
+    },
+    // Al pasar sobre una entidad (o elegir una línea) se atenúa lo demás.
+    { selector: ".atenuado", style: { opacity: 0.18 } },
+    {
+      selector: "edge.resaltada, edge.elegida",
       style: {
-        "target-arrow-shape": "triangle",
-        "target-arrow-color": "#6a7fa8",
-        "arrow-scale": 0.8,
+        label: "data(label)",
+        "line-opacity": 1,
+        width: "mapData(fuerza, 1, 10, 3, 9)",
+        "z-index": 10,
       },
     },
+    { selector: "node.resaltado", style: { "background-opacity": 0.5, color: "#ffffff" } },
     {
       selector: "edge.elegida",
-      style: { "line-color": "#f2d27a", "target-arrow-color": "#f2d27a", color: "#f2d27a" },
+      style: { "underlay-color": "#f0d572", "underlay-opacity": 0.35, "underlay-padding": 4 },
     },
   ];
 }
@@ -178,6 +216,7 @@ function elementos(grafo: GrafoVista, foco: string | null): ElementDefinition[] 
         label: etiquetaArista(a),
         fuerza: a.fuerza,
         clase: a.clase,
+        familia: familiaArista(a.clase, a.tipo),
         dirigido: a.clase === "evento" && a.tipo === "transferencia",
       },
     })),
@@ -201,6 +240,10 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
 
   const tipos = useMemo(() => [...new Set(grafo.nodos.map((n) => n.tipo))].sort(), [grafo]);
   const nombre = useMemo(() => new Map(grafo.nodos.map((n) => [n.id, n.nombre])), [grafo]);
+  const familias = useMemo(() => {
+    const presentes = new Set(grafo.aristas.map((x) => familiaArista(x.clase, x.tipo)));
+    return FAMILIAS_ARISTA.filter((f) => presentes.has(f));
+  }, [grafo]);
   const aristaPorId = useMemo(() => new Map(grafo.aristas.map((a) => [a.id, a])), [grafo]);
 
   const { visible, distancia } = useMemo(() => {
@@ -242,6 +285,18 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
       cy.on("tap", (ev) => {
         if (ev.target === cy) aristaRef.current(null);
       });
+      // Resalta la entidad bajo el cursor con sus líneas y vecinas, y atenúa el resto.
+      cy.on("mouseover", "node", (ev) => {
+        const cerca = ev.target.closedNeighborhood();
+        cy?.elements().not(cerca).addClass("atenuado");
+        cerca.edges().addClass("resaltada");
+        cerca.nodes().addClass("resaltado");
+      });
+      cy.on("mouseout", "node", () => {
+        cy?.elements().removeClass("atenuado resaltada resaltado");
+      });
+      cy.on("mouseover", "edge", (ev) => ev.target.addClass("resaltada"));
+      cy.on("mouseout", "edge", (ev) => ev.target.removeClass("resaltada"));
       cyRef.current = cy;
       setListo(true);
     })();
@@ -408,7 +463,7 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
           </label>
 
           {estado.foco ? (
-            <div role="group" aria-label="Saltos" className="flex gap-1">
+            <div role="group" aria-label="Alcance" className="flex gap-1">
               {([1, 2] as const).map((s) => (
                 <button
                   key={s}
@@ -417,7 +472,7 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
                   onClick={() => navegar({ ...estado, saltos: s })}
                   className={claseBoton}
                 >
-                  {s === 1 ? "1 salto" : "2 saltos"}
+                  {s === 1 ? "Relaciones directas" : "Hasta segundo grado"}
                 </button>
               ))}
             </div>
@@ -458,7 +513,7 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
           </summary>
           <div className="mt-3 flex flex-wrap gap-6">
             <fieldset className="flex flex-col gap-1">
-              <legend className="mb-1 text-tenue">Tipo</legend>
+              <legend className="mb-1 text-tenue">Tipo de entidad</legend>
               {tipos.map((t) => (
                 <label key={t} className="flex items-center gap-1.5 text-texto">
                   <input
@@ -478,7 +533,7 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
               ))}
             </fieldset>
             <fieldset className="flex flex-col gap-1">
-              <legend className="mb-1 text-tenue">Nivel</legend>
+              <legend className="mb-1 text-tenue">Nivel de riesgo</legend>
               {NIVELES.map((n) => (
                 <label key={n} className="flex items-center gap-1.5 text-texto">
                   <input
@@ -503,13 +558,14 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
               ))}
             </fieldset>
             <fieldset className="flex flex-col gap-2">
-              <legend className="mb-1 text-tenue">Fecha de vínculos y eventos</legend>
+              <legend className="mb-1 text-tenue">Fecha de las relaciones</legend>
               <label className="flex items-center gap-2 text-texto">
                 Desde
                 <input
                   type="date"
                   value={estado.desde ?? ""}
                   onChange={(ev) => navegar({ ...estado, desde: ev.target.value || null }, true)}
+                  onClick={abrirCalendario}
                   className={claseControl}
                 />
               </label>
@@ -519,6 +575,7 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
                   type="date"
                   value={estado.hasta ?? ""}
                   onChange={(ev) => navegar({ ...estado, hasta: ev.target.value || null }, true)}
+                  onClick={abrirCalendario}
                   className={claseControl}
                 />
               </label>
@@ -527,8 +584,10 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
         </details>
 
         <p className="text-xs text-tenue" data-testid="resumen-vista" aria-live="polite">
-          {visible.nodos.length} entidades · {visible.aristas.length} líneas visibles
-          {estado.foco ? ` · ${estado.saltos === 1 ? "1 salto" : "2 saltos"} desde el centro` : ""}
+          {visible.nodos.length} entidades · {visible.aristas.length} relaciones visibles
+          {estado.foco
+            ? ` · ${estado.saltos === 1 ? "relaciones directas" : "hasta segundo grado"} de la entidad central`
+            : ""}
         </p>
         {focoFiltrado ? (
           <p role="status" className="text-xs text-oro">
@@ -539,9 +598,9 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
           ref={contenedor}
           role="img"
           aria-label="Red de vínculos"
-          className="h-[640px] w-full rounded-lg border border-linea bg-[#0b1220]"
+          className="h-[680px] w-full rounded-lg border border-linea-2 bg-[#0b1220] bg-[radial-gradient(ellipse_at_50%_0%,rgba(212,175,55,0.07),transparent_60%)]"
         />
-        <Leyenda tipos={tipos} />
+        <Leyenda tipos={tipos} familias={familias} />
       </div>
 
       <aside className="flex flex-col gap-4" aria-label="Detalle">
@@ -626,29 +685,62 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
   );
 }
 
-function Leyenda({ tipos }: { tipos: string[] }) {
+function Leyenda({ tipos, familias }: { tipos: string[]; familias: readonly FamiliaArista[] }) {
   return (
-    <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-tenue" aria-label="Leyenda">
-      {NIVELES.map((n) => (
-        <span key={n} className="flex items-center gap-1.5">
+    <div
+      className="grid gap-x-8 gap-y-3 rounded-lg border border-linea bg-panel p-3 text-xs text-tenue sm:grid-cols-3"
+      aria-label="Leyenda"
+    >
+      <div className="flex flex-col gap-1.5">
+        <p className="font-semibold text-texto">Nivel de riesgo (color de la entidad)</p>
+        {NIVELES.map((n) => (
+          <span key={n} className="flex items-center gap-1.5">
+            <span
+              className="inline-block size-3 rounded-full border-2"
+              style={{ borderColor: COLOR_NIVEL[n], background: `${COLOR_NIVEL[n]}55` }}
+              aria-hidden
+            />
+            {NOMBRE_NIVEL[n]}
+          </span>
+        ))}
+        <span className="flex items-center gap-1.5">
           <span
-            className="inline-block size-2.5 rounded-full"
-            style={{ background: COLOR_NIVEL[n] }}
+            className="inline-block size-3 rounded-full border-2"
+            style={{ borderColor: COLOR_SIN_NIVEL, background: `${COLOR_SIN_NIVEL}55` }}
             aria-hidden
           />
-          {NOMBRE_NIVEL[n]}
+          Sin calificar
         </span>
-      ))}
-      <span className="text-tenue-2">·</span>
-      {tipos.map((t) => (
-        <span key={t} className="flex items-center gap-1">
-          {/* El ícono es un SVG propio (data URI), no contenido del auditado. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={iconoTipo(t)} alt="" className="size-4 rounded bg-[#5a6a8a] p-0.5" />
-          {NOMBRE_TIPO[t] ?? t}
-        </span>
-      ))}
-      <span className="text-tenue-2">· línea punteada = eventos agrupados · grosor = fuerza</span>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <p className="font-semibold text-texto">Tipo de entidad (ícono)</p>
+        {tipos.map((t) => (
+          <span key={t} className="flex items-center gap-1.5">
+            {/* El ícono es un SVG propio (data URI), no contenido del auditado. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={iconoTipo(t)} alt="" className="size-4 rounded bg-[#3d5a78] p-0.5" />
+            {NOMBRE_TIPO[t] ?? t}
+          </span>
+        ))}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <p className="font-semibold text-texto">Relación (color de la línea)</p>
+        {familias.map((f) => (
+          <span key={f} className="flex items-center gap-1.5">
+            <span
+              className="inline-block h-1 w-6 rounded"
+              style={{ background: COLOR_FAMILIA[f] }}
+              aria-hidden
+            />
+            {NOMBRE_FAMILIA[f]}
+          </span>
+        ))}
+        <p className="mt-1 text-tenue-2">
+          Línea continua: vínculo declarado. Punteada: eventos agrupados (llamadas, transferencias,
+          contratos). Más gruesa: relación más fuerte. Pasa el cursor sobre una entidad para ver sus
+          relaciones; haz clic en una línea para ver la evidencia.
+        </p>
+      </div>
     </div>
   );
 }

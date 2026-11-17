@@ -35,8 +35,8 @@ test("vista del 07734: centrar, 2 saltos, atrás del navegador y ficha", async (
 
   // La red se dibuja aunque los vínculos del Excel vengan por nombre y no por ID.
   const resumen = page.getByTestId("resumen-vista");
-  await expect(resumen).toContainText("líneas visibles", { timeout: 30_000 });
-  const lineas = Number((await resumen.textContent())?.match(/(\d+) líneas/)?.[1]);
+  await expect(resumen).toContainText("relaciones visibles", { timeout: 30_000 });
+  const lineas = Number((await resumen.textContent())?.match(/(\d+) relaciones/)?.[1]);
   expect(lineas).toBeGreaterThanOrEqual(22);
   await expect(
     page.getByRole("img", { name: "Red de vínculos" }).locator("canvas").first(),
@@ -46,7 +46,7 @@ test("vista del 07734: centrar, 2 saltos, atrás del navegador y ficha", async (
   await page.getByLabel("Buscar entidad").fill("ANA TORRES");
   await page.getByRole("button", { name: "Centrar", exact: true }).click();
   await expect(page).toHaveURL(/foco=[0-9a-f-]{36}&saltos=1/);
-  await expect(resumen).toContainText("1 salto desde el centro");
+  await expect(resumen).toContainText("relaciones directas de la entidad central");
   const ficha = page.getByRole("region", { name: "Ficha" });
   await expect(ficha.getByText("Datos generales")).toBeVisible({ timeout: 30_000 });
   const ruta = page.getByRole("navigation", { name: "Ruta" });
@@ -58,8 +58,8 @@ test("vista del 07734: centrar, 2 saltos, atrás del navegador y ficha", async (
   // Ampliar a 2 saltos; con 300 llamadas la interacción responde de inmediato.
   const unSalto = Number((await resumen.textContent())?.match(/^(\d+) entidades/)?.[1]);
   const inicio = Date.now();
-  await page.getByRole("button", { name: "2 saltos" }).click();
-  await expect(resumen).toContainText("2 saltos desde el centro");
+  await page.getByRole("button", { name: "Hasta segundo grado" }).click();
+  await expect(resumen).toContainText("hasta segundo grado de la entidad central");
   expect(Date.now() - inicio).toBeLessThan(3_000);
   await expect(page).toHaveURL(/saltos=2/);
   const dosSaltos = Number((await resumen.textContent())?.match(/^(\d+) entidades/)?.[1]);
@@ -68,10 +68,10 @@ test("vista del 07734: centrar, 2 saltos, atrás del navegador y ficha", async (
   // Atrás del navegador: 1 salto y luego la vista general.
   await page.goBack();
   await expect(page).toHaveURL(/saltos=1/);
-  await expect(resumen).toContainText("1 salto desde el centro");
+  await expect(resumen).toContainText("relaciones directas de la entidad central");
   await page.goBack();
   await expect(page).not.toHaveURL(/foco=/);
-  await expect(resumen).not.toContainText("desde el centro");
+  await expect(resumen).not.toContainText("de la entidad central");
   await expect(ruta.getByRole("button", { name: "Vista general" })).toHaveAttribute(
     "aria-current",
     "page",

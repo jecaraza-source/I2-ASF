@@ -1,4 +1,4 @@
-import type { Nivel } from "@sigma/red";
+import type { FamiliaArista, Nivel } from "@sigma/red";
 import type { Css } from "cytoscape";
 
 export const NOMBRE_TIPO: Record<string, string> = {
@@ -17,6 +17,24 @@ export const NOMBRE_NIVEL: Record<Nivel, string> = {
   medio: "Medio",
   bajo: "Bajo",
 };
+
+/**
+ * Color de las líneas por familia. Parte de la paleta del prototipo (legacy/), aclarada para que
+ * no se pierdan sobre el fondo oscuro.
+ */
+export const COLOR_FAMILIA: Record<FamiliaArista, string> = {
+  propiedad: "#ef7b6a",
+  flujo: "#f0d572",
+  irregularidad: "#ff9f43",
+  familiar: "#c39bff",
+  cuenta: "#4fd1c5",
+  contractual: "#7ddc8f",
+  comunicacion: "#7fb3d8",
+  otro: "#a9b6cc",
+};
+
+/** Color de una entidad sin calificación (nodo del prototipo). */
+export const COLOR_SIN_NIVEL = "#7fb3d8";
 
 /** Paleta del prototipo (legacy/): rojo, ámbar, oro, verde. */
 export const COLOR_NIVEL: Record<Nivel, string> = {

@@ -12,6 +12,7 @@ import {
   type Involucrado,
 } from "@sigma/importador/captura";
 import { useId, useState, useTransition } from "react";
+import { abrirCalendario } from "@/lib/calendario";
 
 export type TipoParaCaptura = {
   id: string;
@@ -160,6 +161,7 @@ export function FormularioRegistro({
             inputMode={c.tipo === "monto" || c.tipo === "numero" ? "decimal" : undefined}
             maxLength={c.tipo === "fecha" ? undefined : 400}
             onChange={(e) => cambiar(e.target.value)}
+            onClick={c.tipo === "fecha" ? abrirCalendario : undefined}
           />
         )}
         <ErrorCampo texto={error} />

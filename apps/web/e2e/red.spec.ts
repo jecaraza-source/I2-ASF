@@ -41,8 +41,8 @@ test("red de lavado: 20 nodos, 25 vínculos, 20 eventos; un cambio de peso deja 
   await encargoConImportacion(page, "Red_Lavado_Dinero_LDN2024047.xlsx");
 
   await generarTodas(page);
-  await expect(page.getByTestId("indicador-Nodos")).toContainText("20");
-  await expect(page.getByTestId("indicador-Vínculos")).toContainText("25");
+  await expect(page.getByTestId("indicador-Entidades")).toContainText("20");
+  await expect(page.getByTestId("indicador-Vínculos declarados")).toContainText("25");
   await expect(page.getByTestId("indicador-Eventos")).toContainText("20");
   // Cada calificación muestra los criterios que la explican.
   const entidades = page.getByRole("region", { name: "Entidades calificadas" });

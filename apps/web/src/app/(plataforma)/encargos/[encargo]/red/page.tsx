@@ -186,7 +186,7 @@ export default async function Red({
           {!actual || !gen ? (
             <EstadoVacio
               titulo="Aún no hay redes generadas."
-              descripcion="Elige semillas y alcance para reunir las entidades, sus vínculos declarados y eventos, y calificarlas."
+              descripcion="Elige las entidades de partida y hasta dónde llega la red para reunir las entidades, sus vínculos declarados y eventos, y calificarlas."
             />
           ) : (
             <>
@@ -195,7 +195,7 @@ export default async function Red({
                   Generación del {formatoFecha(actual.generada_en)} ·{" "}
                   {resumen?.todas
                     ? "todas las entidades"
-                    : `${actual.semillas.length} semilla(s), alcance ${actual.alcance}`}{" "}
+                    : `${actual.semillas.length} entidad(es) de partida, ${actual.alcance === 1 ? "relaciones directas" : "hasta segundo grado"}`}{" "}
                   · reglas versión {actual.version_reglas}
                 </p>
                 <dl
@@ -204,12 +204,12 @@ export default async function Red({
                 >
                   {(
                     [
-                      ["Nodos", resumen?.indicadores.nodos ?? gen.nodos.length],
-                      ["Vínculos", resumen?.indicadores.vinculos ?? gen.vinculos.length],
+                      ["Entidades", resumen?.indicadores.nodos ?? gen.nodos.length],
+                      ["Vínculos declarados", resumen?.indicadores.vinculos ?? gen.vinculos.length],
                       ["Eventos", resumen?.indicadores.eventos ?? 0],
                       ["Fantasma u offshore", resumen?.indicadores.fantasma_offshore ?? 0],
-                      ["Críticas", resumen?.indicadores.por_nivel?.critico ?? 0],
-                      ["Altas", resumen?.indicadores.por_nivel?.alto ?? 0],
+                      ["Riesgo crítico", resumen?.indicadores.por_nivel?.critico ?? 0],
+                      ["Riesgo alto", resumen?.indicadores.por_nivel?.alto ?? 0],
                     ] as const
                   ).map(([t, n]) => (
                     <div
@@ -296,10 +296,10 @@ export default async function Red({
                         Entidad
                       </th>
                       <th scope="col" className="px-4 py-2">
-                        Saltos
+                        Distancia
                       </th>
                       <th scope="col" className="px-4 py-2">
-                        Nivel
+                        Riesgo
                       </th>
                       <th scope="col" className="px-4 py-2">
                         Criterios
@@ -357,7 +357,7 @@ export default async function Red({
                         Fuerza
                       </th>
                       <th scope="col" className="px-4 py-2">
-                        Nivel
+                        Riesgo
                       </th>
                       <th scope="col" className="px-4 py-2">
                         Criterios
