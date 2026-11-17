@@ -117,21 +117,23 @@ test("expediente documental: filtra por entidad y por categoría, cambia de vist
   await modulos.getByRole("link", { name: "Expedientes" }).click();
   await page.getByRole("link", { name: "EXP-DOC" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("EXP-DOC");
-  const resumen = page.getByTestId("resumen-documental");
+  // Next conserva ocultas las páginas visitadas: todo se busca en lo visible.
+  const visible = { visible: true };
+  const resumen = page.getByTestId("resumen-documental").filter(visible);
   await expect(resumen).toHaveText(/^2 registro\(s\)/);
-  const arbol = page.getByRole("navigation", { name: "Árbol del encargo" });
+  const arbol = page.getByRole("navigation", { name: "Árbol del encargo" }).filter(visible);
   await expect(arbol.getByRole("link", { name: /^EXP-DOC/ })).toContainText("2");
   await expect(arbol.getByRole("link", { name: /^Sin expediente/ })).toContainText("1");
-  const tabla = page.getByRole("table", { name: "Registros" });
+  const tabla = page.getByRole("table", { name: "Registros" }).filter(visible);
   await expect(tabla.getByRole("row", { name: /CTR-DOC-1/ })).toContainText("1,000.00");
   await expect(tabla.getByRole("row", { name: /CTR-DOC-1/ })).toContainText("SPD200101AB1");
   await expect(tabla.getByRole("row", { name: /contrato-doc\.pdf/ })).toContainText("Pendiente");
 
   // Filtro de estado: solo validados.
-  await page.getByLabel("Estado").selectOption({ label: "Validados" });
-  await page.getByRole("button", { name: "Filtrar" }).click();
+  await page.getByLabel("Estado").filter(visible).selectOption({ label: "Validados" });
+  await page.getByRole("button", { name: "Filtrar" }).filter(visible).click();
   await expect(resumen).toHaveText(/^1 registro\(s\)/);
-  await page.getByRole("link", { name: "Quitar filtros" }).click();
+  await page.getByRole("link", { name: "Quitar filtros" }).filter(visible).click();
   await expect(resumen).toHaveText(/^2 registro\(s\)/);
 
   // Por entidad dentro del expediente, luego su categoría; los conteos del árbol cuadran.
@@ -145,23 +147,23 @@ test("expediente documental: filtra por entidad y por categoría, cambia de vist
   );
 
   // La entidad en todos los expedientes del encargo.
-  await page.getByRole("link", { name: "quitar categoría" }).click();
-  await page.getByRole("link", { name: "ver en todos los expedientes" }).click();
+  await page.getByRole("link", { name: "quitar categoría" }).filter(visible).click();
+  await page.getByRole("link", { name: "ver en todos los expedientes" }).filter(visible).click();
   await expect(page).toHaveURL(/\/registros\?vista=entidad&entidad=/);
   await expect(resumen).toHaveText(/^2 registro\(s\) de =SUMA PROVEEDOR DOC SA DE CV/);
-  await expect(page.getByRole("link", { name: "Por entidad" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Por entidad" }).filter(visible)).toHaveAttribute(
     "aria-current",
     "page",
   );
 
   // Por categoría: grupos de Contractual y Fiscal en todo el encargo.
   await page.goto(page.url().replace(/\/registros\?.*$/, "/registros"));
-  await page.getByRole("link", { name: "Por categoría" }).click();
+  await page.getByRole("link", { name: "Por categoría" }).filter(visible).click();
   await expect(tabla.getByRole("rowheader", { name: /^Contractual · 2/ })).toBeVisible();
   await expect(tabla.getByRole("rowheader", { name: /^Fiscal · 1/ })).toBeVisible();
 
   // Línea de tiempo: de lo más antiguo a lo más reciente, por mes; lo que no tiene fecha al final.
-  await page.getByRole("link", { name: "Línea de tiempo" }).click();
+  await page.getByRole("link", { name: "Línea de tiempo" }).filter(visible).click();
   const grupos = tabla.getByRole("rowheader").filter({ hasText: /·/ });
   await expect(grupos).toHaveText([/^marzo de 2022/, /^mayo de 2022/, /^Sin fecha/]);
 
@@ -171,30 +173,32 @@ test("expediente documental: filtra por entidad y por categoría, cambia de vist
   await expect(tabla.getByRole("row", { name: /F-DOC-9/ })).toBeVisible();
 
   // Detalle de un registro: lo que generó y su bitácora.
-  await page.getByRole("link", { name: "Por expediente" }).click();
+  await page.getByRole("link", { name: "Por expediente" }).filter(visible).click();
   await arbol.getByRole("link", { name: /^EXP-DOC/ }).click();
   await tabla.getByRole("link", { name: /^Contrato CTR-DOC-1/ }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Contrato CTR-DOC-1/);
-  await expect(page.getByRole("region", { name: "Eventos generados" })).toContainText("contrato");
-  await expect(page.getByRole("region", { name: "Bitácora del registro" })).toContainText(
-    "Alta del registro",
-  );
-  await page.getByRole("link", { name: "EXP-DOC" }).first().click();
+  await expect(
+    page.getByRole("region", { name: "Eventos generados" }).filter(visible),
+  ).toContainText("contrato");
+  await expect(
+    page.getByRole("region", { name: "Bitácora del registro" }).filter(visible),
+  ).toContainText("Alta del registro");
+  await page.getByRole("link", { name: "EXP-DOC" }).filter(visible).first().click();
 
   // Del registro del documento hasta el original.
   await tabla.getByRole("link", { name: "contrato-doc.pdf" }).first().click();
   await expect(page).toHaveURL(/\/registros\//);
-  await page.getByRole("link", { name: "contrato-doc.pdf" }).click();
+  await page.getByRole("link", { name: "contrato-doc.pdf" }).filter(visible).click();
   await expect(page).toHaveURL(/\/documentos\//);
-  await expect(page.getByTitle("Original: contrato-doc.pdf")).toBeVisible();
+  await expect(page.getByTitle("Original: contrato-doc.pdf").filter(visible)).toBeVisible();
 
   // Exportar la vista del expediente: dos filas y las fórmulas neutralizadas.
   await page.goBack();
-  await page.getByRole("link", { name: "EXP-DOC" }).first().click();
+  await page.getByRole("link", { name: "EXP-DOC" }).filter(visible).first().click();
   await expect(resumen).toHaveText(/^2 registro\(s\)/);
   const [descarga] = await Promise.all([
     page.waitForEvent("download"),
-    page.getByRole("link", { name: "Exportar CSV" }).click(),
+    page.getByRole("link", { name: "Exportar CSV" }).filter(visible).click(),
   ]);
   const csv = readFileSync(await descarga.path(), "utf8");
   const lineas = csv.replace(/^﻿/, "").trimEnd().split("\r\n");
@@ -212,5 +216,5 @@ test("el lector no exporta", async ({ page }) => {
   expect(r.status()).toBe(403);
   await page.goto("/encargos/c0000000-0000-4000-8000-000000000001/registros");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Registros del encargo");
-  await expect(page.getByRole("link", { name: "Exportar CSV" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Exportar CSV" }).filter(visible)).toHaveCount(0);
 });
