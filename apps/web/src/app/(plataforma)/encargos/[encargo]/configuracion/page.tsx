@@ -120,7 +120,7 @@ export default async function Configuracion({ params }: { params: Promise<{ enca
           <p className="mb-3 text-xs text-tenue">
             Proveedores a los que este encargo puede enviar documentos para leerlos. Sin marcas, la
             IA está apagada aquí. El consumo y los topes están en{" "}
-            <Link href="/ia" className="text-azul-claro hover:underline">
+            <Link href="/ia" className="text-azul-claro underline hover:text-texto">
               Uso de IA
             </Link>
             .
