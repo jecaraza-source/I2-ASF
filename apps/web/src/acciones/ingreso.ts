@@ -110,29 +110,32 @@ export type Registro =
   | { ok: true; documentoId: string; registroId: string }
   | { ok: false; mensaje: string; rechazado?: boolean; duplicado?: boolean };
 
-/**
- * Registra un original ya subido. El servidor vuelve a calcular el SHA-256 sobre lo que quedó en
- * el bucket: si no coincide con la huella declarada, o el contenido no es del tipo que dice ser,
- * el documento se rechaza y queda en bitácora (§4).
- */
-export async function registrarDocumento(entrada: unknown): Promise<Registro> {
-  const p = registroSchema.safeParse(entrada);
-  if (!p.success) return { ok: false, mensaje: p.error.issues[0]?.message ?? "Datos inválidos." };
-  const d = p.data;
-  const tipo = tipoPorNombre(d.nombre);
-  if (!tipo) return { ok: false, mensaje: "Tipo de archivo no aceptado." };
-  const c = await contexto(d.encargoId);
-  if (!c) return { ok: false, mensaje: "Tu rol no permite ingresar documentos en este encargo." };
+type Contexto = NonNullable<Awaited<ReturnType<typeof contexto>>>;
+type Verificado =
+  | { ok: true; sha256: string; mime: string; tamano: number }
+  | { ok: false; mensaje: string; rechazado?: boolean };
 
-  const destino = ruta(c.organizacionId, c.encargoId, d.sha256);
-  const descarga = await c.supabase.storage.from(BUCKET).download(destino);
+/**
+ * Descarga lo que quedó en el bucket y lo verifica: SHA-256 recalculado en el servidor, tamaño y
+ * que el contenido sea del tipo que dice ser. Lo que no pasa se rechaza y queda en bitácora (§4).
+ */
+async function verificarOriginal(
+  c: Contexto,
+  declarado: string,
+  nombre: string,
+): Promise<Verificado> {
+  const tipo = tipoPorNombre(nombre);
+  if (!tipo) return { ok: false, mensaje: "Tipo de archivo no aceptado." };
+  const descarga = await c.supabase.storage
+    .from(BUCKET)
+    .download(ruta(c.organizacionId, c.encargoId, declarado));
   if (descarga.error || !descarga.data) {
     return { ok: false, mensaje: "El archivo no llegó al almacenamiento. Vuelve a subirlo." };
   }
   const bytes = new Uint8Array(await descarga.data.arrayBuffer());
   const calculado = createHash("sha256").update(bytes).digest("hex");
 
-  const rechazar = async (motivo: string, mensaje: string): Promise<Registro> => {
+  const rechazar = async (motivo: string, mensaje: string): Promise<Verificado> => {
     const { error } = await c.supabase.from("bitacora").insert({
       organizacion_id: c.organizacionId,
       encargo_id: c.encargoId,
@@ -141,8 +144,8 @@ export async function registrarDocumento(entrada: unknown): Promise<Registro> {
       objeto_tipo: "documento_origen",
       detalle: {
         motivo,
-        nombre_archivo: d.nombre,
-        sha256_declarado: d.sha256,
+        nombre_archivo: nombre,
+        sha256_declarado: declarado,
         sha256_calculado: calculado,
         tamano: bytes.length,
         tipo_almacenado: descarga.data.type,
@@ -152,28 +155,60 @@ export async function registrarDocumento(entrada: unknown): Promise<Registro> {
     return { ok: false, rechazado: true, mensaje };
   };
 
-  if (calculado !== d.sha256) {
+  if (calculado !== declarado) {
     return rechazar(
       "sha256_no_coincide",
       "Rechazado: la huella calculada en el servidor no coincide con la del navegador.",
     );
   }
-  if (bytes.length > MAX_BYTES_DOCUMENTO)
+  if (bytes.length > MAX_BYTES_DOCUMENTO) {
     return rechazar("tamano_excedido", "Rechazado: el archivo supera 50 MB.");
+  }
   if (!contenidoCoincide(bytes, tipo) || descarga.data.type.split(";")[0] !== tipo.mime) {
     return rechazar(
       "tipo_no_coincide",
       `Rechazado: el contenido no corresponde a un archivo .${tipo.extension}.`,
     );
   }
+  return { ok: true, sha256: calculado, mime: tipo.mime, tamano: bytes.length };
+}
+
+const resultadoRpc = z.object({
+  documento_id: z.uuid(),
+  registro_id: z.uuid(),
+  trabajo_id: z.uuid(),
+});
+
+/** Se intenta procesar el trabajo de una vez; si no se puede, lo toma el cron. */
+async function procesarAhora(trabajoId: string, origen: string) {
+  try {
+    await procesarTrabajos({ trabajoId });
+  } catch {
+    console.error(`[${origen}] el trabajo ${trabajoId} queda para el cron`);
+  }
+}
+
+/**
+ * Registra un original ya subido. El servidor vuelve a calcular el SHA-256 sobre lo que quedó en
+ * el bucket: si no coincide con la huella declarada, o el contenido no es del tipo que dice ser,
+ * el documento se rechaza y queda en bitácora (§4).
+ */
+export async function registrarDocumento(entrada: unknown): Promise<Registro> {
+  const p = registroSchema.safeParse(entrada);
+  if (!p.success) return { ok: false, mensaje: p.error.issues[0]?.message ?? "Datos inválidos." };
+  const d = p.data;
+  const c = await contexto(d.encargoId);
+  if (!c) return { ok: false, mensaje: "Tu rol no permite ingresar documentos en este encargo." };
+  const v = await verificarOriginal(c, d.sha256, d.nombre);
+  if (!v.ok) return v;
 
   const { data, error } = await c.supabase.rpc("registrar_documento", {
     p: {
       encargo_id: c.encargoId,
-      sha256: calculado,
+      sha256: v.sha256,
       nombre_archivo: d.nombre,
-      mime: tipo.mime,
-      tamano: bytes.length,
+      mime: v.mime,
+      tamano: v.tamano,
       tipo_documento_id: d.tipoDocumentoId,
       expediente_id: d.expedienteId,
       expediente_nuevo: d.expedienteId ? null : d.expedienteNuevo,
@@ -181,20 +216,53 @@ export async function registrarDocumento(entrada: unknown): Promise<Registro> {
     } as Json,
   });
   if (error) {
-    if (error.code === "23505")
+    if (error.code === "23505") {
       return { ok: false, duplicado: true, mensaje: "Este archivo ya existe en el encargo." };
+    }
     return { ok: false, mensaje: mensajeDeError(error, "registrarDocumento") };
   }
-  const r = z
-    .object({ documento_id: z.uuid(), registro_id: z.uuid(), trabajo_id: z.uuid() })
-    .safeParse(data);
+  const r = resultadoRpc.safeParse(data);
   if (!r.success) return { ok: false, mensaje: "El registro no devolvió un documento." };
+  await procesarAhora(r.data.trabajo_id, "registrarDocumento");
+  return { ok: true, documentoId: r.data.documento_id, registroId: r.data.registro_id };
+}
 
-  // Se intenta procesar el trabajo de una vez; si no se puede, lo toma el cron.
-  try {
-    await procesarTrabajos({ trabajoId: r.data.trabajo_id });
-  } catch {
-    console.error(`[registrarDocumento] el trabajo ${r.data.trabajo_id} queda para el cron`);
+const asociarSchema = z.object({
+  encargoId: z.uuid(),
+  registroId: z.uuid(),
+  sha256: sha,
+  nombre: z.string().trim().min(1).max(255),
+});
+
+/** Liga un original ya subido a una captura «sin soporte documental» y encola su extracción. */
+export async function asociarDocumento(entrada: unknown): Promise<Registro> {
+  const p = asociarSchema.safeParse(entrada);
+  if (!p.success) return { ok: false, mensaje: "Datos inválidos." };
+  const d = p.data;
+  const c = await contexto(d.encargoId);
+  if (!c) return { ok: false, mensaje: "Tu rol no permite asociar documentos en este encargo." };
+  const v = await verificarOriginal(c, d.sha256, d.nombre);
+  if (!v.ok) return v;
+
+  const { data, error } = await c.supabase.rpc("asociar_documento", {
+    p: {
+      registro_id: d.registroId,
+      sha256: v.sha256,
+      nombre_archivo: d.nombre,
+      mime: v.mime,
+      tamano: v.tamano,
+    } as Json,
+  });
+  if (error) {
+    if (error.code === "23505") {
+      return { ok: false, duplicado: true, mensaje: "Este archivo ya existe en el encargo." };
+    }
+    if (error.code === "22023")
+      return { ok: false, mensaje: "El registro ya tiene un documento asociado." };
+    return { ok: false, mensaje: mensajeDeError(error, "asociarDocumento") };
   }
+  const r = resultadoRpc.safeParse(data);
+  if (!r.success) return { ok: false, mensaje: "La asociación no devolvió un documento." };
+  await procesarAhora(r.data.trabajo_id, "asociarDocumento");
   return { ok: true, documentoId: r.data.documento_id, registroId: r.data.registro_id };
 }
