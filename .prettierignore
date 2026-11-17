@@ -11,3 +11,4 @@ supabase/.temp
 packages/modelo/src/db.ts
 apps/web/AGENTS.md
 apps/web/next-env.d.ts
+packages/i2-export/src/plantilla.ts

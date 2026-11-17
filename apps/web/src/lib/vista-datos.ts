@@ -25,7 +25,7 @@ async function leerTodo<T>(
 }
 
 /** Consulta `.in()` en lotes para no exceder el largo de la URL. */
-async function enLotes<T>(
+export async function enLotes<T>(
   ids: string[],
   consulta: (lote: string[]) => PromiseLike<{ data: T[] | null; error: { code?: string } | null }>,
   tamano = LOTE,

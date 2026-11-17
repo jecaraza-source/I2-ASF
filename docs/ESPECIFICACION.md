@@ -533,10 +533,31 @@ Funciones puras `(datos) => Alerta[]`. Cada alerta enlaza las evidencias que se 
 
 ## 12. Exportaciones
 
-- **i2 Analyst's Notebook:** CSV de entidades y CSV de vínculos, más un documento con la
-  especificación de importación (columnas, tipos, iconos). **GraphML** como alternativa.
-- **PDF de reporte:** generado en servidor, sin navegador headless. Incluye folio del expediente,
-  fecha, autor y SHA-256 de los datos exportados. Toda exportación va a bitácora.
+Todo sale de la **generación más reciente** de la red (`packages/i2-export`, funciones puras; la ruta
+es `…/red/exportar/<archivo>`). Botón «Exportar» en Red de vínculos y en cada expediente. Roles
+`admin` y `auditor` (permiso `red.exportar`).
+
+- **Alcance:** la red completa del encargo, o con `?expediente=<id>` solo las entidades de la red que
+  aparecen en registros de ese expediente (por su entidad canónica) y los vínculos, eventos y
+  alertas entre ellas.
+- **i2 Analyst's Notebook:** `entidades.csv` (ID, nombre, tipo, tipo i2 sugerido, RFC, CURP,
+  teléfono, riesgo declarado, nivel, puntaje, criterios), `vinculos.csv` (vínculos declarados) y
+  `eventos.csv` (transferencias, llamadas y contratos como vínculos con fecha y monto; de un evento
+  con más de dos participantes salen los dos primeros por rol). UTF-8 con BOM; las celdas que
+  empiezan con `=`, `+`, `-`, `@` se neutralizan. `especificacion-i2.txt` explica la importación
+  (columnas, tipos, íconos y orden) y lista cada CSV con sus filas y SHA-256.
+- **GraphML:** `red.graphml` estándar (Gephi, yEd, Cytoscape); vínculos con `clase = vinculo` y
+  eventos con `clase = evento`.
+- **PDF de reporte:** `reporte.pdf` con pdf-lib en servidor (sin navegador headless) y la plantilla
+  del prototipo: portada, resumen con indicadores, dibujo de la red (disposición por fuerzas
+  determinista; hasta 400 entidades de mayor puntaje), entidades con nivel y criterios, alertas. Al
+  pie de cada página: folio, fecha, autor y SHA-256 de los datos exportados. Esos datos (JSON
+  canónico: listas ordenadas por ID y llaves ordenadas) van **adjuntos al PDF como `datos.json`**,
+  así cualquiera recalcula el hash.
+- **Folio:** identificador del expediente (o `RED`) + 8 caracteres aleatorios, p. ej.
+  `EXP-2026-0001-7F3A2B1C`. Va en el nombre del archivo.
+- **Bitácora:** `red.exportacion` con archivo, folio, expediente, conteos y SHA-256 (sin nombres ni
+  montos). Si la bitácora no se puede escribir, no se entrega el archivo.
 
 ## 13. Fixtures y valores esperados
 

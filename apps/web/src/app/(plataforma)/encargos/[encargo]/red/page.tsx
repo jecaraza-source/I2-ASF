@@ -5,6 +5,7 @@ import { z } from "zod";
 import { resolverFusionAccion } from "@/acciones/red";
 import { EstadoVacio } from "@/components/estados";
 import { FormularioAjuste, FormularioGenerar } from "@/components/red/formularios";
+import { MenuExportar } from "@/components/exportar/menu";
 import { BotonConsultarFuentes } from "@/components/fuentes/consultar";
 import { EnlaceBoton, Panel, Titulo } from "@/components/ui";
 import { formatoFecha, obtenerEncargo } from "@/lib/datos";
@@ -171,6 +172,12 @@ export default async function Red({
               <BotonConsultarFuentes
                 encargoId={encargo.id}
                 texto="Consultar fuentes de todas las entidades"
+              />
+            ) : null}
+            {lista.length && puede(activa.rol, "red.exportar") ? (
+              <MenuExportar
+                encargoId={encargo.id}
+                nota={`Generación más reciente, del ${formatoFecha(lista[0]!.generada_en)}.`}
               />
             ) : null}
             {actual ? <EnlaceBoton href={`${base}/vista`}>Explorar la red</EnlaceBoton> : null}

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.9.0",
+    "@sigma/i2-export": "workspace:*",
     "@sigma/importador": "workspace:*",
     "@sigma/modelo": "workspace:*",
     "@sigma/red": "workspace:*",
