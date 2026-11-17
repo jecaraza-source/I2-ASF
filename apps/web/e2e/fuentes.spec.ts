@@ -128,12 +128,9 @@ test("fuentes de consulta: carga de la lista 69-B, coincidencia exacta con alert
   await page.goto(ficha);
 
   // Confirmar e incorporar como registro: abre el registro creado.
-  await page
-    .getByRole("button", { name: /^Confirmar: EMPRESA FACTURADORA/ })
-    .filter(visible)
-    .click();
+  await externas.getByRole("button", { name: /^Confirmar: EMPRESA FACTURADORA/ }).click();
   await expect(externas).toContainText("Confirmada");
-  await page.getByRole("button", { name: "Incorporar como registro" }).filter(visible).click();
+  await externas.getByRole("button", { name: "Incorporar como registro" }).click();
   await expect(page).toHaveURL(/\/registros\/[0-9a-f-]{36}$/, { timeout: 30_000 });
   await expect(page.locator("main").filter(visible)).toContainText("Lista 69-B del SAT");
   await page.goto(ficha);
@@ -149,10 +146,10 @@ test("fuentes de consulta: carga de la lista 69-B, coincidencia exacta con alert
     .getByRole("button", { name: /^Descartar: / })
     .filter(visible)
     .click();
-  await page.getByRole("button", { name: "Confirmar descarte" }).filter(visible).click();
-  await expect(page.getByRole("alert").filter(visible)).toBeVisible();
-  await page.getByLabel("Motivo del descarte").filter(visible).fill("Homónimo: otro RFC");
-  await page.getByRole("button", { name: "Confirmar descarte" }).filter(visible).click();
+  await externas.getByRole("button", { name: "Confirmar descarte" }).click();
+  await expect(externas.getByRole("alert")).toBeVisible();
+  await externas.getByLabel("Motivo del descarte").fill("Homónimo: otro RFC");
+  await externas.getByRole("button", { name: "Confirmar descarte" }).click();
   await expect(externas).toContainText("Descartada");
   await expect(externas).toContainText("motivo: Homónimo: otro RFC");
   await modulos.getByRole("link", { name: "Alertas" }).click();
