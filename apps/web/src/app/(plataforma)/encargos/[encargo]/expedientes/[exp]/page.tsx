@@ -1,12 +1,19 @@
-import { puede } from "@sigma/modelo";
-import { EnlaceBoton, Panel, Titulo } from "@/components/ui";
+import { leerFiltrosDocumental, puede } from "@sigma/modelo";
+import { Suspense } from "react";
+import { Documental } from "@/components/documental/documental";
+import { EstadoCargando } from "@/components/estados";
+import { EnlaceBoton, Titulo } from "@/components/ui";
 import { formatoFecha, obtenerExpediente } from "@/lib/datos";
 import { requerirOrganizacion } from "@/lib/sesion";
 
+type Parametros = Promise<Record<string, string | string[] | undefined>>;
+
 export default async function Expediente({
   params,
+  searchParams,
 }: {
   params: Promise<{ encargo: string; exp: string }>;
+  searchParams: Parametros;
 }) {
   const { encargo: encargoId, exp } = await params;
   const expediente = await obtenerExpediente(encargoId, exp);
@@ -27,19 +34,45 @@ export default async function Expediente({
       >
         <span className="font-mono">{expediente.identificador}</span>
       </Titulo>
-      <Panel>
-        <dl className="grid grid-cols-[10rem_1fr] gap-y-2 text-sm">
+      <dl className="-mt-3 mb-6 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+        <div className="flex gap-2">
           <dt className="text-tenue">Número de control</dt>
           <dd className="text-texto">{expediente.numero_control ?? "—"}</dd>
-          <dt className="text-tenue">Descripción</dt>
-          <dd className="whitespace-pre-wrap text-texto">{expediente.descripcion ?? "—"}</dd>
+        </div>
+        <div className="flex gap-2">
           <dt className="text-tenue">Alta</dt>
           <dd className="text-texto">{formatoFecha(expediente.creado_en)}</dd>
-        </dl>
-      </Panel>
-      <p className="mt-6 text-sm text-tenue">
-        Los registros del expediente se muestran aquí a partir de la tarea 10.
-      </p>
+        </div>
+        {expediente.descripcion ? (
+          <div className="flex basis-full gap-2">
+            <dt className="text-tenue">Descripción</dt>
+            <dd className="whitespace-pre-wrap text-texto">{expediente.descripcion}</dd>
+          </div>
+        ) : null}
+      </dl>
+      <Suspense fallback={<EstadoCargando texto="Cargando registros…" />}>
+        <Registros encargoId={encargoId} expedienteId={expediente.id} searchParams={searchParams} />
+      </Suspense>
     </main>
+  );
+}
+
+async function Registros({
+  encargoId,
+  expedienteId,
+  searchParams,
+}: {
+  encargoId: string;
+  expedienteId: string;
+  searchParams: Parametros;
+}) {
+  const { activa } = await requerirOrganizacion();
+  return (
+    <Documental
+      encargoId={encargoId}
+      rol={activa.rol}
+      filtros={leerFiltrosDocumental(await searchParams)}
+      expedienteFijo={expedienteId}
+    />
   );
 }

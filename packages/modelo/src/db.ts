@@ -1931,6 +1931,15 @@ export type Database = {
         Returns: undefined
       }
       asociar_documento: { Args: { p: Json }; Returns: Json }
+      bitacora_registro: {
+        Args: { p_registro: string }
+        Returns: {
+          accion: string
+          actor_correo: string
+          detalle: Json
+          en: string
+        }[]
+      }
       bitacora_usuarios: {
         Args: {
           p_clase: string
@@ -1959,6 +1968,49 @@ export type Database = {
       es_miembro: {
         Args: { p_organizacion_id: string; p_roles?: string[] }
         Returns: boolean
+      }
+      expediente_arbol: {
+        Args: { p: Json }
+        Returns: {
+          categoria: string
+          categoria_id: string
+          entidad: string
+          entidad_id: string
+          entidad_tipo: string
+          expediente: string
+          expediente_id: string
+          nivel: number
+          registros: number
+        }[]
+      }
+      expediente_registros: {
+        Args: { p: Json }
+        Returns: {
+          alertas: number
+          archivo: string
+          categoria: string
+          categoria_id: string
+          documento_id: string
+          estado_extraccion: string
+          estado_validacion: string
+          expediente: string
+          expediente_id: string
+          fecha: string
+          fila: number
+          fuente: string
+          hoja: string
+          identificadores: Json
+          involucrados: Json
+          montos: Json
+          nivel: string
+          origen: string
+          referencias: string[]
+          registro_id: string
+          resumen: string
+          sha256: string
+          tipo: string
+          total: number
+        }[]
       }
       guardar_alertas: { Args: { p: Json }; Returns: Json }
       guardar_configuracion_ia: {

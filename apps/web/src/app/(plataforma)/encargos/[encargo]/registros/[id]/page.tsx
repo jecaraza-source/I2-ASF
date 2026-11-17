@@ -7,12 +7,35 @@ import { Etiqueta, Panel, Titulo } from "@/components/ui";
 import { formatoFecha, obtenerEncargo } from "@/lib/datos";
 import { requerirOrganizacion } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
-import { cargarRegistro } from "@/lib/vista-datos";
+import { cargarGenerado, cargarRegistro } from "@/lib/vista-datos";
 
 const ORIGEN: Record<string, string> = {
   documento: "Documento",
   captura: "Captura manual",
   importacion: "Importación de Excel",
+};
+
+const fechaHora = new Intl.DateTimeFormat("es-MX", {
+  timeZone: "America/Mexico_City",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+/** Nombre legible de las acciones de la bitácora que tocan un registro o su documento. */
+const ACCION: Record<string, string> = {
+  "documento_origen.alta": "Ingreso del documento",
+  "documento.consulta": "Consulta del original",
+  "registro.alta": "Alta del registro",
+  "registro.cambio": "Cambio en el registro",
+  "extraccion.ia": "Lectura con IA",
+  "extraccion.validacion": "Validación de un dato",
+  "registro.validacion": "Validación",
+  "registro.rechazo": "Rechazo",
+  "registro.exportacion": "Exportación",
 };
 
 function valor(v: unknown): string {
@@ -33,6 +56,7 @@ export default async function Registro({
   const supabase = await clienteServidor();
   const datos = await cargarRegistro(supabase, encargo.id, id);
   if (!datos) notFound();
+  const generado = await cargarGenerado(supabase, encargo.id, datos.registro.id);
   const { registro: r, extracciones, entidades } = datos;
   const base = `/encargos/${encargo.id}`;
   const { activa } = await requerirOrganizacion();
@@ -60,6 +84,19 @@ export default async function Registro({
                 </Link>
               ) : (
                 "—"
+              )}
+            </dd>
+            <dt className="text-tenue">Expediente</dt>
+            <dd className="text-texto">
+              {r.expediente_id ? (
+                <Link
+                  href={`${base}/expedientes/${r.expediente_id}`}
+                  className="text-azul-claro hover:underline"
+                >
+                  {r.expediente?.identificador ?? "Ver expediente"}
+                </Link>
+              ) : (
+                "Sin expediente"
               )}
             </dd>
             <dt className="text-tenue">Fuente</dt>
@@ -156,6 +193,89 @@ export default async function Registro({
             ))}
           </ul>
         </Panel>
+        <Panel>
+          <h2 className="mb-3 text-base font-semibold text-texto">Lo que generó</h2>
+          {!generado.vinculos.length && !generado.eventos.length ? (
+            <p className="text-sm text-tenue">
+              {r.estado_validacion === "pendiente"
+                ? "Nada todavía: un registro pendiente no genera vínculos ni eventos hasta validarse."
+                : "Este registro no generó vínculos ni eventos."}
+            </p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              <section aria-label="Vínculos generados">
+                <h3 className="mb-2 text-xs tracking-wide text-oro uppercase">
+                  Vínculos · {generado.vinculos.length}
+                </h3>
+                <ul className="flex flex-col gap-1.5 text-sm">
+                  {generado.vinculos.map((v) => (
+                    <li key={v.id}>
+                      <Link
+                        href={`${base}/entidades/${v.origen_id}`}
+                        className="text-azul-claro hover:underline"
+                      >
+                        {v.origen}
+                      </Link>{" "}
+                      <span className="text-tenue">{v.dirigido ? "→" : "↔"}</span>{" "}
+                      <Link
+                        href={`${base}/entidades/${v.destino_id}`}
+                        className="text-azul-claro hover:underline"
+                      >
+                        {v.destino}
+                      </Link>
+                      <span className="block text-xs text-tenue">
+                        {v.tipo}
+                        {v.fuerza ? ` · fuerza ${v.fuerza}` : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+              <section aria-label="Eventos generados">
+                <h3 className="mb-2 text-xs tracking-wide text-oro uppercase">
+                  Eventos · {generado.eventos.length}
+                </h3>
+                <ul className="flex flex-col gap-1.5 text-sm">
+                  {generado.eventos.map((ev) => (
+                    <li key={ev.id}>
+                      <span className="text-texto">
+                        {ev.tipo}
+                        {ev.fecha ? ` · ${formatoFecha(ev.fecha)}` : ""}
+                        {ev.monto !== null ? ` · ${ev.monto} ${ev.moneda ?? ""}` : ""}
+                      </span>
+                      <span className="block text-xs text-tenue">
+                        {ev.participantes.map((p) => `${p.nombre} (${p.rol})`).join(" · ") ||
+                          "Sin participantes"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </div>
+          )}
+        </Panel>
+
+        <section
+          aria-label="Bitácora del registro"
+          className="rounded-lg border border-linea bg-panel p-4"
+        >
+          <h2 className="mb-3 text-base font-semibold text-texto">Bitácora</h2>
+          {!generado.bitacora.length ? (
+            <p className="text-sm text-tenue">Sin movimientos registrados.</p>
+          ) : (
+            <ol className="flex flex-col gap-1.5 text-sm">
+              {generado.bitacora.map((b, i) => (
+                <li key={`${b.en}-${i}`} className="flex flex-wrap gap-x-3">
+                  <span className="font-mono text-xs text-tenue">
+                    {fechaHora.format(new Date(b.en))}
+                  </span>
+                  <span className="text-texto">{ACCION[b.accion] ?? b.accion}</span>
+                  <span className="text-tenue">{b.actor_correo ?? "Sistema"}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
       </div>
     </main>
   );

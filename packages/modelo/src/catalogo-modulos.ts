@@ -42,6 +42,14 @@ export const MODULOS = [
     listo: true,
   },
   {
+    clave: "registros",
+    nombre: "Registros",
+    descripcion: "Todos los registros del encargo: cuatro vistas, árbol, búsqueda y exportación.",
+    ruta: "/registros",
+    categoria: "gestion",
+    listo: true,
+  },
+  {
     clave: "importaciones",
     nombre: "Importación de Excel",
     descripcion: "Convierte hojas de cálculo en registros trazables hasta la celda de origen.",
