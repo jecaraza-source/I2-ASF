@@ -1,7 +1,7 @@
 "use client";
 
 import { NOMBRE_PROVEEDOR_IA, PROVEEDORES_IA, type ProveedorIA } from "@sigma/modelo";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { configurarIAEncargo, guardarConfiguracionIA, guardarPrecioIA } from "@/acciones/ia";
 import { BotonEnviar } from "@/components/formulario";
 import { ESTADO_INICIAL } from "@/lib/formulario";
@@ -28,10 +28,23 @@ export function FormularioConfiguracionIA({
   topeMensual: number;
 }) {
   const [estado, enviar] = useActionState(guardarConfiguracionIA, ESTADO_INICIAL);
+  // Controlados: React reinicia los formularios tras cada acción y se perdería lo escrito al
+  // corregir un error de validación.
+  const [valores, setValores] = useState({
+    activa,
+    diario: String(topeDiario),
+    mensual: String(topeMensual),
+  });
   return (
     <form action={enviar} className="flex flex-col gap-4">
       <label className="flex items-center gap-2 text-sm text-texto">
-        <input type="checkbox" name="activa" defaultChecked={activa} className="size-4" />
+        <input
+          type="checkbox"
+          name="activa"
+          checked={valores.activa}
+          onChange={(e) => setValores((v) => ({ ...v, activa: e.target.checked }))}
+          className="size-4"
+        />
         IA activa en la organización
       </label>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -39,7 +52,8 @@ export function FormularioConfiguracionIA({
           Tope diario de tokens
           <input
             name="tope_diario_tokens"
-            defaultValue={topeDiario}
+            value={valores.diario}
+            onChange={(e) => setValores((v) => ({ ...v, diario: e.target.value }))}
             inputMode="numeric"
             className={claseControl}
           />
@@ -48,7 +62,8 @@ export function FormularioConfiguracionIA({
           Tope mensual de tokens
           <input
             name="tope_mensual_tokens"
-            defaultValue={topeMensual}
+            value={valores.mensual}
+            onChange={(e) => setValores((v) => ({ ...v, mensual: e.target.value }))}
             inputMode="numeric"
             className={claseControl}
           />
