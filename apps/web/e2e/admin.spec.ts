@@ -35,8 +35,8 @@ test("admin agrega un tipo de documento al catálogo", async ({ page }) => {
   const nombre = unico("Identificación");
   const clave = `id_${Date.now().toString(36)}`;
   await page.getByLabel("Nombre del tipo").fill(nombre);
-  await page.getByLabel("Clave", { exact: true }).fill(clave);
-  await page.getByLabel("Categoría", { exact: true }).selectOption({ label: "Contractual" });
+  await page.getByRole("textbox", { name: /^Clave/ }).fill(clave);
+  await page.getByRole("combobox", { name: /^Categoría/ }).selectOption({ label: "Contractual" });
   await page.getByRole("button", { name: "Agregar tipo" }).click();
   await expect(tipos).toContainText(nombre);
   await expect(tipos).toContainText(clave);
