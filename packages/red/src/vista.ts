@@ -296,8 +296,11 @@ export function posiciones(
 ) {
   const pos = new Map<string, Punto>();
   const porTipo = new Map<string, NodoVista[]>();
-  for (const n of [...nodos].sort((a, b) => a.nombre.localeCompare(b.nombre)))
-    porTipo.set(n.tipo, [...(porTipo.get(n.tipo) ?? []), n]);
+  for (const n of [...nodos].sort((a, b) => a.nombre.localeCompare(b.nombre))) {
+    const grupo = porTipo.get(n.tipo);
+    if (grupo) grupo.push(n);
+    else porTipo.set(n.tipo, [n]);
+  }
   const tipos = [...porTipo.keys()].sort((a, b) => ordenTipo(a) - ordenTipo(b));
 
   if (diseno === "empaquetado") {

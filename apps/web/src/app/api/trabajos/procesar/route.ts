@@ -34,7 +34,7 @@ async function procesar(request: NextRequest) {
     }
     return NextResponse.json(r);
   } catch (e) {
-    console.error(`[trabajos] ${e instanceof Error ? e.message : "error"}`);
+    console.error(`[trabajos] ${e instanceof Error ? e.name : "error"}`);
     return NextResponse.json({ error: "No se pudieron procesar los trabajos" }, { status: 500 });
   }
 }

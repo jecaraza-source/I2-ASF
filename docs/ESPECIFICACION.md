@@ -128,9 +128,21 @@ cuando pertenece a un encargo. No se repiten abajo.
 - `auditor`: crea y valida registros, genera redes, resuelve alertas, firma hallazgos.
 - `lector`: solo lectura.
 
-Función `es_miembro(organizacion_id, roles text[])` (`security definer`, `search_path` fijo) usada por
-todas las políticas. `bitacora`: solo INSERT y SELECT. Registro por invitación; el alta pública queda
-desactivada.
+Las políticas comparan `organizacion_id = any ((select privado.mis_organizaciones(roles))::uuid[])`:
+la lista de organizaciones activas del usuario (con el rol pedido) se calcula **una vez por consulta**,
+no por fila (migración 21; antes `es_miembro` por fila hacía inviable el expediente con 50,000
+registros). `privado.aplicar_rls` crea así las políticas de las tablas nuevas. `es_miembro` sigue
+disponible para las funciones. `bitacora`: solo INSERT y SELECT. Registro por invitación; el alta
+pública queda desactivada.
+
+**Funciones con privilegios:** ninguna función `security definer` vive en `public` (esquema expuesto
+por la API). El cuerpo va en `privado` y en `public` queda una envoltura `security invoker` con la
+misma firma. `anon` solo ejecuta `registrar_acceso_fallido`.
+
+**Escritura solo por funciones:** `vinculo`, `evento`, `evento_participante`, `registro_entidad` y
+`alias_entidad` no admiten UPDATE. `entidad`, `extraccion` y `fusion_propuesta` solo se modifican
+dentro de funciones de la plataforma (`/rpc/…`). Un disparador rechaza el PATCH directo a la API
+usando `request.path`. Detalle en `docs/INFORME_ENDURECIMIENTO.md`.
 
 ### 3.1 Usuarios, accesos y control de cambios
 
@@ -148,8 +160,8 @@ Pantalla `/usuarios` (solo `admin`), con tres secciones:
 
 Reglas en la base (migración 17):
 
-- **La baja es lógica** (`miembro.activo = false`); los miembros no se borran. `es_miembro` exige
-  miembro activo, así que la baja corta todas las políticas a la vez.
+- **La baja es lógica** (`miembro.activo = false`); los miembros no se borran. `es_miembro` y
+  `mis_organizaciones` exigen miembro activo, así que la baja corta todas las políticas a la vez.
 - **Siempre queda un administrador activo** y **nadie cambia su propio rol ni se da de baja**.
 - La bitácora guarda IDs, roles, IP y navegador; los correos se resuelven al leer
   (`usuarios_organizacion`, `bitacora_usuarios`, solo `admin`).

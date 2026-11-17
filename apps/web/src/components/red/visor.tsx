@@ -159,6 +159,15 @@ function estilos(tipos: string[]): StylesheetJson {
   ];
 }
 
+/**
+ * Arriba de este número de entidades visibles, los diseños por fuerzas, capas o jerarquía tardan
+ * minutos en el navegador (crecen con el cuadrado de las entidades): se usa la rejilla empaquetada.
+ */
+const RED_GRANDE = 1500;
+const DISENOS_COSTOSOS: Diseno[] = ["fuerza", "mincruce", "jerarquia"];
+const disenoEfectivo = (d: Diseno, entidades: number): Diseno =>
+  entidades > RED_GRANDE && DISENOS_COSTOSOS.includes(d) ? "empaquetado" : d;
+
 function opcionesDiseno(
   d: Diseno,
   grafo: GrafoVista,
@@ -361,7 +370,14 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
       cy.elements().remove();
       cy.add(elementos(visible, estado.foco));
     });
-    cy.layout(opcionesDiseno(estado.diseno, visible, estado.foco, distancia)).run();
+    cy.layout(
+      opcionesDiseno(
+        disenoEfectivo(estado.diseno, visible.nodos.length),
+        visible,
+        estado.foco,
+        distancia,
+      ),
+    ).run();
   }, [listo, visible, estado.foco, estado.diseno, distancia]);
 
   useEffect(() => {
@@ -686,6 +702,12 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
             ? ` · ${estado.saltos === 1 ? "relaciones directas" : "hasta segundo grado"} de la entidad central`
             : ""}
         </p>
+        {disenoEfectivo(estado.diseno, visible.nodos.length) !== estado.diseno ? (
+          <p role="status" className="text-xs text-oro" data-testid="aviso-red-grande">
+            Red grande ({visible.nodos.length.toLocaleString("es-MX")} entidades): se dibuja en
+            rejilla empaquetada. Centra una entidad o filtra para usar el diseño elegido.
+          </p>
+        ) : null}
         {focoFiltrado ? (
           <p role="status" className="text-xs text-oro">
             Los filtros ocultan la entidad central.
