@@ -606,10 +606,20 @@ export async function cargarRegistro(supabase: Cliente, encargoId: string, regis
     ),
     supabase
       .from("registro_entidad")
-      .select("rol, entidad(id, nombre, tipo)")
+      .select("rol, entidad(id, nombre, tipo, nombre_normalizado)")
       .eq("encargo_id", encargoId)
       .eq("registro_id", r.id),
   ]);
+  // Aportación de cada socio: sale de la lectura validada del involucrado (con su página).
+  const aportaciones = new Map<string, { monto: string; moneda: string }>();
+  for (const x of extracciones) {
+    if (!/^involucrado_\d+$/.test(x.campo) || !["validado", "corregido"].includes(x.estado))
+      continue;
+    const v = aportacionSchema.safeParse(x.valor_normalizado);
+    if (v.success && v.data.aportacion) {
+      aportaciones.set(`${v.data.nombre}|${v.data.rol}`, v.data.aportacion);
+    }
+  }
   return {
     registro: r,
     extracciones: extracciones.map((x) => ({
@@ -618,9 +628,23 @@ export async function cargarRegistro(supabase: Cliente, encargoId: string, regis
       valor_ia: valorOriginalSchema.parse(x.valor_original).valor_crudo ?? null,
       ubicacion_texto: describirUbicacion(x.ubicacion),
     })),
-    entidades: (menciones.data ?? []).map((m) => ({ rol: m.rol, ...m.entidad })),
+    entidades: (menciones.data ?? []).map((m) => ({
+      rol: m.rol,
+      ...m.entidad,
+      aportacion: m.entidad
+        ? (aportaciones.get(`${m.entidad.nombre_normalizado}|${m.rol}`) ?? null)
+        : null,
+    })),
   };
 }
+
+const aportacionSchema = z
+  .object({
+    nombre: z.string(),
+    rol: z.string(),
+    aportacion: z.object({ monto: z.string(), moneda: z.string() }).optional(),
+  })
+  .catch({ nombre: "", rol: "" });
 
 /** Lo que un registro generó (vínculos y eventos, por su evidencia) y su bitácora. */
 export async function cargarGenerado(supabase: Cliente, encargoId: string, registroId: string) {

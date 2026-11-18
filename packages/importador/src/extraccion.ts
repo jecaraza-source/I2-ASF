@@ -5,11 +5,10 @@
  */
 import { z } from "zod";
 import {
-  CAMPOS_COMUNES,
+  camposDelTipo,
   NOMBRE_ROL,
   ROLES_INVOLUCRADO,
   TIPOS_INVOLUCRADO,
-  leerCamposEsperados,
   type CampoEsperado,
   type RolInvolucrado,
 } from "./captura";
@@ -40,7 +39,9 @@ Reglas:
 - "pagina" es la página (empezando en 1) donde viste el dato, o null si no hay dato.
 - Involucrados: lista a cada persona, empresa o dependencia con un papel en el documento. Transcribe la razón social EXACTAMENTE como aparece, sin abreviar ni expandir el tipo de sociedad.
 - Un RFC pertenece a quien el texto dice que pertenece: lee la frase completa. No atribuyas a la empresa el RFC de su representante o apoderado, ni al titular el RFC de quien emite un recibo. Si no aparece el RFC de alguien, deja null.
-- El notario, los testigos y quien emite un recibo no son la parte principal: usa el rol que les corresponde.`;
+- El notario, los testigos y quien emite un recibo no son la parte principal: usa el rol que les corresponde.
+- Los campos de texto largo (objeto social, facultades, concepto, asunto) se transcriben COMPLETOS y literales, con todas sus fracciones o incisos, sin resumir ni omitir.
+- En actas constitutivas y de asamblea: lista a cada socio o accionista con el monto de su aportación en "aportacion" (como aparece; null si no se indica); al comisario con el rol "comisario"; y a cada apoderado o representante legal con su rol. El capital social va en el campo de monto.`;
 
 const dato = (descripcion: string) => ({
   type: "object",
@@ -59,15 +60,15 @@ const dato = (descripcion: string) => ({
 
 const DESCRIPCION_TIPO: Record<CampoEsperado["tipo"], string> = {
   texto: "texto",
-  texto_largo: "texto, puede ser largo",
+  texto_largo: "texto completo y literal, sin resumir",
   fecha: "fecha AAAA-MM-DD",
   monto: "monto como aparece en el documento",
   numero: "número",
 };
 
-/** Campos que se piden para un tipo de documento: los comunes más los suyos. */
+/** Campos que se piden para un tipo de documento: los comunes (ajustados al tipo) más los suyos. */
 export function camposDeExtraccion(camposEsperados: unknown): CampoEsperado[] {
-  return [...CAMPOS_COMUNES, ...leerCamposEsperados(camposEsperados)];
+  return camposDelTipo(camposEsperados);
 }
 
 /**
@@ -105,10 +106,14 @@ export function esquemaExtraccion(campos: CampoEsperado[]) {
             rol: { type: "string", enum: [...ROLES_INVOLUCRADO] },
             rfc: { type: ["string", "null"] },
             curp: { type: ["string", "null"] },
+            aportacion: {
+              type: ["string", "null"],
+              description: "Monto que aporta al capital (solo socios o accionistas), o null",
+            },
             confianza: { type: "number" },
             pagina: { type: ["integer", "null"] },
           },
-          required: ["tipo", "nombre", "rol", "rfc", "curp", "confianza", "pagina"],
+          required: ["tipo", "nombre", "rol", "rfc", "curp", "aportacion", "confianza", "pagina"],
           additionalProperties: false,
         },
       },
@@ -126,7 +131,7 @@ const pagina = z.number().int().min(1).max(10_000).nullable();
 const respuestaSchema = z.object({
   campos: z.record(
     z.string(),
-    z.object({ valor: z.string().max(8000).nullable(), confianza, pagina }),
+    z.object({ valor: z.string().max(20000).nullable(), confianza, pagina }),
   ),
   moneda: z.string().nullable(),
   involucrados: z
@@ -137,6 +142,8 @@ const respuestaSchema = z.object({
         rol: z.enum(ROLES_INVOLUCRADO),
         rfc: z.string().max(30).nullable(),
         curp: z.string().max(30).nullable(),
+        // Opcional: respuestas de modelos o simulaciones anteriores no lo traen.
+        aportacion: z.string().max(60).nullable().optional(),
         confianza,
         pagina,
       }),
@@ -216,10 +223,20 @@ export function interpretarExtraccion(
     let ids: Identificadores = {};
     if (inv.rfc) ids = agregarIdentificador(ids, "rfc", inv.rfc);
     if (inv.curp) ids = agregarIdentificador(ids, "curp", inv.curp);
-    const dudoso = !normalizado || (ids.invalidos?.length ?? 0) > 0;
+    const aportacionCruda = inv.aportacion?.trim() || null;
+    const aportacion = aportacionCruda ? normalizarMonto(aportacionCruda) : null;
+    // Un RFC o CURP con formato inválido o una aportación ilegible siempre lo revisa una persona.
+    const dudoso =
+      !normalizado || (ids.invalidos?.length ?? 0) > 0 || (aportacionCruda !== null && !aportacion);
     extracciones.push({
       campo: `involucrado_${i + 1}`,
-      valor_crudo: [nombre, NOMBRE_ROL[inv.rol as RolInvolucrado], inv.rfc, inv.curp]
+      valor_crudo: [
+        nombre,
+        NOMBRE_ROL[inv.rol as RolInvolucrado],
+        inv.rfc,
+        inv.curp,
+        aportacionCruda ? `aportación ${aportacionCruda}` : null,
+      ]
         .filter(Boolean)
         .join(" · "),
       valor_normalizado: {
@@ -228,10 +245,11 @@ export function interpretarExtraccion(
         tipo: inv.tipo,
         rol: inv.rol,
         ...ids,
+        ...(aportacion ? { aportacion: { monto: aportacion, moneda } } : {}),
+        ...(aportacionCruda ? { aportacion_texto: aportacionCruda } : {}),
       },
       confianza: inv.confianza,
       ubicacion: inv.pagina ? { pagina: inv.pagina } : {},
-      // Un RFC o CURP con formato inválido siempre lo revisa una persona.
       estado: !dudoso && inv.confianza >= umbral ? "validado" : "pendiente",
     });
   });

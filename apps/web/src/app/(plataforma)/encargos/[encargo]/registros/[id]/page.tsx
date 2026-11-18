@@ -1,6 +1,7 @@
 import { puede, formatoMonto, formatoNumero, formatoPorcentaje } from "@sigma/modelo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { NOMBRE_ROL } from "@sigma/importador/captura";
 import { AsociarDocumento } from "@/components/captura/asociar-documento";
 import { NOMBRE_TIPO } from "@/components/red/presentacion";
 import { Etiqueta, Panel, Titulo } from "@/components/ui";
@@ -202,7 +203,11 @@ export default async function Registro({
                   {e.nombre}
                 </Link>{" "}
                 <span className="text-xs text-tenue">
-                  {NOMBRE_TIPO[e.tipo] ?? e.tipo} · {e.rol}
+                  {NOMBRE_TIPO[e.tipo] ?? e.tipo} ·{" "}
+                  {NOMBRE_ROL[e.rol as keyof typeof NOMBRE_ROL] ?? e.rol}
+                  {e.aportacion
+                    ? ` · aportación ${formatoMonto(e.aportacion.monto, e.aportacion.moneda)}`
+                    : ""}
                 </span>
               </li>
             ))}

@@ -345,3 +345,52 @@ describe("extraerConRespaldo", () => {
     expect(usos).toEqual([]);
   });
 });
+
+describe("acta constitutiva", () => {
+  const camposActa = camposDeExtraccion([
+    { clave: "objeto_social", etiqueta: "Objeto social", tipo: "texto_largo" },
+    { clave: "numero_factura", oculto: true },
+    { clave: "monto", etiqueta: "Capital social constitutivo" },
+  ]);
+
+  it("pide el capital con su nombre, sin factura, y la aportación de cada involucrado", () => {
+    expect(camposActa.map((c) => c.clave)).not.toContain("numero_factura");
+    const e = esquemaExtraccion(camposActa);
+    expect(e.properties.campos.properties.monto?.description).toContain(
+      "Capital social constitutivo",
+    );
+    expect(e.properties.involucrados.items.required).toContain("aportacion");
+  });
+
+  it("lee la aportación de un socio y manda a revisar una ilegible", () => {
+    const vacioActa = Object.fromEntries(
+      camposActa.map((c) => [c.clave, { valor: null, confianza: 0, pagina: null }]),
+    );
+    const socio = (nombre: string, aportacion: string | null) => ({
+      tipo: "persona_fisica",
+      nombre,
+      rol: "socio",
+      rfc: null,
+      curp: null,
+      aportacion,
+      confianza: 0.95,
+      pagina: 4,
+    });
+    const r = interpretarExtraccion(
+      {
+        campos: vacioActa,
+        moneda: "MXN",
+        involucrados: [socio("Ana Ruiz Gómez", "$25,000.00"), socio("Luis Pérez Soto", "la mitad")],
+      },
+      camposActa,
+      0.85,
+    );
+    if (!r.ok) throw new Error(r.motivo);
+    expect(r.extracciones[0]).toMatchObject({
+      estado: "validado",
+      valor_normalizado: { rol: "socio", aportacion: { monto: "25000.00", moneda: "MXN" } },
+    });
+    expect(r.extracciones[0]?.valor_crudo).toContain("aportación $25,000.00");
+    expect(r.extracciones[1]).toMatchObject({ estado: "pendiente" });
+  });
+});

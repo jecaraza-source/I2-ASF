@@ -2,7 +2,11 @@ import { puede } from "@sigma/modelo";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { SinPermiso } from "@/components/estados";
-import { FormularioTipoDocumento } from "@/components/formularios/catalogo";
+import { CAMPOS_COMUNES, camposComunesDe } from "@sigma/importador/captura";
+import {
+  FormularioCamposComunes,
+  FormularioTipoDocumento,
+} from "@/components/formularios/catalogo";
 import { Titulo } from "@/components/ui";
 import { obtenerEncargo } from "@/lib/datos";
 import { requerirOrganizacion } from "@/lib/sesion";
@@ -27,7 +31,7 @@ export default async function EditarTipo({
   const [{ data: tipo }, { data: categorias }] = await Promise.all([
     supabase
       .from("tipo_documento")
-      .select("id, clave, nombre, categoria_id")
+      .select("id, clave, nombre, categoria_id, campos_esperados")
       .eq("id", id)
       .eq("organizacion_id", activa.organizacionId)
       .maybeSingle(),
@@ -41,7 +45,23 @@ export default async function EditarTipo({
   return (
     <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo>Editar tipo de documento</Titulo>
-      <FormularioTipoDocumento encargoId={encargo.id} categorias={categorias ?? []} tipo={tipo} />
+      <FormularioTipoDocumento
+        encargoId={encargo.id}
+        categorias={categorias ?? []}
+        tipo={{
+          id: tipo.id,
+          clave: tipo.clave,
+          nombre: tipo.nombre,
+          categoria_id: tipo.categoria_id,
+        }}
+      />
+      <div className="mt-10 max-w-xl border-t border-linea pt-6">
+        <FormularioCamposComunes
+          tipoId={tipo.id}
+          comunes={CAMPOS_COMUNES}
+          ajustados={camposComunesDe(tipo.campos_esperados)}
+        />
+      </div>
     </main>
   );
 }

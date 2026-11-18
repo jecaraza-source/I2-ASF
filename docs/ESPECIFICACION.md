@@ -263,12 +263,24 @@ minutos); al tercer fallo quedan en `error`. Los manejadores son idempotentes.
 campo con lo capturado; cada diferencia genera una alerta `R11_captura_vs_documento`.
 
 - **Formulario único:** campos comunes (abajo) + `campos_esperados` del tipo + involucrados repetibles
-  (empresa, persona o dependencia; rol; RFC; CURP) con autocompletado contra las entidades del
-  encargo. Lo valida y normaliza el servidor con las funciones de §5. Un RFC o CURP con formato
+  (empresa, persona o dependencia; rol; RFC; CURP; aportación si es socio) con autocompletado
+  contra las entidades del encargo. Cada involucrado es una tarjeta con sus etiquetas visibles. Lo valida y normaliza el servidor con las funciones de §5. Un RFC o CURP con formato
   inválido se conserva marcado, no bloquea.
 - **`campos_esperados`:** arreglo de `{ clave, etiqueta, tipo, requerido? }` con `tipo` en `texto`,
   `texto_largo`, `fecha`, `monto`, `numero`. El catálogo provisional trae los suyos
   (`privado.campos_provisionales`); un tipo nuevo con esa clave los recibe al crearse.
+  Los campos propios de texto largo admiten hasta 20,000 caracteres y la IA los transcribe completos.
+- **Campos comunes por tipo (tarea 18):** una entrada de `campos_esperados` con la clave de un campo
+  común no es un campo propio: lo renombra (`{ clave: "monto", etiqueta: "Capital social
+  constitutivo" }`) o lo quita (`{ clave: "numero_factura", oculto: true }`). El tipo de dato no
+  cambia. Lo interpreta `camposComunesDe`. El catálogo provisional trae los ajustes del acta
+  constitutiva (capital social constitutivo, domicilio social; sin contrato, factura, cuenta ni
+  teléfono) y del poder notarial (sin contrato, factura, cuenta, monto ni teléfono); se editan en
+  Configuración → tipo de documento → «Campos comunes en este tipo de documento». Una lectura de la
+  IA de un campo oculto se rechaza al validar.
+- **Socios y aportaciones:** un involucrado con rol `socio` lleva `aportacion` (monto, en la moneda
+  del registro), que se guarda en la extracción del involucrado (`valor_normalizado.aportacion`,
+  con su página) y se muestra en el registro. Rol `comisario` para el comisario de la sociedad.
 - **Qué guarda `capturar_registro`** (una transacción): el registro `validado`; una extracción
   `manual`/`validado` por campo y por involucrado, sin confianza; las entidades (se reutiliza la que
   tenga el mismo RFC válido, o el mismo tipo y nombre normalizado); `registro_entidad` con el rol;
@@ -322,7 +334,12 @@ encargo (`…/registros`, donde también viven los registros sin expediente y la
 
 **Campos comunes del registro:** involucrados con rol, razones sociales, RFC y CURP, fecha del
 documento, números de referencia (expediente, contrato, factura, cuenta), montos con moneda,
-domicilios, teléfonos. Cada tipo de documento añade los suyos en `campos_esperados`.
+domicilios, teléfonos. Cada tipo de documento añade los suyos en `campos_esperados` y puede renombrar
+u ocultar los comunes que no le aplican.
+
+**Pantalla de validación:** el original va fijo arriba, en una franja de un tercio de la pantalla
+(«Ampliar» la lleva a dos tercios; «Abrir original» lo abre completo); enfocar un dato lleva la
+franja a su página. Debajo, los datos se recorren con «Siguiente por revisar».
 
 ## 7. Extracción con IA
 

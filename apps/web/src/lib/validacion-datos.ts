@@ -3,6 +3,7 @@ import {
   MONEDAS,
   ROLES_INVOLUCRADO,
   TIPOS_INVOLUCRADO,
+  camposComunesDe,
   leerCamposEsperados,
 } from "@sigma/importador/captura";
 import { z } from "zod";
@@ -57,6 +58,7 @@ const involucradoSchema = z.object({
   nombre_original: z.string().optional().catch(undefined),
   rfc: z.string().optional().catch(undefined),
   curp: z.string().optional().catch(undefined),
+  aportacion_texto: z.string().optional().catch(undefined),
 });
 const montoSchema = z.object({ moneda: z.enum(MONEDAS) });
 const paginaSchema = z.object({ pagina: z.number().int().positive().optional() }).catch({});
@@ -100,6 +102,7 @@ export async function registroPorValidar(supabase: Cliente, encargoId: string, r
         nombre: v.data.nombre_original ?? v.data.nombre,
         rfc: v.data.rfc ?? "",
         curp: v.data.curp ?? "",
+        aportacion: v.data.aportacion_texto ?? "",
         campoIa: l.campo,
       });
       continue;
@@ -132,6 +135,7 @@ export async function registroPorValidar(supabase: Cliente, encargoId: string, r
       nombre: r.tipo_documento.nombre,
       categoria: r.tipo_documento.categoria_documental?.nombre ?? "Sin categoría",
       campos,
+      comunes: camposComunesDe(r.tipo_documento.campos_esperados),
       campos_esperados: r.tipo_documento.campos_esperados,
     },
     lecturas: lecturas ?? [],

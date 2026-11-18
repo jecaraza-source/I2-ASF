@@ -56,7 +56,9 @@ function canon(v: unknown): string {
 function sinOriginal(v: unknown): unknown {
   if (!v || typeof v !== "object" || Array.isArray(v)) return v;
   return Object.fromEntries(
-    Object.entries(v as Record<string, unknown>).filter(([k]) => k !== "nombre_original"),
+    Object.entries(v as Record<string, unknown>).filter(
+      ([k]) => k !== "nombre_original" && k !== "aportacion_texto",
+    ),
   );
 }
 
