@@ -108,7 +108,7 @@ test("pantallas de lectura en el celular, sin salirse a lo ancho", async ({ page
   // Detalle de un registro y ficha de una entidad, si el encargo de ejemplo los tiene.
   const conDatos = process.env.CI ? CARGA : ENCARGO;
   await page.goto(`${conDatos}/registros`);
-  const registro = page.locator(`a[href*="/registros/"]`).first();
+  const registro = page.locator(`th a[href*="/registros/"]`).first();
   if (await registro.count()) {
     await revisar(page, (await registro.getAttribute("href")) ?? ENCARGO, "17-registro");
   }
