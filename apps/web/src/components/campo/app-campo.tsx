@@ -506,7 +506,11 @@ function CedulaCampo({
       organizacion_id: visita.organizacion_id,
       encargo_id: visita.encargo_id,
       entidad: visita.entidad,
-      fotos: fotos.map(({ url: _url, ...f }) => f),
+      fotos: fotos.map((f) => {
+        const { url, ...local } = f;
+        URL.revokeObjectURL(url);
+        return local;
+      }),
       guardada_en: new Date().toISOString(),
       error: null,
     });

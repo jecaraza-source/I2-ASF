@@ -43,11 +43,11 @@ export async function enviarPendiente(p: PendienteLocal): Promise<ResultadoEnvio
       .from("campo")
       .upload(ruta, foto.blob, { contentType: foto.mime, upsert: false });
     // Ya subida en un intento anterior: el servidor comprueba que sea la misma foto.
+    const detalle = errorSubida as { message?: string; statusCode?: unknown } | null;
     const yaExiste =
-      errorSubida &&
-      ("statusCode" in errorSubida
-        ? String(errorSubida.statusCode) === "409"
-        : /exists|duplicate/i.test(errorSubida.message));
+      detalle !== null &&
+      (String(detalle.statusCode ?? "") === "409" ||
+        /exists|duplicate/i.test(detalle.message ?? ""));
     if (errorSubida && !yaExiste) {
       return { ok: false, error: "No se pudo subir una foto." };
     }
