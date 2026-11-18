@@ -184,9 +184,9 @@ describe("esquemaEstricto", () => {
         pattern: { type: "number", enum: [0, 1] },
       },
     });
-    expect(esquemaEstricto(esquemaExtraccion([{ clave: "folio", etiqueta: "Folio" }]))).toEqual(
-      esquemaExtraccion([{ clave: "folio", etiqueta: "Folio" }]),
-    );
+    expect(
+      esquemaEstricto(esquemaExtraccion([{ clave: "folio", etiqueta: "Folio", tipo: "texto" }])),
+    ).toEqual(esquemaExtraccion([{ clave: "folio", etiqueta: "Folio", tipo: "texto" }]));
   });
 });
 
