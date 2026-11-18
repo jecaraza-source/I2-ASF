@@ -1,10 +1,10 @@
 "use client";
 
-import { CATEGORIAS_MODULO, MODULOS } from "@sigma/modelo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { cerrarSesion } from "@/acciones/sesion";
+import { ModulosAgrupados } from "@/components/modulos-agrupados";
 
 const ENCARGO =
   /^\/encargos\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(\/|$)/i;
@@ -93,37 +93,11 @@ export function MenuMovil({
                   </Link>
                 </li>
               </ul>
-              {base
-                ? CATEGORIAS_MODULO.map((c) => {
-                    const modulos = MODULOS.filter((m) => m.categoria === c.clave && m.listo);
-                    if (modulos.length === 0) return null;
-                    return (
-                      <section key={c.clave} aria-label={c.nombre} className="mt-3">
-                        <h2 className="px-3 text-[10px] tracking-[2px] text-oro uppercase">
-                          {c.nombre}
-                        </h2>
-                        <ul className="mt-1 flex flex-col">
-                          {modulos.map((m) => (
-                            <li key={m.clave}>
-                              <Link
-                                href={`${base}${m.ruta}`}
-                                aria-current={
-                                  pathname === `${base}${m.ruta}` ||
-                                  (m.ruta !== "" && pathname.startsWith(`${base}${m.ruta}/`))
-                                    ? "page"
-                                    : undefined
-                                }
-                                className={`${enlace} aria-[current=page]:text-oro`}
-                              >
-                                {m.nombre}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </section>
-                    );
-                  })
-                : null}
+              {base ? (
+                <div className="mt-3">
+                  <ModulosAgrupados base={base} claseEnlace={enlace} />
+                </div>
+              ) : null}
             </nav>
 
             <ul className="mt-4 flex flex-col border-t border-linea pt-3">
