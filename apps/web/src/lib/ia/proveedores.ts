@@ -1,6 +1,10 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { ErrorProveedor, type RespuestaProveedor } from "@sigma/importador/extraccion";
+import {
+  codigoDeMensaje,
+  ErrorProveedor,
+  type RespuestaProveedor,
+} from "@sigma/importador/extraccion";
 import type { ProveedorIA } from "@sigma/modelo";
 import OpenAI from "openai";
 
@@ -45,12 +49,19 @@ function errorDe(e: unknown): ErrorProveedor {
   if (e instanceof ErrorProveedor) return e;
   const x = e as { status?: unknown; name?: unknown; error?: unknown; code?: unknown };
   const status = typeof x?.status === "number" ? x.status : null;
-  const cuerpo = (x?.error ?? {}) as { type?: unknown; code?: unknown; error?: { type?: unknown } };
+  const cuerpo = (x?.error ?? {}) as {
+    type?: unknown;
+    code?: unknown;
+    message?: unknown;
+    error?: { type?: unknown; message?: unknown };
+  };
   const tipo = [cuerpo.error?.type, cuerpo.type, cuerpo.code, x?.code].find(
     (v) => typeof v === "string",
   );
+  // El mensaje solo se usa para elegir un código fijo; nunca se guarda ni va a los logs.
+  const mensaje = [cuerpo.error?.message, cuerpo.message].find((v) => typeof v === "string");
   if (typeof tipo === "string" && /^[a-z0-9_.-]{1,60}$/i.test(tipo)) {
-    return new ErrorProveedor(status, tipo.toLowerCase());
+    return new ErrorProveedor(status, codigoDeMensaje(tipo.toLowerCase(), mensaje));
   }
   const nombre = typeof x?.name === "string" ? x.name : "";
   if (/timeout|abort/i.test(nombre)) return new ErrorProveedor(status, "tiempo_agotado");

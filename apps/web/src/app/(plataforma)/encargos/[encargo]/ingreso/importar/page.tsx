@@ -1,4 +1,4 @@
-import { MOTIVO_BLOQUEO_IA, NOMBRE_PROVEEDOR_IA, puede } from "@sigma/modelo";
+import { MOTIVO_BLOQUEO_IA, NOMBRE_PROVEEDOR_IA, puede, textoErrorIA } from "@sigma/modelo";
 import Link from "next/link";
 import { z } from "zod";
 import { reencolarExtraccion } from "@/acciones/ingreso";
@@ -25,7 +25,7 @@ function notaDe(estado: string, nota: string | null): string {
       ? ` · leído con ${NOMBRE_PROVEEDOR_IA[nota]}`
       : "";
   }
-  if (estado === "error") return ` · código ${nota}`;
+  if (estado === "error") return ` · ${textoErrorIA(nota)}`;
   return MOTIVO_BLOQUEO_IA[nota] ? ` · ${MOTIVO_BLOQUEO_IA[nota]}` : "";
 }
 

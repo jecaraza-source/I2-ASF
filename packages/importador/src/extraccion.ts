@@ -259,6 +259,25 @@ export class ErrorProveedor extends Error {
   }
 }
 
+/**
+ * Afina un error 400 genérico (`invalid_request_error`) leyendo el mensaje del proveedor. Solo
+ * devuelve un código fijo: el mensaje nunca se guarda (podría citar el documento).
+ */
+export function codigoDeMensaje(codigo: string, mensaje: string | null | undefined): string {
+  if (!mensaje || !/invalid_request|^http_400$|^error$/.test(codigo)) return codigo;
+  const m = mensaje.toLowerCase();
+  if (/credit balance|purchase credits|billing|plans & billing/.test(m))
+    return "saldo_insuficiente";
+  if (/page/.test(m) && /pdf|maximum|limit|exceed/.test(m)) return "pdf_demasiadas_paginas";
+  if (/prompt is too long|context (window|length)|too many tokens/.test(m))
+    return "documento_largo";
+  if (/too large|exceeds the maximum|size limit|request_too_large/.test(m)) return "archivo_grande";
+  if (/model/.test(m)) return "modelo_invalido";
+  if (/schema|tool/.test(m)) return "esquema_invalido";
+  if (/pdf|document|image|media_type|base64/.test(m)) return "archivo_ilegible";
+  return codigo;
+}
+
 export type ClaseError = "limite" | "reintentable" | "fatal";
 
 /**
@@ -271,7 +290,8 @@ export function clasificarError(e: unknown): ClaseError {
   if (e instanceof ErrorProveedor) {
     const s = e.status;
     if (s === 429 || s === 529 || s === 402 || s === 401 || s === 403) return "limite";
-    if (/credit|billing|quota|insufficient|overloaded|rate_limit/.test(e.codigo)) return "limite";
+    if (/credit|billing|quota|insufficient|overloaded|rate_limit|saldo/.test(e.codigo))
+      return "limite";
     if (
       s === 408 ||
       (s !== null && s >= 500) ||
