@@ -3,7 +3,7 @@
 import { CATEGORIAS_MODULO, MODULOS } from "@sigma/modelo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cerrarSesion } from "@/acciones/sesion";
 
 const ENCARGO =
@@ -31,8 +31,14 @@ export function MenuMovil({
 }) {
   const pathname = usePathname();
   const dialogo = useRef<HTMLDialogElement>(null);
+  // El contenido solo existe con el panel abierto: así no duplica enlaces ni etiquetas de la página.
+  const [abierto, setAbierto] = useState(false);
   const encargoId = ENCARGO.exec(pathname)?.[1];
   const base = encargoId ? `/encargos/${encargoId}` : null;
+
+  useEffect(() => {
+    if (abierto && dialogo.current && !dialogo.current.open) dialogo.current.showModal();
+  }, [abierto]);
 
   // Al navegar se cierra.
   useEffect(() => {
@@ -44,7 +50,7 @@ export function MenuMovil({
       <button
         type="button"
         aria-haspopup="dialog"
-        onClick={() => dialogo.current?.showModal()}
+        onClick={() => setAbierto(true)}
         className="flex min-h-11 items-center gap-2 rounded-md border border-azul-borde px-3 text-sm text-azul-claro hover:text-texto focus-visible:outline-2 focus-visible:outline-oro"
       >
         <span aria-hidden className="text-base leading-none">
@@ -55,105 +61,108 @@ export function MenuMovil({
       <dialog
         ref={dialogo}
         aria-label="Menú"
+        onClose={() => setAbierto(false)}
         onClick={(ev) => {
           // Clic en el fondo (fuera del panel) cierra.
           if (ev.target === dialogo.current) dialogo.current.close();
         }}
         className="m-0 ml-auto h-dvh max-h-dvh w-[min(22rem,88vw)] max-w-none border-l border-linea-2 bg-fondo-2 p-0 text-texto backdrop:bg-black/60"
       >
-        <div className="flex h-full flex-col overflow-y-auto overscroll-contain px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="mb-3 flex items-start justify-between gap-3 border-b border-linea px-2 pb-3">
-            <div className="min-w-0 text-xs">
-              <p className="truncate text-sm text-azul-claro">{organizacion}</p>
-              <p className="truncate text-tenue">{correo}</p>
-              <p className="text-tenue">{rol}</p>
+        {abierto ? (
+          <div className="flex h-full flex-col overflow-y-auto overscroll-contain px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="mb-3 flex items-start justify-between gap-3 border-b border-linea px-2 pb-3">
+              <div className="min-w-0 text-xs">
+                <p className="truncate text-sm text-azul-claro">{organizacion}</p>
+                <p className="truncate text-tenue">{correo}</p>
+                <p className="text-tenue">{rol}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => dialogo.current?.close()}
+                className="min-h-11 rounded-md border border-linea-2 px-3 text-sm text-texto focus-visible:outline-2 focus-visible:outline-oro"
+              >
+                Cerrar
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => dialogo.current?.close()}
-              className="min-h-11 rounded-md border border-linea-2 px-3 text-sm text-texto focus-visible:outline-2 focus-visible:outline-oro"
-            >
-              Cerrar
-            </button>
-          </div>
 
-          <nav aria-label="Navegación principal">
-            <ul className="flex flex-col">
+            <nav aria-label="Navegación principal">
+              <ul className="flex flex-col">
+                <li>
+                  <Link href="/encargos" className={enlace}>
+                    Encargos
+                  </Link>
+                </li>
+              </ul>
+              {base
+                ? CATEGORIAS_MODULO.map((c) => {
+                    const modulos = MODULOS.filter((m) => m.categoria === c.clave && m.listo);
+                    if (modulos.length === 0) return null;
+                    return (
+                      <section key={c.clave} aria-label={c.nombre} className="mt-3">
+                        <h2 className="px-3 text-[10px] tracking-[2px] text-oro uppercase">
+                          {c.nombre}
+                        </h2>
+                        <ul className="mt-1 flex flex-col">
+                          {modulos.map((m) => (
+                            <li key={m.clave}>
+                              <Link
+                                href={`${base}${m.ruta}`}
+                                aria-current={
+                                  pathname === `${base}${m.ruta}` ||
+                                  (m.ruta !== "" && pathname.startsWith(`${base}${m.ruta}/`))
+                                    ? "page"
+                                    : undefined
+                                }
+                                className={`${enlace} aria-[current=page]:text-oro`}
+                              >
+                                {m.nombre}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    );
+                  })
+                : null}
+            </nav>
+
+            <ul className="mt-4 flex flex-col border-t border-linea pt-3">
+              {esAdmin ? (
+                <>
+                  <li>
+                    <Link href="/usuarios" className={enlace}>
+                      Usuarios
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/ia" className={enlace}>
+                      Uso de IA
+                    </Link>
+                  </li>
+                </>
+              ) : null}
               <li>
-                <Link href="/encargos" className={enlace}>
-                  Encargos
+                <Link href="/acceso/contrasena" className={enlace}>
+                  Mi contraseña
                 </Link>
+              </li>
+              {variasOrganizaciones ? (
+                <li>
+                  <Link href="/organizacion" className={enlace}>
+                    Cambiar de organización
+                  </Link>
+                </li>
+              ) : null}
+              <li>
+                <form action={cerrarSesion}>
+                  <button type="submit" className={`${enlace} w-full text-left`}>
+                    Salir
+                  </button>
+                </form>
               </li>
             </ul>
-            {base
-              ? CATEGORIAS_MODULO.map((c) => {
-                  const modulos = MODULOS.filter((m) => m.categoria === c.clave && m.listo);
-                  if (modulos.length === 0) return null;
-                  return (
-                    <section key={c.clave} aria-label={c.nombre} className="mt-3">
-                      <h2 className="px-3 text-[10px] tracking-[2px] text-oro uppercase">
-                        {c.nombre}
-                      </h2>
-                      <ul className="mt-1 flex flex-col">
-                        {modulos.map((m) => (
-                          <li key={m.clave}>
-                            <Link
-                              href={`${base}${m.ruta}`}
-                              aria-current={
-                                pathname === `${base}${m.ruta}` ||
-                                (m.ruta !== "" && pathname.startsWith(`${base}${m.ruta}/`))
-                                  ? "page"
-                                  : undefined
-                              }
-                              className={`${enlace} aria-[current=page]:text-oro`}
-                            >
-                              {m.nombre}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  );
-                })
-              : null}
-          </nav>
-
-          <ul className="mt-4 flex flex-col border-t border-linea pt-3">
-            {esAdmin ? (
-              <>
-                <li>
-                  <Link href="/usuarios" className={enlace}>
-                    Usuarios
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/ia" className={enlace}>
-                    Uso de IA
-                  </Link>
-                </li>
-              </>
-            ) : null}
-            <li>
-              <Link href="/acceso/contrasena" className={enlace}>
-                Mi contraseña
-              </Link>
-            </li>
-            {variasOrganizaciones ? (
-              <li>
-                <Link href="/organizacion" className={enlace}>
-                  Cambiar de organización
-                </Link>
-              </li>
-            ) : null}
-            <li>
-              <form action={cerrarSesion}>
-                <button type="submit" className={`${enlace} w-full text-left`}>
-                  Salir
-                </button>
-              </form>
-            </li>
-          </ul>
-        </div>
+          </div>
+        ) : null}
       </dialog>
     </div>
   );
