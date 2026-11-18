@@ -639,7 +639,8 @@ servicio.
     versión en `privado.version_aviso_campo()`); sin aceptarlo no se ven documentos ni se puede
     subir nada. Cambiar el texto exige subir la versión: todos lo vuelven a aceptar.
   - El **aviso de privacidad simplificado** (`AVISO_PRIVACIDAD_SITIO`) se muestra a quien atiende,
-    con el nombre de la organización como responsable. Pendiente de revisión jurídica (§14).
+    con el nombre de la organización como responsable. Ambos textos están revisados por el área
+    jurídica (17/11/2026).
   - Cédula con 5 preguntas (`PREGUNTAS_CAMPO`), domicilio observado, observaciones y de 1 a 10 fotos
     con hora, ubicación y SHA-256 calculado en el teléfono.
 - **Sin señal:** las visitas se descargan a IndexedDB y caducan a las **24 h** sin volver a
@@ -694,5 +695,4 @@ Cada una tiene un valor provisional para no detener el desarrollo.
 | Pesos y umbrales de la calificación | Tabla de §9 | `regla_calificacion` |
 | Inventario de bases de datos para la ficha | Otros expedientes + lista 69-B (CSV o Excel) | `fuente_consulta` (§11.1) |
 | Umbral de confianza de la IA | 0.85 | `encargo.umbral_confianza` |
-| Texto del aviso de confidencialidad y del aviso de privacidad en sitio (revisión jurídica) | Borrador de §16 | `packages/modelo/src/campo.ts` + `privado.version_aviso_campo()` |
 | Ventana sin señal de la app de campo | 24 h | `HORAS_MAXIMAS_SIN_ENVIAR` |

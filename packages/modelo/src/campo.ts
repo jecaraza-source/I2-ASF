@@ -15,8 +15,8 @@ export const MIMES_FOTO = ["image/jpeg", "image/png", "image/webp", "image/heic"
 
 /**
  * Compromiso de confidencialidad que acepta quien verifica, antes de descargar visitas.
- * Redacción base: la debe revisar el área jurídica del cliente (Ley General de Protección de Datos
- * Personales en Posesión de Sujetos Obligados y normativa de fiscalización aplicable).
+ * Texto revisado por el área jurídica (17/11/2026). Cambiarlo exige subir
+ * `privado.version_aviso_campo()` para que todos lo vuelvan a aceptar.
  */
 export const AVISO_CONFIDENCIALIDAD: { titulo: string; parrafos: string[] } = {
   titulo: "Aviso de confidencialidad y protección de datos",
