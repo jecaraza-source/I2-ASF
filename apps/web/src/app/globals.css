@@ -83,3 +83,49 @@ html {
     font-size: 16px;
   }
 }
+
+/*
+ * Tablas como tarjetas en el celular (`tabla-tarjetas`): cada fila es una tarjeta; el primer dato
+ * ocupa el ancho completo y los demás llevan encima su columna (`data-etiqueta`). En pantallas
+ * anchas es una tabla normal.
+ */
+@media (max-width: 767px) {
+  table.tabla-tarjetas,
+  table.tabla-tarjetas > tbody {
+    display: block;
+  }
+  table.tabla-tarjetas > caption {
+    display: block;
+  }
+  table.tabla-tarjetas > thead {
+    display: none;
+  }
+  table.tabla-tarjetas > tbody > tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0.5rem;
+    padding-block: 0.5rem;
+  }
+  table.tabla-tarjetas > tbody > tr > :is(td, th) {
+    display: block;
+    min-width: 0;
+    max-width: none;
+    padding-block: 0.25rem;
+    text-align: left;
+    white-space: normal;
+  }
+  table.tabla-tarjetas > tbody > tr > :first-child,
+  table.tabla-tarjetas > tbody > tr > [colspan],
+  table.tabla-tarjetas > tbody > tr > .ancho-completo {
+    grid-column: 1 / -1;
+  }
+  table.tabla-tarjetas > tbody > tr > [data-etiqueta]::before {
+    content: attr(data-etiqueta);
+    display: block;
+    margin-bottom: 0.125rem;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+}

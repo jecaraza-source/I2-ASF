@@ -89,7 +89,7 @@ export default async function CapturaManualPagina({
         )}
 
         <section aria-label="Capturas" className="overflow-x-auto rounded-lg border border-linea">
-          <table className="w-full text-left text-sm">
+          <table className="tabla-tarjetas w-full text-left text-sm">
             <caption className="px-4 py-2 text-left text-sm font-semibold text-texto">
               Capturas del encargo ({(capturas ?? []).length})
             </caption>
@@ -120,15 +120,19 @@ export default async function CapturaManualPagina({
                       {r.resumen ?? "Registro"}
                     </Link>
                   </td>
-                  <td className="px-4 py-2 text-tenue">{r.fuente ?? "—"}</td>
-                  <td className="px-4 py-2">
+                  <td data-etiqueta="Fuente declarada" className="px-4 py-2 text-tenue">
+                    {r.fuente ?? "—"}
+                  </td>
+                  <td data-etiqueta="Soporte" className="px-4 py-2">
                     {r.documento_id ? (
                       <Etiqueta tono="ok">Con documento</Etiqueta>
                     ) : (
                       <Etiqueta tono="oro">Sin soporte documental</Etiqueta>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-tenue">{formatoFecha(r.creado_en)}</td>
+                  <td data-etiqueta="Capturado" className="px-4 py-2 text-tenue">
+                    {formatoFecha(r.creado_en)}
+                  </td>
                 </tr>
               ))}
               {(capturas ?? []).length === 0 ? (

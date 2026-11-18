@@ -136,7 +136,7 @@ export default async function Registro({
           className="overflow-x-auto rounded-lg border border-linea"
           aria-label="Datos de origen"
         >
-          <table className="w-full text-left text-sm">
+          <table className="tabla-tarjetas w-full text-left text-sm">
             <caption className="px-4 py-2 text-left text-sm font-semibold text-texto">
               Datos y ubicación de origen
             </caption>
@@ -167,17 +167,19 @@ export default async function Registro({
                   className="border-t border-linea align-top target:bg-oro/10"
                 >
                   <td className="px-4 py-2 text-texto">{x.campo}</td>
-                  <td className="px-4 py-2 text-texto">
+                  <td data-etiqueta="Valor en la fuente" className="px-4 py-2 text-texto">
                     {x.valor_crudo ?? "—"}
                     {x.valor_ia !== null ? (
                       <span className="block text-xs text-tenue">La IA leyó «{x.valor_ia}»</span>
                     ) : null}
                   </td>
-                  <td className="px-4 py-2 text-tenue">{valor(x.campo, x.valor_normalizado)}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-tenue">
+                  <td data-etiqueta="Normalizado" className="px-4 py-2 text-tenue">
+                    {valor(x.campo, x.valor_normalizado)}
+                  </td>
+                  <td data-etiqueta="Ubicación" className="px-4 py-2 font-mono text-xs text-tenue">
                     {x.metodo === "manual" ? "Captura manual" : x.ubicacion_texto}
                   </td>
-                  <td className="px-4 py-2 text-xs text-tenue">
+                  <td data-etiqueta="Método" className="px-4 py-2 text-xs text-tenue">
                     {x.metodo}
                     {x.confianza !== null ? ` · ${formatoPorcentaje(x.confianza)}` : ""} ·{" "}
                     {x.estado}

@@ -305,7 +305,7 @@ export default async function Red({
                 aria-label="Entidades calificadas"
                 className="overflow-x-auto rounded-lg border border-linea"
               >
-                <table className="w-full text-left text-sm">
+                <table className="tabla-tarjetas w-full text-left text-sm">
                   <caption className="px-4 py-2 text-left text-sm font-semibold text-texto">
                     Entidades
                   </caption>
@@ -336,17 +336,17 @@ export default async function Red({
                         <td className="px-4 py-2 text-texto">
                           {nombre.get(c.objeto_id) ?? c.objeto_id}
                         </td>
-                        <td className="px-4 py-2 text-tenue">
+                        <td data-etiqueta="Distancia" className="px-4 py-2 text-tenue">
                           {distancia.get(c.objeto_id) ?? "—"}
                         </td>
-                        <td className="px-4 py-2">
+                        <td data-etiqueta="Riesgo" className="px-4 py-2">
                           <Nivel c={c} />
                         </td>
-                        <td className="px-4 py-2">
+                        <td data-etiqueta="Criterios" className="px-4 py-2">
                           <Criterios c={c} />
                         </td>
                         {puedeAjustar ? (
-                          <td className="px-4 py-2">
+                          <td data-etiqueta="Ajuste" className="px-4 py-2">
                             <FormularioAjuste
                               calificacionId={c.id}
                               nivelActual={c.ajuste_nivel ?? c.nivel}
@@ -363,7 +363,7 @@ export default async function Red({
                 aria-label="Vínculos calificados"
                 className="overflow-x-auto rounded-lg border border-linea"
               >
-                <table className="w-full text-left text-sm">
+                <table className="tabla-tarjetas w-full text-left text-sm">
                   <caption className="px-4 py-2 text-left text-sm font-semibold text-texto">
                     Vínculos declarados
                   </caption>
@@ -392,17 +392,17 @@ export default async function Red({
                     {vinculosCalificados.map((c) => (
                       <tr key={c.id} className="border-t border-linea align-top">
                         <td className="px-4 py-2 text-texto">{describirVinculo(c.objeto_id)}</td>
-                        <td className="px-4 py-2 text-tenue">
+                        <td data-etiqueta="Fuerza" className="px-4 py-2 text-tenue">
                           {vinculoPorId.get(c.objeto_id)?.fuerza ?? "—"}
                         </td>
-                        <td className="px-4 py-2">
+                        <td data-etiqueta="Riesgo" className="px-4 py-2">
                           <Nivel c={c} />
                         </td>
-                        <td className="px-4 py-2">
+                        <td data-etiqueta="Criterios" className="px-4 py-2">
                           <Criterios c={c} />
                         </td>
                         {puedeAjustar ? (
-                          <td className="px-4 py-2">
+                          <td data-etiqueta="Ajuste" className="px-4 py-2">
                             <FormularioAjuste
                               calificacionId={c.id}
                               nivelActual={c.ajuste_nivel ?? c.nivel}

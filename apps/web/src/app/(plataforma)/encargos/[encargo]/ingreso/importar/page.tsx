@@ -116,7 +116,7 @@ export default async function IngresoDocumentos({
           aria-label="Documentos ingresados"
           className="overflow-x-auto rounded-lg border border-linea"
         >
-          <table className="w-full text-left text-sm">
+          <table className="tabla-tarjetas w-full text-left text-sm">
             <caption className="px-4 py-2 text-left text-sm font-semibold text-texto">
               Documentos ingresados ({(registros ?? []).length})
             </caption>
@@ -157,10 +157,16 @@ export default async function IngresoDocumentos({
                       "—"
                     )}
                   </td>
-                  <td className="px-4 py-2 text-texto">{r.tipo_documento?.nombre ?? "—"}</td>
-                  <td className="px-4 py-2 text-texto">{r.expediente?.identificador ?? "—"}</td>
-                  <td className="px-4 py-2 text-tenue">{r.fuente ?? "—"}</td>
-                  <td className="px-4 py-2">
+                  <td data-etiqueta="Tipo" className="px-4 py-2 text-texto">
+                    {r.tipo_documento?.nombre ?? "—"}
+                  </td>
+                  <td data-etiqueta="Expediente" className="px-4 py-2 text-texto">
+                    {r.expediente?.identificador ?? "—"}
+                  </td>
+                  <td data-etiqueta="Fuente" className="px-4 py-2 text-tenue">
+                    {r.fuente ?? "—"}
+                  </td>
+                  <td data-etiqueta="Registro" className="px-4 py-2">
                     <Etiqueta tono={r.estado_validacion === "validado" ? "ok" : "neutro"}>
                       {r.estado_validacion === "pendiente" ? "Pendiente" : r.estado_validacion}
                     </Etiqueta>
@@ -183,7 +189,9 @@ export default async function IngresoDocumentos({
                       </form>
                     ) : null}
                   </td>
-                  <td className="px-4 py-2 text-tenue">{formatoFecha(r.creado_en)}</td>
+                  <td data-etiqueta="Recibido" className="px-4 py-2 text-tenue">
+                    {formatoFecha(r.creado_en)}
+                  </td>
                 </tr>
               ))}
               {(registros ?? []).length === 0 ? (

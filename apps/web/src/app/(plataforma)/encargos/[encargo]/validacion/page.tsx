@@ -70,7 +70,7 @@ export default async function PaginaValidacion({
           aria-label="Cola de validación"
           className="overflow-x-auto rounded-lg border border-linea"
         >
-          <table className="w-full text-left text-sm">
+          <table className="tabla-tarjetas w-full text-left text-sm">
             <thead className="bg-panel-2 text-xs tracking-wide text-tenue uppercase">
               <tr>
                 {["Documento", "Tipo", "Leído por", "Datos", "Ingresado"].map((t) => (
@@ -95,11 +95,13 @@ export default async function PaginaValidacion({
                       <span className="text-texto">{r.archivo}</span>
                     )}
                   </th>
-                  <td className="px-4 py-3 text-texto">{r.tipo}</td>
-                  <td className="px-4 py-3 text-tenue">
+                  <td data-etiqueta="Tipo" className="px-4 py-3 text-texto">
+                    {r.tipo}
+                  </td>
+                  <td data-etiqueta="Leído por" className="px-4 py-3 text-tenue">
                     {(r.proveedor && proveedores[r.proveedor]) ?? "—"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-etiqueta="Datos" className="px-4 py-3">
                     {r.porRevisar ? (
                       <Etiqueta tono="oro">
                         {formatoNumero(r.porRevisar)} de {formatoNumero(r.total)} por revisar
@@ -108,7 +110,9 @@ export default async function PaginaValidacion({
                       <Etiqueta tono="ok">{formatoNumero(r.total)} sobre el umbral</Etiqueta>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-tenue">{fecha.format(new Date(r.creadoEn))}</td>
+                  <td data-etiqueta="Ingresado" className="px-4 py-3 text-tenue">
+                    {fecha.format(new Date(r.creadoEn))}
+                  </td>
                 </tr>
               ))}
             </tbody>
