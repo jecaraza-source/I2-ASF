@@ -107,6 +107,18 @@ export async function listarVerificadores(
 
 const respuestasSchema = z.record(z.string(), z.enum(["si", "no", "no_verificable"])).catch({});
 
+type CedulaFila = {
+  registro_id: string;
+  capturada_en: string;
+  recibida_en: string;
+  respuestas: unknown;
+  domicilio_observado: string | null;
+  observaciones: string | null;
+  latitud: number | null;
+  longitud: number | null;
+  precision_m: number | null;
+};
+
 export type VisitaListada = {
   id: string;
   entidad_id: string;
@@ -165,17 +177,7 @@ export async function listarVisitas(
         motivo: string | null;
         domicilios: string[];
         entidad: { nombre: string } | null;
-        cedula_campo: {
-          registro_id: string;
-          capturada_en: string;
-          recibida_en: string;
-          respuestas: unknown;
-          domicilio_observado: string | null;
-          observaciones: string | null;
-          latitud: number | null;
-          longitud: number | null;
-          precision_m: number | null;
-        } | null;
+        cedula_campo: CedulaFila | CedulaFila[] | null;
         evidencia_campo: {
           id: string;
           ruta: string;
@@ -198,7 +200,8 @@ export async function listarVisitas(
   const correo = new Map(verificadores.map((v) => [v.usuario_id, v.correo]));
 
   return filas.map((v) => {
-    const c = v.cedula_campo;
+    // PostgREST la entrega como objeto o como lista de uno, según detecte la relación 1 a 1.
+    const c = Array.isArray(v.cedula_campo) ? (v.cedula_campo[0] ?? null) : v.cedula_campo;
     const resp = c ? respuestasSchema.parse(c.respuestas) : {};
     return {
       id: v.id,
