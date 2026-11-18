@@ -19,7 +19,7 @@ export default async function VistaRed({ params }: { params: Promise<{ encargo: 
 
   if (!gen) {
     return (
-      <main className="flex-1 px-8 py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
         <Titulo accion={volver}>Vista de la red</Titulo>
         <EstadoVacio
           titulo="Aún no hay una red generada."
@@ -31,7 +31,7 @@ export default async function VistaRed({ params }: { params: Promise<{ encargo: 
 
   const grafo = await cargarVista(supabase, encargo.id, gen.id);
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo accion={volver}>Vista de la red</Titulo>
       <p className="-mt-3 mb-4 text-sm text-tenue">
         Generación del {formatoFecha(gen.generada_en)} · reglas versión {gen.version_reglas}

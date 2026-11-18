@@ -149,7 +149,7 @@ function Fila({
               maxLength={500}
               onChange={(e) => setMotivo(e.target.value)}
               placeholder="Homónimo, otro RFC…"
-              className="w-72 rounded-md border border-linea-2 bg-fondo-2 px-2 py-1.5 text-sm text-texto focus:border-oro focus:outline-none"
+              className="w-full max-w-72 rounded-md border border-linea-2 bg-fondo-2 px-2 py-1.5 text-sm text-texto focus:border-oro focus:outline-none"
             />
           </label>
           <button

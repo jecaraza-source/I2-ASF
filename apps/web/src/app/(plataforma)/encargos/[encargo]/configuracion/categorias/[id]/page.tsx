@@ -18,7 +18,7 @@ export default async function EditarCategoria({
   const { activa } = await requerirOrganizacion();
   if (!puede(activa.rol, "catalogo.editar"))
     return (
-      <main className="flex-1 px-8 py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
         <SinPermiso />
       </main>
     );
@@ -32,7 +32,7 @@ export default async function EditarCategoria({
     .maybeSingle();
   if (!data) notFound();
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo>Editar categoría</Titulo>
       <FormularioCategoria encargoId={encargo.id} categoria={data} />
     </main>

@@ -76,7 +76,7 @@ export default async function Registro({
   const sinSoporte = r.origen === "captura" && !r.documento_origen;
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo>{r.resumen ?? "Registro"}</Titulo>
       <div className="flex max-w-5xl flex-col gap-6">
         <Panel>

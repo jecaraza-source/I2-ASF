@@ -77,7 +77,7 @@ export default async function Alertas({
     lista.filter((a) => a[campo] === v).length;
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo>Alertas</Titulo>
       <p className="-mt-3 mb-6 max-w-3xl text-sm text-tenue">
         Las reglas comparan lo que dicen las fuentes entre sí. Una alerta es una contradicción por

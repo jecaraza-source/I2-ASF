@@ -3,6 +3,7 @@ import { Suspense, type ReactNode } from "react";
 import { cerrarSesion } from "@/acciones/sesion";
 import { BarraMarca } from "@/components/marca";
 import { MenuModulos } from "@/components/menu-modulos";
+import { MenuMovil } from "@/components/menu-movil";
 import { BarraNavegacion } from "@/components/navegacion";
 import { redirect } from "next/navigation";
 import { requerirOrganizacion } from "@/lib/sesion";
@@ -32,7 +33,7 @@ export default function LayoutPlataforma({ children }: { children: ReactNode }) 
       <Suspense fallback={null}>
         <BarraNavegacion />
       </Suspense>
-      <div id="contenido" tabIndex={-1} className="flex flex-1 focus:outline-none">
+      <div id="contenido" tabIndex={-1} className="flex min-w-0 flex-1 focus:outline-none">
         {children}
       </div>
     </div>
@@ -44,41 +45,51 @@ async function ZonaUsuario() {
   // El verificador de campo solo usa la app de campo.
   if (sesion.activa.rol === "verificador") redirect("/campo");
   return (
-    <div className="flex items-center gap-4 text-xs">
-      <div className="text-right">
-        <p className="text-azul-claro" data-testid="organizacion-activa">
-          {sesion.activa.nombre}
-        </p>
-        <p className="text-azul-medio">
-          {sesion.usuario.email} · <span data-testid="rol-activo">{ROLES[sesion.activa.rol]}</span>
-        </p>
-      </div>
-      {sesion.activa.rol === "admin" ? (
-        <>
-          <Link href="/usuarios" className="text-azul-claro underline hover:text-texto">
-            Usuarios
-          </Link>
-          <Link href="/ia" className="text-azul-claro underline hover:text-texto">
-            Uso de IA
-          </Link>
-        </>
-      ) : null}
-      <Link href="/acceso/contrasena" className="text-azul-claro underline hover:text-texto">
-        Mi contraseña
-      </Link>
-      {sesion.membresias.length > 1 ? (
-        <Link href="/organizacion" className="text-azul-claro underline hover:text-texto">
-          Cambiar
+    <>
+      <MenuMovil
+        organizacion={sesion.activa.nombre}
+        correo={sesion.usuario.email ?? ""}
+        rol={ROLES[sesion.activa.rol]}
+        esAdmin={sesion.activa.rol === "admin"}
+        variasOrganizaciones={sesion.membresias.length > 1}
+      />
+      <div className="hidden items-center gap-4 text-xs md:flex">
+        <div className="text-right">
+          <p className="text-azul-claro" data-testid="organizacion-activa">
+            {sesion.activa.nombre}
+          </p>
+          <p className="text-azul-medio">
+            {sesion.usuario.email} ·{" "}
+            <span data-testid="rol-activo">{ROLES[sesion.activa.rol]}</span>
+          </p>
+        </div>
+        {sesion.activa.rol === "admin" ? (
+          <>
+            <Link href="/usuarios" className="text-azul-claro underline hover:text-texto">
+              Usuarios
+            </Link>
+            <Link href="/ia" className="text-azul-claro underline hover:text-texto">
+              Uso de IA
+            </Link>
+          </>
+        ) : null}
+        <Link href="/acceso/contrasena" className="text-azul-claro underline hover:text-texto">
+          Mi contraseña
         </Link>
-      ) : null}
-      <form action={cerrarSesion}>
-        <button
-          type="submit"
-          className="rounded border border-azul-borde px-2.5 py-1 text-azul-claro hover:text-texto"
-        >
-          Salir
-        </button>
-      </form>
-    </div>
+        {sesion.membresias.length > 1 ? (
+          <Link href="/organizacion" className="text-azul-claro underline hover:text-texto">
+            Cambiar
+          </Link>
+        ) : null}
+        <form action={cerrarSesion}>
+          <button
+            type="submit"
+            className="rounded border border-azul-borde px-2.5 py-1 text-azul-claro hover:text-texto"
+          >
+            Salir
+          </button>
+        </form>
+      </div>
+    </>
   );
 }

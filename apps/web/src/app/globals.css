@@ -67,3 +67,19 @@ body {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
+
+/*
+ * Celular: iOS acerca la página al enfocar un campo con letra menor a 16 px; con 16 px no lo hace.
+ * También se evita que el texto cambie de tamaño al girar el teléfono.
+ */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

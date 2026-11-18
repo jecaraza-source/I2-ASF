@@ -729,7 +729,7 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
             ref={contenedor}
             role="img"
             aria-label="Red de vínculos"
-            className="h-[680px] w-full rounded-lg border border-linea-2 bg-[#0b1220] bg-[radial-gradient(ellipse_at_50%_0%,rgba(212,175,55,0.07),transparent_60%)]"
+            className="h-[68dvh] w-full touch-none rounded-lg border border-linea-2 bg-[#0b1220] md:h-[680px] bg-[radial-gradient(ellipse_at_50%_0%,rgba(212,175,55,0.07),transparent_60%)]"
           />
           {menu ? (
             <MenuContextual

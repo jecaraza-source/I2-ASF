@@ -26,7 +26,7 @@ export default async function PaginaValidarRegistro({
   const base = `/encargos/${encargo.id}`;
   if (!puede(activa.rol, "registro.validar")) {
     return (
-      <main className="flex-1 px-8 py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
         <Titulo>Validar registro</Titulo>
         <SinPermiso texto="Tu rol permite consultar la cola de validación, no validar." />
       </main>
@@ -37,7 +37,7 @@ export default async function PaginaValidarRegistro({
   if (!r) notFound();
   if (!r.enCola) {
     return (
-      <main className="flex-1 px-8 py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
         <Titulo>Validar registro</Titulo>
         <Panel>
           <p className="text-sm text-texto">
@@ -86,7 +86,7 @@ export default async function PaginaValidarRegistro({
   const tipo = tipoPorMime(r.documento.mime);
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo
         accion={
           <EnlaceBoton variante="secundario" href={`${base}/validacion`}>

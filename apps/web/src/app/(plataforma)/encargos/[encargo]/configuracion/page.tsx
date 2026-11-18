@@ -17,7 +17,7 @@ export default async function Configuracion({ params }: { params: Promise<{ enca
   const { activa } = await requerirOrganizacion();
   if (!puede(activa.rol, "catalogo.editar")) {
     return (
-      <main className="flex-1 px-8 py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
         <Titulo>Configuración</Titulo>
         <SinPermiso texto="Solo un administrador de la organización configura el catálogo documental." />
       </main>
@@ -65,7 +65,7 @@ export default async function Configuracion({ params }: { params: Promise<{ enca
   const base = `/encargos/${encargo.id}/configuracion`;
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo>Configuración</Titulo>
       <p className="-mt-3 mb-6 text-sm text-tenue">
         El catálogo documental es de la organización: aplica a todos sus encargos.

@@ -44,7 +44,7 @@ export default async function Importacion({
     // Un fallo de lectura no es «no existe»: la importación pudo haberse guardado.
     console.error(`[resumenImportacion] error de base: ${errorResumen.code ?? "desconocido"}`);
     return (
-      <main className="flex-1 px-8 py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
         <Titulo>Importación</Titulo>
         <Panel className="max-w-2xl">
           <p role="alert" className="text-sm text-texto">
@@ -81,7 +81,7 @@ export default async function Importacion({
   ];
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo
         accion={
           <EnlaceBoton variante="secundario" href={`/encargos/${encargo.id}/importaciones`}>

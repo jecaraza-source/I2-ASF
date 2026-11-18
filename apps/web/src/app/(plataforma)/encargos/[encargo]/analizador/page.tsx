@@ -24,7 +24,7 @@ export default async function Analizador({ params }: { params: Promise<{ encargo
   const puedeGenerar = puede(activa.rol, "sintesis.generar");
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo>Analizador</Titulo>
       <p className="-mt-3 mb-6 max-w-3xl text-sm text-tenue">
         Síntesis de un expediente o de una entidad a partir de registros validados. La IA propone;

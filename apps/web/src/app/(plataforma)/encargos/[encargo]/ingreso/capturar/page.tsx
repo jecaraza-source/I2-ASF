@@ -53,7 +53,7 @@ export default async function CapturaManualPagina({
   );
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo>Captura manual</Titulo>
       <p className="-mt-3 mb-6 max-w-3xl text-sm text-tenue">
         Para datos que no vienen en un archivo. El registro queda marcado «sin soporte documental»
