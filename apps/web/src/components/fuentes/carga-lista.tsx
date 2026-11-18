@@ -1,5 +1,6 @@
 "use client";
 
+import { formatoNumero } from "@sigma/modelo";
 import { formatoDe, leerTablas, sha256Hex } from "@sigma/importador/leer-navegador";
 import {
   NOMBRE_SITUACION_69B,
@@ -143,13 +144,13 @@ export function CargaLista69b({ fuenteId }: { fuenteId: string }) {
           aria-label="Resumen del archivo"
         >
           <p className="text-texto" data-testid="resumen-lista">
-            {leido.filas.length.toLocaleString("es-MX")} contribuyente(s) con RFC válido
+            {formatoNumero(leido.filas.length)} contribuyente(s) con RFC válido
             {leido.repetidas ? ` · ${leido.repetidas} repetido(s) omitido(s)` : ""}
             {leido.descartadas.length ? ` · ${leido.descartadas.length} fila(s) inválida(s)` : ""}
           </p>
           <p className="text-xs text-tenue">
             {porSituacion
-              .map(([s, n]) => `${NOMBRE_SITUACION_69B[s]}: ${n.toLocaleString("es-MX")}`)
+              .map(([s, n]) => `${NOMBRE_SITUACION_69B[s]}: ${formatoNumero(n)}`)
               .join(" · ")}
           </p>
           {leido.descartadas.length ? (
@@ -176,14 +177,13 @@ export function CargaLista69b({ fuenteId }: { fuenteId: string }) {
       ) : null}
       {estado.fase === "cargando" && leido ? (
         <p role="status" className="text-sm text-tenue">
-          Cargando… {estado.enviadas.toLocaleString("es-MX")} de{" "}
-          {leido.filas.length.toLocaleString("es-MX")}
+          Cargando… {formatoNumero(estado.enviadas)} de {formatoNumero(leido.filas.length)}
         </p>
       ) : null}
       {estado.fase === "lista" ? (
         <p role="status" className="text-sm text-ok">
-          Lista cargada: {estado.filas.toLocaleString("es-MX")} contribuyente(s), vigente desde
-          ahora. Vuelve a consultar las entidades para usarla.
+          Lista cargada: {formatoNumero(estado.filas)} contribuyente(s), vigente desde ahora. Vuelve
+          a consultar las entidades para usarla.
         </p>
       ) : null}
       {error ? (

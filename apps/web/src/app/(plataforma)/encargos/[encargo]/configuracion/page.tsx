@@ -1,4 +1,4 @@
-import { PROVEEDORES_IA, puede, type ProveedorIA } from "@sigma/modelo";
+import { PROVEEDORES_IA, puede, type ProveedorIA, formatoNumero } from "@sigma/modelo";
 import Link from "next/link";
 import { SinPermiso } from "@/components/estados";
 import { FormularioCategoria, FormularioTipoDocumento } from "@/components/formularios/catalogo";
@@ -160,7 +160,7 @@ export default async function Configuracion({ params }: { params: Promise<{ enca
                     <>
                       <p className="text-xs text-tenue" data-testid="lista-vigente">
                         {vigente
-                          ? `Vigente: ${vigente.nombre_archivo} · ${vigente.filas.toLocaleString("es-MX")} contribuyentes · cargada el ${formatoFecha(vigente.vigente_desde)} · SHA-256 ${vigente.sha256.slice(0, 12)}…`
+                          ? `Vigente: ${vigente.nombre_archivo} · ${formatoNumero(vigente.filas)} contribuyentes · cargada el ${formatoFecha(vigente.vigente_desde)} · SHA-256 ${vigente.sha256.slice(0, 12)}…`
                           : "Aún no hay lista cargada: las consultas no encuentran nada en esta fuente."}
                       </p>
                       {historial.length > 1 ? (
@@ -171,7 +171,7 @@ export default async function Configuracion({ params }: { params: Promise<{ enca
                               .filter((c) => c.estado !== "vigente")
                               .map((c) => (
                                 <li key={c.id}>
-                                  {c.nombre_archivo} · {c.filas.toLocaleString("es-MX")} ·{" "}
+                                  {c.nombre_archivo} · {formatoNumero(c.filas)} ·{" "}
                                   {formatoFecha(c.creado_en)} · SHA-256 {c.sha256.slice(0, 12)}…
                                 </li>
                               ))}

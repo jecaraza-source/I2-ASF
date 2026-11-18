@@ -1,6 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { POR_PAGINA_OPCIONES, totalPaginas, type ParametrosTabla } from "@sigma/modelo";
+import {
+  POR_PAGINA_OPCIONES,
+  totalPaginas,
+  type ParametrosTabla,
+  formatoNumero,
+} from "@sigma/modelo";
 import { EstadoVacio } from "@/components/estados";
 
 export type Columna<F, C extends string> = {
@@ -155,10 +160,9 @@ export function TablaDatos<F, C extends string>({
         <span>
           {total === 0
             ? "0 resultados"
-            : `${(parametros.pagina - 1) * parametros.porPagina + 1}–${Math.min(
-                parametros.pagina * parametros.porPagina,
-                total,
-              )} de ${total}`}
+            : `${formatoNumero((parametros.pagina - 1) * parametros.porPagina + 1)}–${formatoNumero(
+                Math.min(parametros.pagina * parametros.porPagina, total),
+              )} de ${formatoNumero(total)}`}
         </span>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">
@@ -181,7 +185,7 @@ export function TablaDatos<F, C extends string>({
             </Link>
           ) : null}
           <span>
-            Página {Math.min(parametros.pagina, paginas)} de {paginas}
+            Página {formatoNumero(Math.min(parametros.pagina, paginas))} de {formatoNumero(paginas)}
           </span>
           {parametros.pagina < paginas ? (
             <Link href={href({ pagina: parametros.pagina + 1 })} className="hover:text-texto">

@@ -7,6 +7,8 @@ import {
   MAX_BYTES_FOTO,
   MAX_FOTOS_POR_VISITA,
   MIMES_FOTO,
+  formatoMonto,
+  formatoNumero,
 } from "@sigma/modelo";
 import { PREGUNTAS_CAMPO } from "@sigma/reglas";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
@@ -38,6 +40,18 @@ const boton =
   "rounded-md border border-linea-2 px-3 py-2 text-sm text-texto hover:border-oro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-oro disabled:opacity-50";
 const botonPrincipal =
   "rounded-md bg-oro px-4 py-2 text-sm font-medium text-fondo hover:bg-oro-suave focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-oro disabled:opacity-50";
+
+/** El monto validado del documento viene como `{ monto, moneda }` o como texto. */
+function montoDocumento(m: unknown): string | null {
+  if (typeof m === "string" || typeof m === "number") return formatoMonto(m);
+  if (m && typeof m === "object" && "monto" in m) {
+    const x = m as { monto: unknown; moneda?: unknown };
+    if (typeof x.monto === "string" || typeof x.monto === "number") {
+      return formatoMonto(x.monto, typeof x.moneda === "string" ? x.moneda : null);
+    }
+  }
+  return null;
+}
 
 function fechaHora(iso: string): string {
   return new Intl.DateTimeFormat("es-MX", {
@@ -232,7 +246,7 @@ export function AppCampo() {
               <li key={p.cedula.id}>
                 <span className="text-texto">{p.entidad}</span>{" "}
                 <span className="text-xs text-tenue">
-                  guardada {fechaHora(p.guardada_en)} · {p.fotos.length} foto(s)
+                  guardada {fechaHora(p.guardada_en)} · {formatoNumero(p.fotos.length)} foto(s)
                 </span>
                 {caducado(p.guardada_en) ? (
                   <span className="block text-xs text-peligro">
@@ -556,7 +570,9 @@ function CedulaCampo({
             <ul className="mt-1 flex flex-col gap-1 text-xs text-texto">
               {visita.documentos.map((d) => (
                 <li key={d.registro_id}>
-                  {[d.tipo, d.fecha, d.resumen].filter(Boolean).join(" · ")}
+                  {[d.tipo, d.fecha, montoDocumento(d.monto), d.resumen]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </li>
               ))}
             </ul>

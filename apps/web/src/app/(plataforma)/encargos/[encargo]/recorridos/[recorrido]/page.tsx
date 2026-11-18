@@ -1,4 +1,4 @@
-import { moduloPorClave, recorridoPorClave } from "@sigma/modelo";
+import { moduloPorClave, recorridoPorClave, formatoNumero } from "@sigma/modelo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
@@ -93,7 +93,7 @@ export default async function PaginaRecorrido({
             {actual.hecha === null
               ? "Esta etapa es de consulta: no deja un dato que medir."
               : actual.hecha
-                ? `Ya está cubierta en este encargo (${actual.cantidad}).`
+                ? `Ya está cubierta en este encargo (${formatoNumero(actual.cantidad)}).`
                 : "Aún no hay nada de esta etapa en el encargo."}
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-3">

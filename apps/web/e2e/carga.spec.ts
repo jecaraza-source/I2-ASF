@@ -21,7 +21,7 @@ test.describe("carga: 5,000 entidades y 50,000 registros", () => {
     const inicio = Date.now();
     await page.goto(`/encargos/${ENCARGO}/red/vista`);
     const resumen = page.getByTestId("resumen-vista").filter(visible);
-    await expect(resumen).toContainText("5000 entidades", { timeout: 90_000 });
+    await expect(resumen).toContainText("5,000 entidades", { timeout: 90_000 });
     await expect(page.getByTestId("aviso-red-grande").filter(visible)).toBeVisible();
     await expect(
       page.getByRole("img", { name: "Red de vínculos" }).locator("canvas").first(),
@@ -50,13 +50,13 @@ test.describe("carga: 5,000 entidades y 50,000 registros", () => {
     const inicio = Date.now();
     await page.goto(`/encargos/${ENCARGO}/expedientes/${EXPEDIENTE}`);
     const resumen = page.getByTestId("resumen-documental").filter(visible);
-    await expect(resumen).toHaveText(/^50000 registro\(s\)/, { timeout: 60_000 });
+    await expect(resumen).toHaveText(/^50,000 registro\(s\)/, { timeout: 60_000 });
     const primera = Date.now() - inicio;
-    await expect(page.getByText(/Página 1 de \d+/).filter(visible)).toBeVisible();
+    await expect(page.getByText(/Página 1 de [\d,]+/).filter(visible)).toBeVisible();
 
     const t0 = Date.now();
     await page.getByRole("link", { name: "Siguiente →" }).filter(visible).click();
-    await expect(page.getByText(/Página 2 de \d+/).filter(visible)).toBeVisible({
+    await expect(page.getByText(/Página 2 de [\d,]+/).filter(visible)).toBeVisible({
       timeout: 60_000,
     });
     const segunda = Date.now() - t0;

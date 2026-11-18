@@ -1,6 +1,6 @@
 "use client";
 
-import { NOMBRE_ROL, type Rol } from "@sigma/modelo";
+import { NOMBRE_ROL, type Rol, formatoNumero } from "@sigma/modelo";
 import { useActionState, useId, useState } from "react";
 import { cancelarVisita, programarVisitas } from "@/acciones/campo";
 import { AreaTexto, BotonEnviar, Campo, Formulario } from "@/components/formulario";
@@ -44,7 +44,8 @@ export function ProgramaVisitas({
       ) : null}
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 text-sm text-texto">
-          Proveedores a visitar ({marcados.size} de {propuestas.length})
+          Proveedores a visitar ({formatoNumero(marcados.size)} de{" "}
+          {formatoNumero(propuestas.length)})
         </legend>
         <ul className="flex max-h-[24rem] flex-col gap-1 overflow-auto rounded-md border border-linea p-2">
           {propuestas.map((p, i) => (
@@ -70,7 +71,8 @@ export function ProgramaVisitas({
                   {p.nombre}
                   <span className="block text-xs text-tenue">
                     {p.rfc ? `${p.rfc} · ` : ""}
-                    {NIVEL[p.nivel as keyof typeof NIVEL] ?? p.nivel} · {p.puntaje} puntos
+                    {NIVEL[p.nivel as keyof typeof NIVEL] ?? p.nivel} · {formatoNumero(p.puntaje)}{" "}
+                    puntos
                   </span>
                 </span>
               </label>

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatoNumero } from "@sigma/modelo";
 import { useActionState, useId, useState } from "react";
 import { crearSintesis } from "@/acciones/analizador";
 import { BotonEnviar } from "@/components/formulario";
@@ -36,7 +37,8 @@ export function NuevaSintesis({
       ) : null}
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 text-sm text-texto">
-          Registros que entran a la síntesis ({marcados.size} de {registros.length})
+          Registros que entran a la síntesis ({formatoNumero(marcados.size)} de{" "}
+          {formatoNumero(registros.length)})
         </legend>
         <label className="flex items-center gap-2 text-xs text-tenue">
           <input

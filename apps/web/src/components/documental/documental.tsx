@@ -11,6 +11,8 @@ import {
   type FiltrosDocumental,
   type OrdenDocumental,
   type Rol,
+  formatoMonto,
+  formatoNumero,
 } from "@sigma/modelo";
 import type { Nivel } from "@sigma/red";
 import Link from "next/link";
@@ -47,15 +49,7 @@ const NOMBRE_ROL: Record<string, string> = {
 };
 const NIVELES = new Set<string>(["critico", "alto", "medio", "bajo"]);
 const MESES = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric", timeZone: "UTC" });
-const moneda = (monto: string, codigo: string) => {
-  const n = Number(monto);
-  if (!Number.isFinite(n)) return `${monto} ${codigo}`;
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: /^[A-Z]{3}$/.test(codigo) ? codigo : "MXN",
-    currencyDisplay: "code",
-  }).format(n);
-};
+const moneda = (monto: string, codigo: string) => formatoMonto(monto, codigo);
 
 const claseControl =
   "rounded-md border border-linea-2 bg-fondo-2 px-2 py-1.5 text-sm text-texto focus:border-oro focus:outline-none";
@@ -245,7 +239,7 @@ export async function Documental({
           <p className="text-sm text-tenue" data-testid="resumen-documental">
             {filtros.vista === "entidad" && !filtros.entidad
               ? "Elige una entidad para ver sus registros en todos los expedientes."
-              : `${total} registro(s)`}
+              : `${formatoNumero(total)} registro(s)`}
             {entidadElegida ? (
               <>
                 {" "}
@@ -347,7 +341,7 @@ export async function Documental({
               </Link>
             ) : null}
             <span>
-              Página {Math.min(filtros.pagina, paginas)} de {paginas}
+              Página {formatoNumero(Math.min(filtros.pagina, paginas))} de {formatoNumero(paginas)}
             </span>
             {filtros.pagina < paginas ? (
               <Link
@@ -402,8 +396,11 @@ function Arbol({
                 <span className={`truncate ${x.id ? "font-mono text-xs" : "italic"}`}>
                   {x.nombre}
                 </span>
-                <span className="text-xs text-tenue" aria-label={`${x.registros} registros`}>
-                  {x.registros}
+                <span
+                  className="text-xs text-tenue"
+                  aria-label={`${formatoNumero(x.registros)} registros`}
+                >
+                  {formatoNumero(x.registros)}
                 </span>
               </Link>
               {abierto ? (
@@ -420,7 +417,7 @@ function Arbol({
                           <span className={`truncate ${e.id ? "" : "italic text-tenue"}`}>
                             {e.nombre}
                           </span>
-                          <span className="text-tenue">{e.registros}</span>
+                          <span className="text-tenue">{formatoNumero(e.registros)}</span>
                         </Link>
                         {entAbierta ? (
                           <ul className="ml-2 border-l border-linea pl-2">
@@ -439,7 +436,7 @@ function Arbol({
                                   className="flex items-center justify-between gap-2 rounded px-1.5 py-0.5 text-xs text-tenue hover:bg-panel-2 hover:text-texto aria-[current=page]:text-oro"
                                 >
                                   <span className="truncate">{c.nombre}</span>
-                                  <span>{c.registros}</span>
+                                  <span>{formatoNumero(c.registros)}</span>
                                 </Link>
                               </li>
                             ))}
@@ -487,7 +484,7 @@ function ElegirEntidad({ arbol, href }: { arbol: NodoExpediente[]; href: (id: st
           >
             <span className="truncate text-texto">{t.nombre}</span>
             <span className="shrink-0 text-xs text-tenue">
-              {t.registros} reg. · {t.expedientes} exp.
+              {formatoNumero(t.registros)} reg. · {formatoNumero(t.expedientes)} exp.
             </span>
           </Link>
         </li>

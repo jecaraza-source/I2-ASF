@@ -1,5 +1,6 @@
 "use client";
 
+import { formatoBytes } from "@sigma/modelo";
 import { useRef, useState, useTransition } from "react";
 import { analizarExcel, confirmarImportacion, type Analisis } from "@/acciones/importaciones";
 import { EditorMapeo } from "./editor-mapeo";
@@ -156,7 +157,7 @@ export function Importador({
         <section aria-label="Vista previa" className="flex flex-col gap-5">
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className="text-tenue">
-              {analisis.archivo.nombre} · {(analisis.archivo.tamano / 1024).toFixed(0)} KB ·{" "}
+              {analisis.archivo.nombre} · {formatoBytes(analisis.archivo.tamano)} ·{" "}
               <span className="font-mono text-xs" title="SHA-256">
                 {analisis.archivo.sha256.slice(0, 16)}…
               </span>

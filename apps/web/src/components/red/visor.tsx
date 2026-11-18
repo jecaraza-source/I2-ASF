@@ -1,5 +1,6 @@
 "use client";
 
+import { formatoNumero } from "@sigma/modelo";
 import {
   DISENOS,
   FAMILIAS_ARISTA,
@@ -697,15 +698,16 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
         </details>
 
         <p className="text-xs text-tenue" data-testid="resumen-vista" aria-live="polite">
-          {visible.nodos.length} entidades · {visible.aristas.length} relaciones visibles
+          {formatoNumero(visible.nodos.length)} entidades · {formatoNumero(visible.aristas.length)}{" "}
+          relaciones visibles
           {estado.foco
             ? ` · ${estado.saltos === 1 ? "relaciones directas" : "hasta segundo grado"} de la entidad central`
             : ""}
         </p>
         {disenoEfectivo(estado.diseno, visible.nodos.length) !== estado.diseno ? (
           <p role="status" className="text-xs text-oro" data-testid="aviso-red-grande">
-            Red grande ({visible.nodos.length.toLocaleString("es-MX")} entidades): se dibuja en
-            rejilla empaquetada. Centra una entidad o filtra para usar el diseño elegido.
+            Red grande ({formatoNumero(visible.nodos.length)} entidades): se dibuja en rejilla
+            empaquetada. Centra una entidad o filtra para usar el diseño elegido.
           </p>
         ) : null}
         {focoFiltrado ? (
@@ -785,7 +787,8 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
                 ))}
                 {evidencia.total > evidencia.objetos.length ? (
                   <li className="text-tenue-2">
-                    Se muestran {evidencia.objetos.length} de {evidencia.total}.
+                    Se muestran {formatoNumero(evidencia.objetos.length)} de{" "}
+                    {formatoNumero(evidencia.total)}.
                   </li>
                 ) : null}
               </ul>

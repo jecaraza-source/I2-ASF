@@ -1,4 +1,4 @@
-import { puede } from "@sigma/modelo";
+import { puede, formatoNumero, formatoPorcentaje } from "@sigma/modelo";
 import { TarjetasRecorridos } from "@/components/recorridos";
 import { EnlaceBoton, Panel, Titulo } from "@/components/ui";
 import { formatoFecha, obtenerEncargo } from "@/lib/datos";
@@ -40,12 +40,12 @@ export default async function ResumenEncargo({ params }: { params: Promise<{ enc
             <dt className="text-tenue">Estado</dt>
             <dd className="text-texto">{encargo.estado}</dd>
             <dt className="text-tenue">Umbral de confianza</dt>
-            <dd className="text-texto">{encargo.umbral_confianza}</dd>
+            <dd className="text-texto">{formatoPorcentaje(encargo.umbral_confianza)}</dd>
           </dl>
         </Panel>
         <Panel>
           <p className="text-sm text-tenue">Expedientes</p>
-          <p className="mt-1 text-3xl font-semibold text-texto">{count ?? 0}</p>
+          <p className="mt-1 text-3xl font-semibold text-texto">{formatoNumero(count ?? 0)}</p>
           <EnlaceBoton
             variante="secundario"
             href={`/encargos/${encargo.id}/expedientes`}

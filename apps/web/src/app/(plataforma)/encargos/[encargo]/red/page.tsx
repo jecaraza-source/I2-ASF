@@ -1,4 +1,4 @@
-import { puede } from "@sigma/modelo";
+import { puede, formatoNumero } from "@sigma/modelo";
 import { DESCRIPCION_CRITERIO, diferencias, type Nivel } from "@sigma/red";
 import Link from "next/link";
 import { z } from "zod";
@@ -27,7 +27,7 @@ function Nivel({ c }: { c: CalificacionGuardada }) {
       <span
         className={`inline-block w-fit rounded border px-1.5 py-0.5 text-xs ${NIVEL[efectivo].clase}`}
       >
-        {NIVEL[efectivo].texto} · {c.puntaje}
+        {NIVEL[efectivo].texto} · {formatoNumero(c.puntaje)}
       </span>
       {c.ajuste_nivel ? (
         <span className="text-[11px] text-tenue">
@@ -214,7 +214,7 @@ export default async function Red({
                   Generación del {formatoFecha(actual.generada_en)} ·{" "}
                   {resumen?.todas
                     ? "todas las entidades"
-                    : `${actual.semillas.length} entidad(es) de partida, ${actual.alcance === 1 ? "relaciones directas" : "hasta segundo grado"}`}{" "}
+                    : `${formatoNumero(actual.semillas.length)} entidad(es) de partida, ${actual.alcance === 1 ? "relaciones directas" : "hasta segundo grado"}`}{" "}
                   · reglas versión {actual.version_reglas}
                 </p>
                 <dl
@@ -237,7 +237,7 @@ export default async function Red({
                       data-testid={`indicador-${t}`}
                     >
                       <dt className="text-xs text-tenue">{t}</dt>
-                      <dd className="text-2xl font-semibold text-texto">{n}</dd>
+                      <dd className="text-2xl font-semibold text-texto">{formatoNumero(n)}</dd>
                     </div>
                   ))}
                 </dl>
@@ -287,7 +287,7 @@ export default async function Red({
                         .map(([titulo, items]) => (
                           <div key={titulo} data-testid={`cambio-${titulo}`}>
                             <h3 className="mb-1 text-xs tracking-wide text-oro uppercase">
-                              {titulo} ({items.length})
+                              {titulo} ({formatoNumero(items.length)})
                             </h3>
                             <ul className="max-h-48 overflow-y-auto text-xs text-tenue">
                               {items.map((t, i) => (

@@ -4,6 +4,7 @@ import {
   PROVEEDORES_IA,
   puede,
   type ProveedorIA,
+  formatoMonto,
 } from "@sigma/modelo";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -57,10 +58,7 @@ const resumenSchema = z.object({
 });
 
 const n = new Intl.NumberFormat("es-MX");
-const dinero = (v: number | null) =>
-  v === null
-    ? "sin precio"
-    : `US$${v.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const dinero = (v: number | null) => (v === null ? "sin precio" : formatoMonto(v, "USD"));
 const numeroONulo = (v: number | null | undefined) =>
   v === null || v === undefined ? null : Number(v);
 const TOPES = { diario: 2_000_000, mensual: 30_000_000 };
@@ -369,8 +367,8 @@ async function Contenido() {
                   <span className="font-mono">{p.modelo}</span>
                 </span>
                 <span className="text-tenue">
-                  entrada US${Number(p.usd_millon_entrada)} · salida US$
-                  {Number(p.usd_millon_salida)}
+                  entrada {formatoMonto(Number(p.usd_millon_entrada), "USD")} · salida{" "}
+                  {formatoMonto(Number(p.usd_millon_salida), "USD")}
                 </span>
                 <form action={eliminarPrecioIA}>
                   <input type="hidden" name="id" value={p.id} />

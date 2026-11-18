@@ -1,5 +1,6 @@
 "use client";
 
+import { formatoPorcentaje } from "@sigma/modelo";
 import {
   CAMPOS_COMUNES,
   MONEDAS,
@@ -46,8 +47,8 @@ export type InicialRegistro = {
 function TextoAnotacion({ a }: { a: Anotacion }) {
   return (
     <span className={a.porRevisar ? "text-oro" : "text-tenue"}>
-      IA · {Math.round(a.confianza * 100)}%{a.pagina ? ` · pág. ${a.pagina}` : ""} ·{" "}
-      {a.porRevisar ? "por revisar" : "sobre el umbral"}
+      IA · {formatoPorcentaje(a.confianza)}
+      {a.pagina ? ` · pág. ${a.pagina}` : ""} · {a.porRevisar ? "por revisar" : "sobre el umbral"}
     </span>
   );
 }

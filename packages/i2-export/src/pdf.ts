@@ -1,3 +1,4 @@
+import { formatoNumero } from "@sigma/modelo";
 import {
   PDFDocument,
   StandardFonts,
@@ -269,7 +270,7 @@ export async function reportePdf(red: RedExport, meta: MetaReporte): Promise<Uin
       borderColor: k.c,
       borderWidth: 1.4,
     });
-    texto(p2, String(k.v), kx + kw / 2, y - 38, {
+    texto(p2, formatoNumero(k.v), kx + kw / 2, y - 38, {
       fuente: f.negrita,
       tam: 24,
       color: k.c,
@@ -300,7 +301,7 @@ export async function reportePdf(red: RedExport, meta: MetaReporte): Promise<Uin
   y = tituloPagina(
     p3,
     "RED DE VÍNCULOS",
-    `${red.entidades.length} entidades · ${red.vinculos.length} vínculos · ${red.eventos.length} eventos`,
+    `${formatoNumero(red.entidades.length)} entidades · ${formatoNumero(red.vinculos.length)} vínculos · ${formatoNumero(red.eventos.length)} eventos`,
   );
   const GX = M;
   const GW = W - 2 * M;
@@ -399,7 +400,7 @@ export async function reportePdf(red: RedExport, meta: MetaReporte): Promise<Uin
   if (red.entidades.length > dibujadas.length) {
     texto(
       p3,
-      `Se dibujan las ${dibujadas.length} entidades de mayor puntaje de ${red.entidades.length}.`,
+      `Se dibujan las ${formatoNumero(dibujadas.length)} entidades de mayor puntaje de ${formatoNumero(red.entidades.length)}.`,
       W / 2,
       GY + 6,
       { fuente: f.normal, tam: 6.5, color: GRIS, alinear: "centro" },
@@ -434,7 +435,7 @@ export async function reportePdf(red: RedExport, meta: MetaReporte): Promise<Uin
   );
   tabla(() => nueva(formato), f, {
     titulo: "ENTIDADES CON NIVEL Y CRITERIOS",
-    sub: `${ordenadas.length} entidades, de mayor a menor puntaje`,
+    sub: `${formatoNumero(ordenadas.length)} entidades, de mayor a menor puntaje`,
     columnas: columnasE,
     vacio: "Sin entidades en la red.",
     filas: ordenadas.map((e) => ({
@@ -443,7 +444,7 @@ export async function reportePdf(red: RedExport, meta: MetaReporte): Promise<Uin
         [e.nombre, e.rfc ? `RFC ${e.rfc}` : ""].filter(Boolean),
         [NOMBRE_TIPO_ENTIDAD[e.tipo] ?? e.tipo],
         [NOMBRE_NIVEL[e.nivel]],
-        [String(e.puntaje)],
+        [formatoNumero(e.puntaje)],
         e.criterios.length
           ? [
               e.criterios.map((c) => `${c.detalle} (+${c.aporte})`).join("; ") +
@@ -471,7 +472,7 @@ export async function reportePdf(red: RedExport, meta: MetaReporte): Promise<Uin
   };
   tabla(() => nueva(formato), f, {
     titulo: "ALERTAS",
-    sub: `${alertas.length} alerta(s) sobre entidades de la red · ${abiertas} abierta(s)`,
+    sub: `${formatoNumero(alertas.length)} alerta(s) sobre entidades de la red · ${formatoNumero(abiertas)} abierta(s)`,
     columnas: [
       { t: "REGLA", w: 40 },
       { t: "SEVERIDAD", w: 60 },
