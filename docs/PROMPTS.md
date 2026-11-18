@@ -25,6 +25,8 @@ solo dicen qué construir y cómo saber que quedó.
 | 14 | App de campo | 13 | Fase posterior |
 | 15 | Analizador (síntesis con origen) | 09, 10 | |
 | 16 | Plataforma responsiva (celular) | 13 | |
+| 17 | Barra lateral agrupada | 16 | |
+| 18 | Validación según el tipo de documento | 09 | |
 
 06 puede ir en paralelo con 04–05, y 07–09 en paralelo con 04–06, en ramas separadas.
 

@@ -1,4 +1,4 @@
-import { leerCamposEsperados } from "@sigma/importador/captura";
+import { camposComunesDe, leerCamposEsperados } from "@sigma/importador/captura";
 import { puede } from "@sigma/modelo";
 import Link from "next/link";
 import { CapturaManual } from "@/components/captura/captura-manual";
@@ -79,6 +79,7 @@ export default async function CapturaManualPagina({
               nombre: t.nombre,
               categoria: t.categoria_documental?.nombre ?? "Otros",
               campos: leerCamposEsperados(t.campos_esperados),
+              comunes: camposComunesDe(t.campos_esperados),
             }))}
             expedientes={(expedientes ?? []).map((x) => ({ id: x.id, nombre: x.identificador }))}
             entidades={(entidades ?? []).map((e) => {

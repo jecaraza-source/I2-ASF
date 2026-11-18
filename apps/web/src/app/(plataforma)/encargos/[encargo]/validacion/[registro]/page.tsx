@@ -114,6 +114,7 @@ export default async function PaginaValidarRegistro({
           nombre: r.tipo.nombre,
           categoria: r.tipo.categoria,
           campos: r.tipo.campos,
+          comunes: r.tipo.comunes,
         }}
         expedientes={(expedientes ?? []).map((x) => ({ id: x.id, nombre: x.identificador }))}
         entidades={(entidades ?? []).map((e) => {

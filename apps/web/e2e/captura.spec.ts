@@ -103,3 +103,55 @@ test("lector consulta las capturas pero no captura", async ({ page }) => {
   await expect(page.getByText("Tu rol permite consultar las capturas, no crearlas.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Guardar captura" })).toHaveCount(0);
 });
+
+test("acta constitutiva: capital social y domicilio social, sin contrato ni factura; socios con su aportación y comisario", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await ingresar(page, "auditor");
+  await page.getByRole("link", { name: "Nuevo encargo" }).first().click();
+  const nombre = unico("Acta e2e");
+  await page.getByLabel("Nombre").fill(nombre);
+  await page.getByRole("button", { name: "Crear encargo" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(nombre);
+  await page
+    .getByRole("navigation", { name: "Módulos" })
+    .getByRole("link", { name: "Captura manual" })
+    .click();
+
+  await page.getByLabel(/^Tipo de documento/).selectOption({ label: "Acta constitutiva" });
+  await expect(page.getByLabel("Capital social constitutivo")).toBeVisible();
+  await expect(page.getByLabel("Domicilio social")).toBeVisible();
+  await expect(page.getByLabel("Número de contrato")).toHaveCount(0);
+  await expect(page.getByLabel("Número de factura")).toHaveCount(0);
+  await expect(page.getByLabel("Número de cuenta")).toHaveCount(0);
+
+  await page.getByLabel("Capital social constitutivo").fill("50,000.00");
+  await page.getByLabel("Domicilio social").fill("Av. Reforma 100, Ciudad de México");
+  await page
+    .getByLabel("Objeto social")
+    .fill("I. La compraventa de materiales. II. La prestación de servicios de construcción.");
+
+  await page.getByRole("button", { name: "Agregar involucrado" }).click();
+  await page.getByLabel("Tipo del involucrado 1").selectOption({ label: "Persona" });
+  await page.getByLabel("Nombre del involucrado 1").fill("ANA RUIZ GÓMEZ E2E");
+  await expect(page.getByLabel("Aportación del involucrado 1")).toHaveCount(0);
+  await page.getByLabel("Rol del involucrado 1").selectOption({ label: "Socio o accionista" });
+  await page.getByLabel("Aportación del involucrado 1").fill("25,000");
+  await page.getByRole("button", { name: "Agregar involucrado" }).click();
+  await page.getByLabel("Tipo del involucrado 2").selectOption({ label: "Persona" });
+  await page.getByLabel("Nombre del involucrado 2").fill("LUIS PÉREZ SOTO E2E");
+  await page.getByLabel("Rol del involucrado 2").selectOption({ label: "Comisario" });
+
+  await page.getByLabel(/^Fuente declarada/).fill("Registro Público de Comercio");
+  await page.getByRole("button", { name: "Guardar captura" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Acta constitutiva (captura manual)",
+    { timeout: 30_000 },
+  );
+  const datos = page.getByRole("region", { name: "Datos de origen" });
+  await expect(datos).toContainText("$50,000.00");
+  await expect(datos).toContainText("II. La prestación de servicios de construcción.");
+  await expect(page.getByText(/Socio o accionista · aportación \$25,000\.00/)).toBeVisible();
+  await expect(page.getByText(/Comisario/).first()).toBeVisible();
+});

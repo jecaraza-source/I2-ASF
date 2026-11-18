@@ -24,6 +24,8 @@ export const campoEsperadoSchema = z.object({
   etiqueta: z.string().trim().min(1).max(80),
   tipo: z.enum(TIPOS_CAMPO),
   requerido: z.boolean().optional(),
+  /** Solo para un campo común (§6): no aplica a este tipo de documento. */
+  oculto: z.boolean().optional(),
 });
 export type CampoEsperado = z.infer<typeof campoEsperadoSchema>;
 
@@ -40,6 +42,40 @@ export function leerCamposEsperados(valor: unknown): CampoEsperado[] {
     }
   }
   return campos;
+}
+
+/**
+ * Campos comunes ajustados al tipo (§6): una entrada de `campos_esperados` con la clave de un campo
+ * común lo renombra (`etiqueta`) o lo quita (`oculto: true`). El acta constitutiva, por ejemplo,
+ * llama «Capital social constitutivo» al monto y no usa número de contrato ni de factura. El tipo
+ * de dato del campo común no cambia.
+ */
+export function camposComunesDe(valor: unknown): CampoEsperado[] {
+  const ajustes = new Map<string, { etiqueta?: string; oculto?: boolean }>();
+  if (Array.isArray(valor)) {
+    for (const v of valor) {
+      const a = z
+        .object({
+          clave: z.string(),
+          etiqueta: z.string().trim().min(1).max(80).optional(),
+          oculto: z.boolean().optional(),
+        })
+        .safeParse(v);
+      if (a.success && CAMPOS_COMUNES.some((c) => c.clave === a.data.clave)) {
+        ajustes.set(a.data.clave, a.data);
+      }
+    }
+  }
+  return CAMPOS_COMUNES.flatMap((c) => {
+    const a = ajustes.get(c.clave);
+    if (a?.oculto) return [];
+    return [a?.etiqueta ? { ...c, etiqueta: a.etiqueta } : c];
+  });
+}
+
+/** Todos los campos de un tipo: los comunes ajustados y los propios. */
+export function camposDelTipo(valor: unknown): CampoEsperado[] {
+  return [...camposComunesDe(valor), ...leerCamposEsperados(valor)];
 }
 
 /** Campos comunes de todo registro (§6). La moneda acompaña al monto. */
@@ -71,6 +107,7 @@ export const ROLES_INVOLUCRADO = [
   "socio",
   "funcionario",
   "notario",
+  "comisario",
   "ordenante",
   "beneficiario",
   "titular",
@@ -85,6 +122,7 @@ export const NOMBRE_ROL: Record<RolInvolucrado, string> = {
   socio: "Socio o accionista",
   funcionario: "Funcionario",
   notario: "Notario",
+  comisario: "Comisario",
   ordenante: "Ordenante",
   beneficiario: "Beneficiario",
   titular: "Titular",
@@ -102,6 +140,8 @@ export const involucradoSchema = z.object({
   rol: z.enum(ROLES_INVOLUCRADO),
   rfc: z.string().trim().max(20).optional().default(""),
   curp: z.string().trim().max(20).optional().default(""),
+  /** Monto que aporta un socio al capital (acta constitutiva o asamblea); vacío si no aplica. */
+  aportacion: z.string().trim().max(40).optional().default(""),
   /** Solo en validación: la lectura de la IA de la que viene este involucrado. */
   campoIa: z
     .string()
@@ -117,7 +157,8 @@ export const capturaSchema = z.object({
   fuente: z.string().trim().min(1, "La fuente declarada es obligatoria").max(200),
   moneda: z.enum(MONEDAS).optional().default("MXN"),
   /** clave del campo → texto tal como lo escribió el auditor. */
-  valores: z.record(z.string(), z.string().max(4000)),
+  /** Hasta 20,000 caracteres: un objeto social o unas facultades se transcriben completos. */
+  valores: z.record(z.string(), z.string().max(20000)),
   involucrados: z.array(involucradoSchema).max(40),
 });
 export type EntradaCaptura = z.input<typeof capturaSchema>;
@@ -139,6 +180,9 @@ export type CargaCaptura = {
     nombre_normalizado: string;
     rol: string;
     identificadores: Identificadores;
+    /** Aportación al capital (decimal en texto) o null. */
+    aportacion: string | null;
+    moneda: string | null;
   }[];
   evento: {
     tipo: "contrato" | "transferencia";
@@ -204,7 +248,7 @@ export function construirCaptura(
     return { ok: false, mensaje: p.error.issues[0]?.message ?? "Datos inválidos", errores };
   }
   const d = p.data;
-  const campos = [...CAMPOS_COMUNES, ...leerCamposEsperados(tipo.campos_esperados)];
+  const campos = camposDelTipo(tipo.campos_esperados);
   const errores: Record<string, string> = {};
   const carga: CargaCaptura["campos"] = [];
   const normalizados = new Map<string, unknown>();
@@ -244,6 +288,14 @@ export function construirCaptura(
       return;
     }
     vistos.add(clave);
+    let aportacion: string | null = null;
+    if (inv.aportacion) {
+      aportacion = normalizarMonto(inv.aportacion);
+      if (!aportacion) {
+        errores[`involucrados.${i}.aportacion`] = "Aportación inválida";
+        return;
+      }
+    }
     let ids: Identificadores = {};
     if (inv.rfc) ids = agregarIdentificador(ids, "rfc", inv.rfc);
     if (inv.curp) ids = agregarIdentificador(ids, "curp", inv.curp);
@@ -253,11 +305,27 @@ export function construirCaptura(
       nombre_normalizado: normalizado,
       rol: inv.rol,
       identificadores: ids,
+      aportacion,
+      moneda: aportacion ? d.moneda : null,
     });
     carga.push({
       campo: `involucrado_${i + 1}`,
-      valor_crudo: [nombre, NOMBRE_ROL[inv.rol], inv.rfc, inv.curp].filter(Boolean).join(" · "),
-      valor_normalizado: { nombre: normalizado, tipo: inv.tipo, rol: inv.rol, ...ids },
+      valor_crudo: [
+        nombre,
+        NOMBRE_ROL[inv.rol],
+        inv.rfc,
+        inv.curp,
+        inv.aportacion ? `aportación ${inv.aportacion}` : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      valor_normalizado: {
+        nombre: normalizado,
+        tipo: inv.tipo,
+        rol: inv.rol,
+        ...ids,
+        ...(aportacion ? { aportacion: { monto: aportacion, moneda: d.moneda } } : {}),
+      },
     });
   });
 

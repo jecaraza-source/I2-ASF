@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { CAMPOS_COMUNES, construirCaptura, leerCamposEsperados } from "./captura";
+import {
+  CAMPOS_COMUNES,
+  camposComunesDe,
+  camposDelTipo,
+  construirCaptura,
+  leerCamposEsperados,
+} from "./captura";
 
 const ENCARGO = "c0000000-0000-4000-8000-000000000001";
 const TIPO = "d0000000-0000-4000-8000-000000000001";
@@ -154,5 +160,85 @@ describe("leerCamposEsperados", () => {
     expect(campos.map((c) => c.clave)).toEqual(["objeto"]);
     expect(leerCamposEsperados(null)).toEqual([]);
     expect(CAMPOS_COMUNES.map((c) => c.clave)).toContain("fecha_documento");
+  });
+});
+
+describe("campos comunes por tipo de documento", () => {
+  const acta = {
+    clave: "acta_constitutiva",
+    nombre: "Acta constitutiva",
+    campos_esperados: [
+      { clave: "objeto_social", etiqueta: "Objeto social", tipo: "texto_largo" },
+      { clave: "numero_contrato", oculto: true },
+      { clave: "numero_factura", oculto: true },
+      { clave: "monto", etiqueta: "Capital social constitutivo" },
+      { clave: "domicilio", etiqueta: "Domicilio social", tipo: "numero" },
+    ],
+  };
+
+  it("renombra y oculta campos comunes sin cambiar su tipo ni tocar los propios", () => {
+    const comunes = camposComunesDe(acta.campos_esperados);
+    const claves = comunes.map((c) => c.clave);
+    expect(claves).not.toContain("numero_contrato");
+    expect(claves).not.toContain("numero_factura");
+    expect(comunes.find((c) => c.clave === "monto")).toMatchObject({
+      etiqueta: "Capital social constitutivo",
+      tipo: "monto",
+    });
+    expect(comunes.find((c) => c.clave === "domicilio")).toMatchObject({
+      etiqueta: "Domicilio social",
+      tipo: "texto_largo",
+    });
+    expect(leerCamposEsperados(acta.campos_esperados).map((c) => c.clave)).toEqual([
+      "objeto_social",
+    ]);
+    expect(camposDelTipo(acta.campos_esperados).at(-1)?.clave).toBe("objeto_social");
+    expect(camposComunesDe(undefined)).toEqual(CAMPOS_COMUNES);
+  });
+
+  it("un campo oculto no se guarda aunque llegue; el capital y las aportaciones se normalizan", () => {
+    const r = construirCaptura(
+      {
+        ...base,
+        valores: {
+          numero_contrato: "NO-DEBE-QUEDAR",
+          monto: "$50,000.00",
+          objeto_social: "I. La compraventa de bienes. II. La prestación de servicios.",
+        },
+        involucrados: [
+          { tipo: "persona_fisica", nombre: "Ana Ruiz Gómez", rol: "socio", aportacion: "25,000" },
+          { tipo: "persona_fisica", nombre: "Luis Pérez Soto", rol: "comisario" },
+        ],
+      },
+      acta,
+    );
+    if (!r.ok) throw new Error(r.mensaje);
+    expect(r.carga.campos.map((c) => c.campo)).not.toContain("numero_contrato");
+    expect(r.carga.campos.find((c) => c.campo === "monto")?.valor_normalizado).toEqual({
+      monto: "50000.00",
+      moneda: "MXN",
+    });
+    expect(r.carga.involucrados[0]).toMatchObject({ rol: "socio", aportacion: "25000.00" });
+    expect(r.carga.involucrados[1]).toMatchObject({ rol: "comisario", aportacion: null });
+    expect(
+      r.carga.campos.find((c) => c.campo === "involucrado_1")?.valor_normalizado,
+    ).toMatchObject({
+      aportacion: { monto: "25000.00", moneda: "MXN" },
+    });
+  });
+
+  it("una aportación ilegible se marca en su involucrado", () => {
+    const r = construirCaptura(
+      {
+        ...base,
+        valores: { monto: "1000" },
+        involucrados: [
+          { tipo: "persona_fisica", nombre: "Ana Ruiz Gómez", rol: "socio", aportacion: "mucho" },
+        ],
+      },
+      acta,
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errores["involucrados.0.aportacion"]).toBe("Aportación inválida");
   });
 });

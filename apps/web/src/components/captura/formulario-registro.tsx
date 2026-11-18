@@ -20,6 +20,8 @@ export type TipoParaCaptura = {
   nombre: string;
   categoria: string;
   campos: CampoEsperado[];
+  /** Campos comunes ajustados a este tipo (renombrados u ocultos, §6). */
+  comunes: CampoEsperado[];
 };
 export type EntidadConocida = { nombre: string; tipo: string; rfc: string | null };
 type Resultado =
@@ -28,6 +30,8 @@ type Resultado =
 type FilaInvolucrado = Required<Pick<Involucrado, "tipo" | "nombre" | "rol">> & {
   rfc: string;
   curp: string;
+  /** Aportación al capital, tal como se escribe (solo socios). */
+  aportacion: string;
   clave: number;
   /** Validación: la lectura de la IA de la que viene (p. ej. `involucrado_2`). */
   campoIa?: string;
@@ -137,12 +141,13 @@ export function FormularioRegistro({
         fuente,
         moneda,
         valores,
-        involucrados: involucrados.map(({ tipo, nombre, rol, rfc, curp, campoIa }) => ({
+        involucrados: involucrados.map(({ tipo, nombre, rol, rfc, curp, aportacion, campoIa }) => ({
           tipo,
           nombre,
           rol,
           rfc,
           curp,
+          aportacion: rol === "socio" ? aportacion : "",
           ...(campoIa ? { campoIa } : {}),
         })),
       });
@@ -197,8 +202,8 @@ export function FormularioRegistro({
         {c.tipo === "texto_largo" ? (
           <textarea
             {...comunes}
-            rows={2}
-            maxLength={4000}
+            rows={c.clave === "objeto_social" || c.clave === "facultades" ? 8 : 3}
+            maxLength={20000}
             onChange={(e) => cambiar(e.target.value)}
           />
         ) : c.tipo === "monto" && c.clave === "monto" ? (
@@ -350,7 +355,9 @@ export function FormularioRegistro({
 
       <fieldset className="rounded-lg border border-linea bg-panel p-4">
         <legend className="px-1 text-sm font-semibold text-texto">Datos del documento</legend>
-        <div className="grid gap-3 md:grid-cols-2">{CAMPOS_COMUNES.map(campo)}</div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {(tipo?.comunes ?? CAMPOS_COMUNES).map(campo)}
+        </div>
         {tipo?.campos.length ? (
           <>
             <h3 className="mt-5 mb-2 text-xs tracking-wide text-oro uppercase">{tipo.nombre}</h3>
@@ -371,101 +378,156 @@ export function FormularioRegistro({
             Agrega a las personas, empresas o dependencias que aparecen.
           </p>
         ) : (
-          <ol className="flex flex-col gap-3" aria-label="Involucrados">
+          <ol className="grid gap-3 lg:grid-cols-2" aria-label="Involucrados">
             {involucrados.map((f, i) => {
               const n = i + 1;
               const error = errores[`involucrados.${i}.nombre`];
+              const errorAportacion = errores[`involucrados.${i}.aportacion`];
               const nota = f.campoIa ? anotaciones?.[f.campoIa] : undefined;
+              const id = `${idLista}-inv-${f.clave}`;
+              const etiqueta = "mb-1 block text-xs text-tenue";
               return (
                 <li
                   key={f.clave}
                   onFocus={nota && alEnfocar ? () => alEnfocar(nota) : undefined}
-                  className="grid gap-2 md:grid-cols-[9rem_minmax(0,1fr)_12rem_10rem_10rem_auto]"
+                  className={`rounded-md border bg-fondo-2/40 p-3 ${nota?.porRevisar ? "border-oro-tenue" : "border-linea-2"}`}
                 >
-                  {validando ? (
-                    <p className="text-xs md:col-span-6">
-                      {nota ? (
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-semibold text-texto">Involucrado {n}</span>
+                    {validando ? (
+                      nota ? (
                         <TextoAnotacion a={nota} />
                       ) : (
                         <span className="text-tenue">Agregado por ti</span>
-                      )}
-                    </p>
-                  ) : null}
-                  <select
-                    aria-label={`Tipo del involucrado ${n}`}
-                    value={f.tipo}
-                    onChange={(e) =>
-                      cambiarInvolucrado(f.clave, {
-                        tipo: e.target.value as FilaInvolucrado["tipo"],
-                      })
-                    }
-                    className={claseControl}
-                  >
-                    {TIPOS_INVOLUCRADO.map((t) => (
-                      <option key={t} value={t}>
-                        {NOMBRE_TIPO_INVOLUCRADO[t]}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex flex-col gap-1">
-                    <input
-                      aria-label={`Nombre del involucrado ${n}`}
-                      placeholder="Nombre o razón social"
-                      list={`${idLista}-entidades`}
-                      value={f.nombre}
-                      maxLength={200}
-                      onChange={(e) => alEscribirNombre(f, e.target.value)}
-                      aria-invalid={error ? true : undefined}
-                      data-por-revisar={nota?.porRevisar ? "true" : undefined}
-                      className={`${claseControl} ${nota?.porRevisar ? "border-oro-tenue" : ""}`}
-                    />
-                    <ErrorCampo texto={error} />
+                      )
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setInvolucrados((lista) => lista.filter((x) => x.clave !== f.clave))
+                      }
+                      aria-label={`Quitar involucrado ${n}`}
+                      className="ml-auto rounded-md border border-linea-2 px-2 py-1 text-xs text-tenue hover:text-texto"
+                    >
+                      Quitar
+                    </button>
                   </div>
-                  <select
-                    aria-label={`Rol del involucrado ${n}`}
-                    value={f.rol}
-                    onChange={(e) =>
-                      cambiarInvolucrado(f.clave, { rol: e.target.value as FilaInvolucrado["rol"] })
-                    }
-                    className={claseControl}
-                  >
-                    {ROLES_INVOLUCRADO.map((r) => (
-                      <option key={r} value={r}>
-                        {NOMBRE_ROL[r]}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    aria-label={`RFC del involucrado ${n}`}
-                    placeholder="RFC"
-                    value={f.rfc}
-                    maxLength={20}
-                    onChange={(e) =>
-                      cambiarInvolucrado(f.clave, { rfc: e.target.value.toUpperCase() })
-                    }
-                    className={claseControl}
-                  />
-                  <input
-                    aria-label={`CURP del involucrado ${n}`}
-                    placeholder="CURP"
-                    value={f.curp}
-                    maxLength={20}
-                    disabled={f.tipo !== "persona_fisica"}
-                    onChange={(e) =>
-                      cambiarInvolucrado(f.clave, { curp: e.target.value.toUpperCase() })
-                    }
-                    className={`${claseControl} disabled:opacity-40`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setInvolucrados((lista) => lista.filter((x) => x.clave !== f.clave))
-                    }
-                    aria-label={`Quitar involucrado ${n}`}
-                    className="self-start rounded-md border border-linea-2 px-2 py-2 text-xs text-tenue hover:text-texto"
-                  >
-                    Quitar
-                  </button>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <label htmlFor={`${id}-nombre`} className={etiqueta}>
+                        Nombre o razón social
+                      </label>
+                      <input
+                        id={`${id}-nombre`}
+                        aria-label={`Nombre del involucrado ${n}`}
+                        list={`${idLista}-entidades`}
+                        value={f.nombre}
+                        maxLength={200}
+                        onChange={(e) => alEscribirNombre(f, e.target.value)}
+                        aria-invalid={error ? true : undefined}
+                        data-por-revisar={nota?.porRevisar ? "true" : undefined}
+                        className={`${claseControl} ${nota?.porRevisar ? "border-oro-tenue" : ""}`}
+                      />
+                      <ErrorCampo texto={error} />
+                    </div>
+                    <div>
+                      <label htmlFor={`${id}-tipo`} className={etiqueta}>
+                        Tipo
+                      </label>
+                      <select
+                        id={`${id}-tipo`}
+                        aria-label={`Tipo del involucrado ${n}`}
+                        value={f.tipo}
+                        onChange={(e) =>
+                          cambiarInvolucrado(f.clave, {
+                            tipo: e.target.value as FilaInvolucrado["tipo"],
+                          })
+                        }
+                        className={claseControl}
+                      >
+                        {TIPOS_INVOLUCRADO.map((t) => (
+                          <option key={t} value={t}>
+                            {NOMBRE_TIPO_INVOLUCRADO[t]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor={`${id}-rol`} className={etiqueta}>
+                        Rol
+                      </label>
+                      <select
+                        id={`${id}-rol`}
+                        aria-label={`Rol del involucrado ${n}`}
+                        value={f.rol}
+                        onChange={(e) =>
+                          cambiarInvolucrado(f.clave, {
+                            rol: e.target.value as FilaInvolucrado["rol"],
+                          })
+                        }
+                        className={claseControl}
+                      >
+                        {ROLES_INVOLUCRADO.map((r) => (
+                          <option key={r} value={r}>
+                            {NOMBRE_ROL[r]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor={`${id}-rfc`} className={etiqueta}>
+                        RFC
+                      </label>
+                      <input
+                        id={`${id}-rfc`}
+                        aria-label={`RFC del involucrado ${n}`}
+                        value={f.rfc}
+                        maxLength={20}
+                        onChange={(e) =>
+                          cambiarInvolucrado(f.clave, { rfc: e.target.value.toUpperCase() })
+                        }
+                        className={claseControl}
+                      />
+                    </div>
+                    {f.tipo === "persona_fisica" ? (
+                      <div>
+                        <label htmlFor={`${id}-curp`} className={etiqueta}>
+                          CURP
+                        </label>
+                        <input
+                          id={`${id}-curp`}
+                          aria-label={`CURP del involucrado ${n}`}
+                          value={f.curp}
+                          maxLength={20}
+                          onChange={(e) =>
+                            cambiarInvolucrado(f.clave, { curp: e.target.value.toUpperCase() })
+                          }
+                          className={claseControl}
+                        />
+                      </div>
+                    ) : null}
+                    {f.rol === "socio" ? (
+                      <div>
+                        <label htmlFor={`${id}-aportacion`} className={etiqueta}>
+                          Aportación ({moneda})
+                        </label>
+                        <input
+                          id={`${id}-aportacion`}
+                          aria-label={`Aportación del involucrado ${n}`}
+                          inputMode="decimal"
+                          placeholder="0.00"
+                          value={f.aportacion}
+                          maxLength={40}
+                          onChange={(e) =>
+                            cambiarInvolucrado(f.clave, { aportacion: e.target.value })
+                          }
+                          aria-invalid={errorAportacion ? true : undefined}
+                          className={claseControl}
+                        />
+                        <ErrorCampo texto={errorAportacion} />
+                      </div>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
@@ -483,6 +545,7 @@ export function FormularioRegistro({
                 rol: "proveedor",
                 rfc: "",
                 curp: "",
+                aportacion: "",
               },
             ]);
             setConsecutivo((n) => n + 1);
