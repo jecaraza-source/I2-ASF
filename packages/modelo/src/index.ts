@@ -10,3 +10,4 @@ export * from "./usuarios";
 export * from "./documental";
 export * from "./csv";
 export * from "./campo";
+export * from "./formato";

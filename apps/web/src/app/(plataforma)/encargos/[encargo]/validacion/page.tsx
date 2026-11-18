@@ -1,4 +1,4 @@
-import { NOMBRE_PROVEEDOR_IA, puede } from "@sigma/modelo";
+import { NOMBRE_PROVEEDOR_IA, puede, formatoNumero, formatoPorcentaje } from "@sigma/modelo";
 import Link from "next/link";
 import { EstadoVacio } from "@/components/estados";
 import { EnlaceBoton, Etiqueta, Titulo } from "@/components/ui";
@@ -50,11 +50,14 @@ export default async function PaginaValidacion({
       <p className="-mt-3 mb-6 max-w-3xl text-sm text-tenue">
         Documentos que la IA ya leyó. Lo que propone no alimenta entidades, vínculos ni alertas
         hasta que una persona lo valida. Umbral de confianza del encargo:{" "}
-        {Math.round(Number(encargo.umbral_confianza) * 100)}%.
+        {formatoPorcentaje(encargo.umbral_confianza)}.
       </p>
       {listo ? (
         <p role="status" className="mb-4 rounded-md border border-ok/60 px-3 py-2 text-sm text-ok">
-          Listo. {cola.length ? `Quedan ${cola.length} en la cola.` : "No queda nada por validar."}
+          Listo.{" "}
+          {cola.length
+            ? `Quedan ${formatoNumero(cola.length)} en la cola.`
+            : "No queda nada por validar."}
         </p>
       ) : null}
       {!cola.length ? (
@@ -99,10 +102,10 @@ export default async function PaginaValidacion({
                   <td className="px-4 py-3">
                     {r.porRevisar ? (
                       <Etiqueta tono="oro">
-                        {r.porRevisar} de {r.total} por revisar
+                        {formatoNumero(r.porRevisar)} de {formatoNumero(r.total)} por revisar
                       </Etiqueta>
                     ) : (
-                      <Etiqueta tono="ok">{r.total} sobre el umbral</Etiqueta>
+                      <Etiqueta tono="ok">{formatoNumero(r.total)} sobre el umbral</Etiqueta>
                     )}
                   </td>
                   <td className="px-4 py-3 text-tenue">{fecha.format(new Date(r.creadoEn))}</td>

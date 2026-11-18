@@ -100,10 +100,10 @@ test("extracción con IA: espera con la IA apagada, lee al encenderla y usa Open
   const datos = page.getByRole("region", { name: "Datos de origen" });
   await expect(datos.getByRole("row", { name: /numero_contrato/ })).toContainText("SOP-IA-001");
   await expect(datos.getByRole("row", { name: /numero_contrato/ })).toContainText(
-    "ia · 0.95 · validado",
+    "ia · 95% · validado",
   );
   await expect(datos.getByRole("row", { name: /numero_contrato/ })).toContainText("Página 1");
-  await expect(datos.getByRole("row", { name: /^monto/ })).toContainText("ia · 0.50 · pendiente");
+  await expect(datos.getByRole("row", { name: /^monto/ })).toContainText("ia · 50% · pendiente");
   await expect(datos.getByRole("row", { name: /^monto/ })).toContainText("Página 2");
   await expect(datos.getByRole("row", { name: /involucrado_1/ })).toContainText(
     "CONSTRUCTORA IA E2E SA DE CV",

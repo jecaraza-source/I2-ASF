@@ -1,6 +1,12 @@
 "use client";
 
-import { EXTENSIONES_ACEPTADAS, MAX_BYTES_DOCUMENTO, tipoPorNombre } from "@sigma/modelo";
+import {
+  EXTENSIONES_ACEPTADAS,
+  MAX_BYTES_DOCUMENTO,
+  tipoPorNombre,
+  formatoBytes,
+  formatoNumero,
+} from "@sigma/modelo";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState, type DragEvent } from "react";
 import { registrarDocumento, revisarDuplicados } from "@/acciones/ingreso";
@@ -64,11 +70,7 @@ const TONO: Record<Estado, string> = {
   error: "text-peligro",
 };
 
-function tamano(bytes: number) {
-  return bytes >= 1048576
-    ? `${(bytes / 1048576).toFixed(1)} MB`
-    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
-}
+const tamano = formatoBytes;
 
 function Clasificar({
   valor,
@@ -250,7 +252,9 @@ export function ZonaIngreso({
     if (!pendientes.length) return;
     const incompletos = pendientes.filter((e) => !completa(e));
     if (incompletos.length) {
-      setAviso(`Falta tipo, expediente o fuente en ${incompletos.length} archivo(s).`);
+      setAviso(
+        `Falta tipo, expediente o fuente en ${formatoNumero(incompletos.length)} archivo(s).`,
+      );
       return;
     }
     setAviso("");
@@ -285,7 +289,9 @@ export function ZonaIngreso({
       }
     }
     setOcupado(false);
-    setAviso(`${registrados} de ${pendientes.length} documento(s) registrados.`);
+    setAviso(
+      `${formatoNumero(registrados)} de ${formatoNumero(pendientes.length)} documento(s) registrados.`,
+    );
     router.refresh();
   }
 

@@ -1,3 +1,4 @@
+import { formatoBytes, formatoNumero } from "@sigma/modelo";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { EnlaceBoton, Panel, Titulo } from "@/components/ui";
@@ -101,7 +102,7 @@ export default async function Importacion({
             data-testid={`conteo-${t}`}
           >
             <dt className="text-xs text-tenue">{t}</dt>
-            <dd className="text-2xl font-semibold text-texto">{n ?? 0}</dd>
+            <dd className="text-2xl font-semibold text-texto">{formatoNumero(n ?? 0)}</dd>
           </div>
         ))}
       </dl>
@@ -113,7 +114,7 @@ export default async function Importacion({
             <dt className="text-tenue">Importado</dt>
             <dd className="text-texto">{formatoFecha(resumen.recibido_en)}</dd>
             <dt className="text-tenue">Tamaño</dt>
-            <dd className="text-texto">{((resumen.tamano ?? 0) / 1024).toFixed(0)} KB</dd>
+            <dd className="text-texto">{formatoBytes(resumen.tamano ?? 0)}</dd>
             <dt className="text-tenue">SHA-256</dt>
             <dd className="font-mono text-xs break-all text-texto">{resumen.sha256}</dd>
           </dl>
@@ -127,7 +128,7 @@ export default async function Importacion({
                 <span className="text-xs text-tenue">
                   {h.estado === "no_mapeada"
                     ? "no procesada"
-                    : `${h.filas_validas} filas · ${h.excluidas} excluidas · ${h.cifras} cifras`}
+                    : `${formatoNumero(h.filas_validas)} filas · ${formatoNumero(h.excluidas)} excluidas · ${formatoNumero(h.cifras)} cifras`}
                 </span>
               </li>
             ))}

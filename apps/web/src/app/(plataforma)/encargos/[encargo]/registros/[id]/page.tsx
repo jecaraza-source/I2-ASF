@@ -1,4 +1,4 @@
-import { puede } from "@sigma/modelo";
+import { puede, formatoMonto, formatoNumero, formatoPorcentaje } from "@sigma/modelo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AsociarDocumento } from "@/components/captura/asociar-documento";
@@ -39,9 +39,21 @@ const ACCION: Record<string, string> = {
   "registro.exportacion": "Exportación",
 };
 
-function valor(v: unknown): string {
+const ES_MONTO = /monto|importe|total|pagado|saldo/i;
+
+/** Valor normalizado para mostrar: montos con su moneda y números con miles. */
+function valor(campo: string, v: unknown): string {
   if (v === null || v === undefined) return "—";
-  return typeof v === "object" ? JSON.stringify(v) : String(v);
+  if (typeof v === "object" && !Array.isArray(v) && "monto" in v) {
+    const m = v as { monto: unknown; moneda?: unknown };
+    if (typeof m.monto === "string" || typeof m.monto === "number") {
+      return formatoMonto(m.monto, typeof m.moneda === "string" ? m.moneda : null);
+    }
+  }
+  if (typeof v === "object") return JSON.stringify(v);
+  if (ES_MONTO.test(campo) && /^-?\d+(\.\d+)?$/.test(String(v))) return formatoMonto(String(v));
+  if (typeof v === "number") return formatoNumero(v);
+  return String(v);
 }
 
 /** Las acciones de esta página procesan el documento después de responder (lectura con IA). */
@@ -161,13 +173,13 @@ export default async function Registro({
                       <span className="block text-xs text-tenue">La IA leyó «{x.valor_ia}»</span>
                     ) : null}
                   </td>
-                  <td className="px-4 py-2 text-tenue">{valor(x.valor_normalizado)}</td>
+                  <td className="px-4 py-2 text-tenue">{valor(x.campo, x.valor_normalizado)}</td>
                   <td className="px-4 py-2 font-mono text-xs text-tenue">
                     {x.metodo === "manual" ? "Captura manual" : x.ubicacion_texto}
                   </td>
                   <td className="px-4 py-2 text-xs text-tenue">
                     {x.metodo}
-                    {x.confianza !== null ? ` · ${Number(x.confianza).toFixed(2)}` : ""} ·{" "}
+                    {x.confianza !== null ? ` · ${formatoPorcentaje(x.confianza)}` : ""} ·{" "}
                     {x.estado}
                   </td>
                 </tr>
@@ -206,7 +218,7 @@ export default async function Registro({
             <div className="grid gap-4 md:grid-cols-2">
               <section aria-label="Vínculos generados">
                 <h3 className="mb-2 text-xs tracking-wide text-oro uppercase">
-                  Vínculos · {generado.vinculos.length}
+                  Vínculos · {formatoNumero(generado.vinculos.length)}
                 </h3>
                 <ul className="flex flex-col gap-1.5 text-sm">
                   {generado.vinculos.map((v) => (
@@ -234,7 +246,7 @@ export default async function Registro({
               </section>
               <section aria-label="Eventos generados">
                 <h3 className="mb-2 text-xs tracking-wide text-oro uppercase">
-                  Eventos · {generado.eventos.length}
+                  Eventos · {formatoNumero(generado.eventos.length)}
                 </h3>
                 <ul className="flex flex-col gap-1.5 text-sm">
                   {generado.eventos.map((ev) => (
@@ -242,7 +254,7 @@ export default async function Registro({
                       <span className="text-texto">
                         {ev.tipo}
                         {ev.fecha ? ` · ${formatoFecha(ev.fecha)}` : ""}
-                        {ev.monto !== null ? ` · ${ev.monto} ${ev.moneda ?? ""}` : ""}
+                        {ev.monto !== null ? ` · ${formatoMonto(ev.monto, ev.moneda)}` : ""}
                       </span>
                       <span className="block text-xs text-tenue">
                         {ev.participantes.map((p) => `${p.nombre} (${p.rol})`).join(" · ") ||

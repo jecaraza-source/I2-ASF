@@ -1,3 +1,4 @@
+import { formatoMonto, formatoNumero } from "@sigma/modelo";
 import { DESCRIPCION_CRITERIO } from "@sigma/red";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -128,7 +129,7 @@ export function Ficha({
                 style={{ background: COLOR_NIVEL[nivel] }}
                 aria-hidden
               />
-              {NOMBRE_NIVEL[nivel]} · {c.puntaje} puntos
+              {NOMBRE_NIVEL[nivel]} · {formatoNumero(c.puntaje)} puntos
               {c.ajuste_nivel ? (
                 <span className="text-xs text-tenue"> (ajustada: {c.ajuste_motivo})</span>
               ) : null}
@@ -151,11 +152,11 @@ export function Ficha({
         )}
       </Seccion>
 
-      <Seccion titulo={`Registros y documentos (${ficha.registros.length})`}>
+      <Seccion titulo={`Registros y documentos (${formatoNumero(ficha.registros.length)})`}>
         <Origenes origenes={ficha.registros.slice(0, limite)} encargoId={encargoId} />
       </Seccion>
 
-      <Seccion titulo={`Vínculos (${ficha.vinculos.length})`}>
+      <Seccion titulo={`Vínculos (${formatoNumero(ficha.vinculos.length)})`}>
         {ficha.vinculos.length ? (
           <ul className="flex flex-col gap-2 text-xs" aria-label="Vínculos de la entidad">
             {ficha.vinculos.slice(0, limite).map((v) => (
@@ -177,14 +178,14 @@ export function Ficha({
         )}
       </Seccion>
 
-      <Seccion titulo={`Eventos (${ficha.eventos_total})`}>
+      <Seccion titulo={`Eventos (${formatoNumero(ficha.eventos_total)})`}>
         {ficha.eventos.length ? (
           <ul className="flex flex-col gap-2 text-xs" aria-label="Eventos de la entidad">
             {ficha.eventos.slice(0, compacta ? 10 : Infinity).map((ev) => (
               <li key={ev.id} className="flex flex-col gap-0.5">
                 <span className="text-texto">
                   {fecha(ev.fecha)} · {ev.tipo} ({ev.rol})
-                  {ev.monto ? ` · ${ev.monto} ${ev.moneda ?? ""}` : ""}
+                  {ev.monto ? ` · ${formatoMonto(ev.monto, ev.moneda)}` : ""}
                   {ev.contrapartes.length ? " con " : ""}
                   {ev.contrapartes.map((o, i) => (
                     <span key={o.id}>
@@ -202,7 +203,8 @@ export function Ficha({
         )}
         {ficha.eventos_total > ficha.eventos.length ? (
           <p className="text-xs text-tenue-2">
-            Se muestran {ficha.eventos.length} de {ficha.eventos_total}.
+            Se muestran {formatoNumero(ficha.eventos.length)} de{" "}
+            {formatoNumero(ficha.eventos_total)}.
           </p>
         ) : null}
       </Seccion>
