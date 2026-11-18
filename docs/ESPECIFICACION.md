@@ -51,6 +51,13 @@ junto a la acción; el estado nunca se comunica solo con color; todo se opera co
 propuesta de la IA o una coincidencia sin revisar se distingue siempre de lo validado por una
 persona.
 
+**Celular (tarea 16):** toda pantalla se lee en 390 px de ancho sin desplazarse a lo ancho. Debajo de
+768 px, la barra lateral, el menú de módulos y la zona del usuario van en el botón «Menú» (panel
+modal). Las tablas de más de tres columnas usan `tabla-tarjetas`: cada fila es una tarjeta y cada
+celda lleva su columna en `data-etiqueta`. Los campos miden 16 px para que iOS no acerque la página.
+En la red, mantener presionado abre el menú contextual. Una pantalla nueva entra en
+`e2e/movil.spec.ts`.
+
 ### 1.2 Fuera de alcance
 
 La plataforma integra y cruza la evidencia que entra a una auditoría; **no consulta información de
