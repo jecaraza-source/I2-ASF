@@ -53,7 +53,7 @@ type Parametros = Promise<Record<string, string | string[] | undefined>>;
 
 export default function PaginaUsuarios({ searchParams }: { searchParams: Parametros }) {
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Suspense fallback={<EstadoCargando texto="Cargando usuarios…" />}>
         <Contenido searchParams={searchParams} />
       </Suspense>

@@ -24,6 +24,7 @@ solo dicen qué construir y cómo saber que quedó.
 | 13 | Endurecimiento | todas | **C — listo para el cliente** |
 | 14 | App de campo | 13 | Fase posterior |
 | 15 | Analizador (síntesis con origen) | 09, 10 | |
+| 16 | Plataforma responsiva (celular) | 13 | |
 
 06 puede ir en paralelo con 04–05, y 07–09 en paralelo con 04–06, en ramas separadas.
 
@@ -362,6 +363,17 @@ Listo cuando: una síntesis del fixture cita solo registros validados; quitar un
 alcance quita sus afirmaciones; el texto dentro de un documento no cambia las instrucciones del
 modelo (prueba con un documento que intenta dar órdenes); lector no genera ni aprueba.
 ```
+
+## 16 — Plataforma responsiva (celular)
+
+Leer la plataforma en un iPhone sin perder funciones: menú del celular (panel modal con módulos y
+zona del usuario), una columna, tablas como tarjetas (`tabla-tarjetas` + `data-etiqueta`), red con
+gestos y altura de pantalla, campos de 16 px para que iOS no acerque la página.
+
+**Listo cuando:** `e2e/movil.spec.ts` (390 × 844, táctil) recorre las pantallas de lectura sin que
+nada se salga a lo ancho, el menú lleva a cada módulo y axe no reporta hallazgos graves.
+
+---
 
 ## Prompts de apoyo
 

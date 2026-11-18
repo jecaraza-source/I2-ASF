@@ -16,7 +16,7 @@ export default async function NuevaImportacion({
   const { activa } = await requerirOrganizacion();
   if (!puede(activa.rol, "importacion.crear")) {
     return (
-      <main className="flex-1 px-8 py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
         <Titulo>Nueva importación</Titulo>
         <SinPermiso />
       </main>
@@ -30,7 +30,7 @@ export default async function NuevaImportacion({
     .order("identificador")
     .limit(500);
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo>Nueva importación</Titulo>
       <Importador
         encargoId={encargo.id}

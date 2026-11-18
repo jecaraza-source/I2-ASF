@@ -31,6 +31,10 @@ const TRAMOS: Record<string, { texto: string; enlace?: boolean }> = {
   usuarios: { texto: "Usuarios y accesos" },
   recorridos: { texto: "Recorridos guiados" },
   organizacion: { texto: "Organización" },
+  validacion: { texto: "Validación" },
+  analizador: { texto: "Analizador" },
+  hallazgos: { texto: "Hallazgos" },
+  verificacion: { texto: "Verificación en campo" },
 };
 
 type Migaja = { ruta: string; texto: string; enlace: boolean };
@@ -75,7 +79,7 @@ export function BarraNavegacion() {
   return (
     <nav
       aria-label="Navegación"
-      className="flex flex-none flex-wrap items-center gap-3 border-b border-linea bg-fondo-2 px-6 py-2 text-xs"
+      className="flex flex-none flex-wrap items-center gap-2 border-b border-linea bg-fondo-2 px-3 py-2 text-xs md:gap-3 md:px-6"
     >
       <button
         type="button"
@@ -86,7 +90,7 @@ export function BarraNavegacion() {
       </button>
       <Link
         href={anterior}
-        className="rounded-md border border-linea-2 px-3 py-1.5 text-sm text-tenue hover:border-oro hover:text-texto focus-visible:outline-2 focus-visible:outline-oro"
+        className="hidden rounded-md border border-linea-2 px-3 py-1.5 text-sm text-tenue hover:border-oro sm:inline-block hover:text-texto focus-visible:outline-2 focus-visible:outline-oro"
       >
         <span aria-hidden>↑</span> Subir un nivel
       </Link>

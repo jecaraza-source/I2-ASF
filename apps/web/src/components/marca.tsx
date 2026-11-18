@@ -10,7 +10,7 @@ export function BarraMarca({
   centro?: React.ReactNode;
 }) {
   return (
-    <header className="flex h-[58px] flex-none items-center gap-4 border-b border-azul-borde bg-linear-135 from-azul-profundo to-azul-header px-6 shadow-[0_2px_16px_rgba(0,0,0,0.6)]">
+    <header className="sticky top-0 z-20 flex h-[58px] flex-none items-center gap-3 border-b border-azul-borde bg-linear-135 from-azul-profundo to-azul-header px-3 shadow-[0_2px_16px_rgba(0,0,0,0.6)] md:static md:gap-4 md:px-6">
       <Link href="/encargos" className="flex items-center gap-3">
         <Image
           src="/marca/escudo.png"
@@ -24,7 +24,7 @@ export function BarraMarca({
           <span className="block text-[15px] font-bold tracking-[0.5px] text-azul-claro">
             SIGMA
           </span>
-          <span className="block text-[9px] tracking-[2.5px] text-azul-medio uppercase">
+          <span className="hidden text-[9px] tracking-[2.5px] text-azul-medio uppercase sm:block">
             Integración de fuentes para auditoría
           </span>
         </span>

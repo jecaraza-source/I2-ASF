@@ -104,7 +104,9 @@ export function TablaDatos<F, C extends string>({
         />
       ) : (
         <div className="overflow-x-auto rounded-lg border border-linea">
-          <table className="w-full text-left text-sm">
+          <table
+            className={`w-full text-left text-sm ${columnas.length > 3 ? "tabla-tarjetas" : ""}`}
+          >
             <caption className="sr-only">{etiqueta}</caption>
             <thead className="bg-panel-2 text-xs tracking-wide text-tenue uppercase">
               <tr>
@@ -141,8 +143,12 @@ export function TablaDatos<F, C extends string>({
             <tbody>
               {filas.map((f) => (
                 <tr key={llave(f)} className="border-t border-linea hover:bg-panel/60">
-                  {columnas.map((c) => (
-                    <td key={c.clave} className={`px-4 py-2.5 text-texto ${c.className ?? ""}`}>
+                  {columnas.map((c, i) => (
+                    <td
+                      key={c.clave}
+                      data-etiqueta={i > 0 ? c.titulo : undefined}
+                      className={`px-4 py-2.5 text-texto ${c.className ?? ""}`}
+                    >
                       {c.celda(f)}
                     </td>
                   ))}

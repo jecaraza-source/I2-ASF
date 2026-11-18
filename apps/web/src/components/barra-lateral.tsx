@@ -12,7 +12,7 @@ export function BarraLateral({
   const base = `/encargos/${encargo.id}`;
   return (
     <aside
-      className="w-60 flex-none border-r border-linea bg-fondo-2 px-3 py-5"
+      className="hidden w-60 flex-none border-r border-linea bg-fondo-2 px-3 py-5 md:block"
       aria-label="Módulos del encargo"
     >
       <div className="mb-5 px-2">
@@ -54,5 +54,10 @@ export function BarraLateral({
 }
 
 export function BarraLateralCargando() {
-  return <aside className="w-60 flex-none border-r border-linea bg-fondo-2" aria-busy="true" />;
+  return (
+    <aside
+      className="hidden w-60 flex-none border-r border-linea bg-fondo-2 md:block"
+      aria-busy="true"
+    />
+  );
 }

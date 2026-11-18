@@ -34,7 +34,7 @@ export default async function Verificacion({ params }: { params: Promise<{ encar
   const visitas = await listarVisitas(supabase, encargo.id, verificadores);
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo>Verificación en campo</Titulo>
       <p className="-mt-3 mb-6 max-w-3xl text-sm text-tenue">
         Confirma que el proveedor existe en su domicilio. El auditor o un verificador contesta la

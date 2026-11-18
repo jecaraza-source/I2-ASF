@@ -29,7 +29,7 @@ export function MenuExportar({
       <div
         role="group"
         aria-label="Exportaciones"
-        className="absolute right-0 z-30 mt-1 flex w-80 flex-col gap-0.5 rounded-md border border-linea-2 bg-panel p-2 shadow-lg"
+        className="absolute right-0 z-30 mt-1 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-0.5 rounded-md border border-linea-2 bg-panel p-2 shadow-lg"
       >
         <p className="px-2 pb-1 text-xs text-tenue">{nota}</p>
         {OPCIONES.map((o) => (

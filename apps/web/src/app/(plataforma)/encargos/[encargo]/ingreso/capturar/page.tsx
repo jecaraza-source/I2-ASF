@@ -53,7 +53,7 @@ export default async function CapturaManualPagina({
   );
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo>Captura manual</Titulo>
       <p className="-mt-3 mb-6 max-w-3xl text-sm text-tenue">
         Para datos que no vienen en un archivo. El registro queda marcado «sin soporte documental»
@@ -89,7 +89,7 @@ export default async function CapturaManualPagina({
         )}
 
         <section aria-label="Capturas" className="overflow-x-auto rounded-lg border border-linea">
-          <table className="w-full text-left text-sm">
+          <table className="tabla-tarjetas w-full text-left text-sm">
             <caption className="px-4 py-2 text-left text-sm font-semibold text-texto">
               Capturas del encargo ({(capturas ?? []).length})
             </caption>
@@ -120,15 +120,19 @@ export default async function CapturaManualPagina({
                       {r.resumen ?? "Registro"}
                     </Link>
                   </td>
-                  <td className="px-4 py-2 text-tenue">{r.fuente ?? "—"}</td>
-                  <td className="px-4 py-2">
+                  <td data-etiqueta="Fuente declarada" className="px-4 py-2 text-tenue">
+                    {r.fuente ?? "—"}
+                  </td>
+                  <td data-etiqueta="Soporte" className="px-4 py-2">
                     {r.documento_id ? (
                       <Etiqueta tono="ok">Con documento</Etiqueta>
                     ) : (
                       <Etiqueta tono="oro">Sin soporte documental</Etiqueta>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-tenue">{formatoFecha(r.creado_en)}</td>
+                  <td data-etiqueta="Capturado" className="px-4 py-2 text-tenue">
+                    {formatoFecha(r.creado_en)}
+                  </td>
                 </tr>
               ))}
               {(capturas ?? []).length === 0 ? (

@@ -107,7 +107,7 @@ export default async function SintesisPagina({
   const titulo = `Síntesis · ${s.alcance_tipo === "expediente" ? "expediente" : "entidad"} ${s.nombre}`;
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo
         accion={
           <EnlaceBoton href={`/encargos/${encargo.id}/analizador`} variante="secundario">

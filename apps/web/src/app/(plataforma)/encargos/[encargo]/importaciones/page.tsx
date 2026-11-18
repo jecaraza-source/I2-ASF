@@ -88,7 +88,7 @@ export default async function Importaciones({
     },
   ];
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo accion={nueva}>Importación de Excel</Titulo>
       <TablaDatos
         filas={data ?? []}

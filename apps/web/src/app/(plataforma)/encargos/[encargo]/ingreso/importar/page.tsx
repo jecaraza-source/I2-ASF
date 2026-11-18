@@ -90,7 +90,7 @@ export default async function IngresoDocumentos({
   const base = `/encargos/${encargo.id}`;
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo>Ingreso de documentos</Titulo>
       <div className="flex max-w-6xl flex-col gap-8">
         {!puedeIngresar ? (
@@ -116,7 +116,7 @@ export default async function IngresoDocumentos({
           aria-label="Documentos ingresados"
           className="overflow-x-auto rounded-lg border border-linea"
         >
-          <table className="w-full text-left text-sm">
+          <table className="tabla-tarjetas w-full text-left text-sm">
             <caption className="px-4 py-2 text-left text-sm font-semibold text-texto">
               Documentos ingresados ({(registros ?? []).length})
             </caption>
@@ -157,10 +157,16 @@ export default async function IngresoDocumentos({
                       "—"
                     )}
                   </td>
-                  <td className="px-4 py-2 text-texto">{r.tipo_documento?.nombre ?? "—"}</td>
-                  <td className="px-4 py-2 text-texto">{r.expediente?.identificador ?? "—"}</td>
-                  <td className="px-4 py-2 text-tenue">{r.fuente ?? "—"}</td>
-                  <td className="px-4 py-2">
+                  <td data-etiqueta="Tipo" className="px-4 py-2 text-texto">
+                    {r.tipo_documento?.nombre ?? "—"}
+                  </td>
+                  <td data-etiqueta="Expediente" className="px-4 py-2 text-texto">
+                    {r.expediente?.identificador ?? "—"}
+                  </td>
+                  <td data-etiqueta="Fuente" className="px-4 py-2 text-tenue">
+                    {r.fuente ?? "—"}
+                  </td>
+                  <td data-etiqueta="Registro" className="px-4 py-2">
                     <Etiqueta tono={r.estado_validacion === "validado" ? "ok" : "neutro"}>
                       {r.estado_validacion === "pendiente" ? "Pendiente" : r.estado_validacion}
                     </Etiqueta>
@@ -183,7 +189,9 @@ export default async function IngresoDocumentos({
                       </form>
                     ) : null}
                   </td>
-                  <td className="px-4 py-2 text-tenue">{formatoFecha(r.creado_en)}</td>
+                  <td data-etiqueta="Recibido" className="px-4 py-2 text-tenue">
+                    {formatoFecha(r.creado_en)}
+                  </td>
                 </tr>
               ))}
               {(registros ?? []).length === 0 ? (

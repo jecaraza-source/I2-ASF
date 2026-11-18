@@ -34,7 +34,7 @@ export default async function NuevaSintesisPagina({
   const titulo = `Nueva síntesis · ${alcance.tipo === "expediente" ? "expediente" : "entidad"} ${nombre}`;
   if (!puede(activa.rol, "sintesis.generar")) {
     return (
-      <main className="flex-1 px-8 py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
         <Titulo>{titulo}</Titulo>
         <SinPermiso texto="Tu rol puede consultar síntesis, pero no generarlas." />
       </main>
@@ -48,7 +48,7 @@ export default async function NuevaSintesisPagina({
   );
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
       <Titulo
         accion={
           <EnlaceBoton href={`/encargos/${encargo.id}/analizador`} variante="secundario">

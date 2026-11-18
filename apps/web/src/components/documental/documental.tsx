@@ -374,7 +374,7 @@ function Arbol({
   return (
     <nav
       aria-label="Árbol del encargo"
-      className="self-start rounded-lg border border-linea bg-panel p-3 text-sm lg:sticky lg:top-4"
+      className="self-start rounded-lg border border-linea bg-panel p-3 text-sm max-lg:max-h-72 max-lg:overflow-y-auto lg:sticky lg:top-4"
     >
       <p className="mb-2 text-[10px] tracking-[2px] text-oro uppercase">
         Expediente → entidad → categoría
@@ -545,8 +545,9 @@ function Tabla({
 
   return (
     <div className="overflow-x-auto rounded-lg border border-linea">
-      <table className="w-full text-left text-sm" aria-label="Registros">
-        <thead className="bg-panel-2 text-xs tracking-wide text-tenue uppercase">
+      {/* En el celular cada fila es una tarjeta: la etiqueta de la columna va sobre cada dato. */}
+      <table className="w-full text-left text-sm max-md:block" aria-label="Registros">
+        <thead className="bg-panel-2 text-xs tracking-wide text-tenue uppercase max-md:hidden">
           <tr>
             {COLUMNAS.map((c) => {
               const activa = ordenable && c.orden === ordenActual;
@@ -576,13 +577,13 @@ function Tabla({
           </tr>
         </thead>
         {grupos.map((g, i) => (
-          <tbody key={`${g.titulo ?? "todos"}-${i}`}>
+          <tbody key={`${g.titulo ?? "todos"}-${i}`} className="max-md:block">
             {g.titulo ? (
-              <tr className="border-t border-linea-2 bg-fondo-2">
+              <tr className="border-t border-linea-2 bg-fondo-2 max-md:block">
                 <th
                   scope="rowgroup"
                   colSpan={COLUMNAS.length}
-                  className="px-3 py-2 text-xs font-semibold tracking-wide text-oro uppercase"
+                  className="px-3 py-2 text-xs max-md:block font-semibold tracking-wide text-oro uppercase"
                 >
                   {g.titulo} <span className="font-normal text-tenue">· {g.filas.length}</span>
                 </th>
@@ -609,8 +610,11 @@ function Fila({
 }) {
   const nivel = f.nivel && NIVELES.has(f.nivel) ? (f.nivel as Nivel) : null;
   return (
-    <tr className="border-t border-linea align-top hover:bg-panel/60">
-      <th scope="row" className="max-w-64 px-3 py-2.5 font-normal">
+    <tr className="border-t border-linea align-top hover:bg-panel/60 max-md:grid max-md:grid-cols-2 max-md:gap-x-2 max-md:py-2">
+      <th
+        scope="row"
+        className="max-w-64 px-3 py-2.5 font-normal max-md:col-span-2 max-md:block max-md:max-w-none max-md:py-1"
+      >
         <Link
           href={`${base}/registros/${f.registro_id}`}
           className="line-clamp-2 text-azul-claro hover:underline"
@@ -623,7 +627,10 @@ function Fila({
           {f.hoja ? ` · ${f.hoja}${f.fila ? `, fila ${f.fila}` : ""}` : ""}
         </span>
       </th>
-      <td className="px-3 py-2.5 whitespace-nowrap">
+      <td
+        data-etiqueta="Expediente"
+        className="px-3 py-2.5 whitespace-nowrap max-md:block max-md:py-1 max-md:text-left max-md:whitespace-normal max-md:before:mb-0.5 max-md:before:block max-md:before:text-[10px] max-md:before:tracking-wide max-md:before:text-tenue max-md:before:uppercase max-md:before:content-[attr(data-etiqueta)]"
+      >
         {f.expediente_id ? (
           <Link
             href={`${base}/expedientes/${f.expediente_id}`}
@@ -635,14 +642,25 @@ function Fila({
           <span className="text-xs text-tenue italic">Sin expediente</span>
         )}
       </td>
-      <td className="px-3 py-2.5">
+      <td
+        data-etiqueta="Tipo y categoría"
+        className="px-3 py-2.5 max-md:block max-md:py-1 max-md:text-left max-md:whitespace-normal max-md:before:mb-0.5 max-md:before:block max-md:before:text-[10px] max-md:before:tracking-wide max-md:before:text-tenue max-md:before:uppercase max-md:before:content-[attr(data-etiqueta)]"
+      >
         <span className="block text-texto">
           {f.tipo ?? (f.hoja ? "Hoja de Excel" : "Sin tipo")}
         </span>
         <span className="block text-xs text-tenue">{f.categoria ?? "Sin categoría"}</span>
       </td>
-      <td className="px-3 py-2.5 whitespace-nowrap text-texto">{formatoFecha(f.fecha)}</td>
-      <td className="min-w-48 px-3 py-2.5">
+      <td
+        data-etiqueta="Fecha"
+        className="px-3 py-2.5 whitespace-nowrap text-texto max-md:block max-md:py-1 max-md:text-left max-md:whitespace-normal max-md:before:mb-0.5 max-md:before:block max-md:before:text-[10px] max-md:before:tracking-wide max-md:before:text-tenue max-md:before:uppercase max-md:before:content-[attr(data-etiqueta)]"
+      >
+        {formatoFecha(f.fecha)}
+      </td>
+      <td
+        data-etiqueta="Involucrados"
+        className="min-w-48 px-3 py-2.5 max-md:block max-md:py-1 max-md:text-left max-md:whitespace-normal max-md:before:mb-0.5 max-md:before:block max-md:before:text-[10px] max-md:before:tracking-wide max-md:before:text-tenue max-md:before:uppercase max-md:before:content-[attr(data-etiqueta)] max-md:col-span-2 max-md:min-w-0 max-md:max-w-none"
+      >
         {f.involucrados.length ? (
           <ul className="flex flex-col gap-0.5">
             {f.involucrados.slice(0, 4).map((i) => (
@@ -664,7 +682,10 @@ function Fila({
           <span className="text-xs text-tenue">—</span>
         )}
       </td>
-      <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap text-texto">
+      <td
+        data-etiqueta="Identificadores"
+        className="px-3 py-2.5 font-mono text-xs whitespace-nowrap text-texto max-md:block max-md:py-1 max-md:text-left max-md:whitespace-normal max-md:before:mb-0.5 max-md:before:block max-md:before:text-[10px] max-md:before:tracking-wide max-md:before:text-tenue max-md:before:uppercase max-md:before:content-[attr(data-etiqueta)]"
+      >
         {f.identificadores.length
           ? f.identificadores.map((x) => (
               <span key={`${x.tipo}-${x.valor}`} className="block">
@@ -673,7 +694,10 @@ function Fila({
             ))
           : "—"}
       </td>
-      <td className="px-3 py-2.5 font-mono text-xs text-texto">
+      <td
+        data-etiqueta="Referencias"
+        className="px-3 py-2.5 font-mono text-xs text-texto max-md:block max-md:py-1 max-md:text-left max-md:whitespace-normal max-md:before:mb-0.5 max-md:before:block max-md:before:text-[10px] max-md:before:tracking-wide max-md:before:text-tenue max-md:before:uppercase max-md:before:content-[attr(data-etiqueta)]"
+      >
         {f.referencias.length
           ? f.referencias.map((r) => (
               <span key={r} className="block">
@@ -682,7 +706,10 @@ function Fila({
             ))
           : "—"}
       </td>
-      <td className="px-3 py-2.5 text-right text-xs whitespace-nowrap text-texto tabular-nums">
+      <td
+        data-etiqueta="Montos"
+        className="px-3 py-2.5 text-right text-xs whitespace-nowrap text-texto tabular-nums max-md:block max-md:py-1 max-md:text-left max-md:whitespace-normal max-md:before:mb-0.5 max-md:before:block max-md:before:text-[10px] max-md:before:tracking-wide max-md:before:text-tenue max-md:before:uppercase max-md:before:content-[attr(data-etiqueta)]"
+      >
         {f.montos.length
           ? f.montos.slice(0, 3).map((m) => (
               <span key={`${m.monto}-${m.moneda}`} className="block">
@@ -691,7 +718,10 @@ function Fila({
             ))
           : "—"}
       </td>
-      <td className="max-w-56 px-3 py-2.5 text-xs">
+      <td
+        data-etiqueta="Fuente y huella"
+        className="max-w-56 px-3 py-2.5 text-xs max-md:block max-md:py-1 max-md:text-left max-md:whitespace-normal max-md:before:mb-0.5 max-md:before:block max-md:before:text-[10px] max-md:before:tracking-wide max-md:before:text-tenue max-md:before:uppercase max-md:before:content-[attr(data-etiqueta)] max-md:col-span-2 max-md:min-w-0 max-md:max-w-none"
+      >
         {f.documento_id && f.archivo ? (
           <Link
             href={`${base}/documentos/${f.documento_id}`}
@@ -710,7 +740,10 @@ function Fila({
           <span className="block text-[10px] text-tenue-2">Sin soporte documental</span>
         ) : null}
       </td>
-      <td className="px-3 py-2.5">
+      <td
+        data-etiqueta="Validación"
+        className="px-3 py-2.5 max-md:block max-md:py-1 max-md:text-left max-md:whitespace-normal max-md:before:mb-0.5 max-md:before:block max-md:before:text-[10px] max-md:before:tracking-wide max-md:before:text-tenue max-md:before:uppercase max-md:before:content-[attr(data-etiqueta)]"
+      >
         <Etiqueta
           tono={
             f.estado_validacion === "pendiente"
@@ -723,7 +756,10 @@ function Fila({
           {NOMBRE_ESTADO[f.estado_validacion] ?? f.estado_validacion}
         </Etiqueta>
       </td>
-      <td className="px-3 py-2.5 text-xs whitespace-nowrap">
+      <td
+        data-etiqueta="Calificación"
+        className="px-3 py-2.5 text-xs whitespace-nowrap max-md:block max-md:py-1 max-md:text-left max-md:whitespace-normal max-md:before:mb-0.5 max-md:before:block max-md:before:text-[10px] max-md:before:tracking-wide max-md:before:text-tenue max-md:before:uppercase max-md:before:content-[attr(data-etiqueta)]"
+      >
         {nivel ? (
           <span className="inline-flex items-center gap-1.5 text-texto">
             <span

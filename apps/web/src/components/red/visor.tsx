@@ -333,14 +333,17 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
         if (ev.target === cy) aristaRef.current(null);
       });
       // Clic derecho (o pulsación larga): menú contextual sobre la entidad o sobre el fondo.
-      cy.on("cxttap", (ev) => {
+      const abrirMenu = (ev: cytoscape.EventObject) => {
         const p = ev.renderedPosition;
         menuRef.current({
           x: p.x,
           y: p.y,
           entidadId: ev.target !== cy && ev.target.isNode() ? ev.target.id() : null,
         });
-      });
+      };
+      cy.on("cxttap", abrirMenu);
+      // En el celular: mantener presionado.
+      cy.on("taphold", abrirMenu);
       cy.on("tapstart", () => menuRef.current(null));
       // Resalta la entidad bajo el cursor con sus líneas y vecinas, y atenúa el resto.
       cy.on("mouseover", "node", (ev) => {
@@ -729,7 +732,7 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
             ref={contenedor}
             role="img"
             aria-label="Red de vínculos"
-            className="h-[680px] w-full rounded-lg border border-linea-2 bg-[#0b1220] bg-[radial-gradient(ellipse_at_50%_0%,rgba(212,175,55,0.07),transparent_60%)]"
+            className="h-[68dvh] w-full touch-none rounded-lg border border-linea-2 bg-[#0b1220] md:h-[680px] bg-[radial-gradient(ellipse_at_50%_0%,rgba(212,175,55,0.07),transparent_60%)]"
           />
           {menu ? (
             <MenuContextual
@@ -743,7 +746,8 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
           ) : null}
         </div>
         <p className="text-xs text-tenue-2">
-          Clic derecho sobre una entidad para centrarla o cambiar su ícono.
+          Clic derecho (en el celular, mantén presionado) sobre una entidad para centrarla o cambiar
+          su ícono.
           {Object.keys(iconos).length
             ? ` ${Object.keys(iconos).length} entidad(es) con ícono personalizado.`
             : ""}
