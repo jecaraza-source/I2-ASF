@@ -31,6 +31,10 @@ const TRAMOS: Record<string, { texto: string; enlace?: boolean }> = {
   usuarios: { texto: "Usuarios y accesos" },
   recorridos: { texto: "Recorridos guiados" },
   organizacion: { texto: "Organización" },
+  validacion: { texto: "Validación" },
+  analizador: { texto: "Analizador" },
+  hallazgos: { texto: "Hallazgos" },
+  verificacion: { texto: "Verificación en campo" },
 };
 
 type Migaja = { ruta: string; texto: string; enlace: boolean };

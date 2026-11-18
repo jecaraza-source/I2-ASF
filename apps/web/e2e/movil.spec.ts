@@ -9,6 +9,8 @@ import { ingresar } from "./ayuda";
  * del celular lleva a cada módulo y la accesibilidad no se rompe. Deja capturas para revisarlas.
  */
 const ENCARGO = "/encargos/c0000000-0000-4000-8000-000000000001";
+/** Encargo de la prueba de carga (CI): 50,000 registros y una red de 5,000 entidades. */
+const CARGA = "/encargos/c0000000-0000-4000-8000-0000000000ca";
 const CAPTURAS = path.join(__dirname, "..", "capturas-movil");
 
 test.use({
@@ -79,15 +81,25 @@ test("pantallas de lectura en el celular, sin salirse a lo ancho", async ({ page
     [`${ENCARGO}/recorridos`, "15-recorridos"],
     ["/campo", "16-campo"],
   ];
+  if (process.env.CI) {
+    rutas.push(
+      [CARGA, "20-carga-resumen"],
+      [`${CARGA}/registros`, "21-carga-registros"],
+      [`${CARGA}/expedientes/d0000000-0000-4000-8000-0000000000ca`, "22-carga-expediente"],
+      [`${CARGA}/red`, "23-carga-red"],
+      [`${CARGA}/red/vista`, "24-carga-red-vista"],
+    );
+  }
   for (const [ruta, nombre] of rutas) await revisar(page, ruta, nombre);
 
   // Detalle de un registro y ficha de una entidad, si el encargo de ejemplo los tiene.
-  await page.goto(`${ENCARGO}/registros`);
+  const conDatos = process.env.CI ? CARGA : ENCARGO;
+  await page.goto(`${conDatos}/registros`);
   const registro = page.locator(`a[href*="/registros/"]`).first();
   if (await registro.count()) {
     await revisar(page, (await registro.getAttribute("href")) ?? ENCARGO, "17-registro");
   }
-  await page.goto(`${ENCARGO}/red`);
+  await page.goto(`${conDatos}/red`);
   const entidad = page.locator(`a[href*="/entidades/"]`).first();
   if (await entidad.count()) {
     await revisar(page, (await entidad.getAttribute("href")) ?? ENCARGO, "18-ficha");
