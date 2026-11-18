@@ -5,6 +5,7 @@ import {
   puede,
   type ProveedorIA,
   formatoMonto,
+  textoErrorIA,
 } from "@sigma/modelo";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -322,7 +323,7 @@ async function Contenido() {
             x.funcion,
             x.resultado === "bloqueada"
               ? `Bloqueada: ${MOTIVO_BLOQUEO_IA[x.codigo_error ?? ""] ?? x.codigo_error ?? "sin motivo"}`
-              : `Error ${x.codigo_error ?? ""}`.trim(),
+              : textoErrorIA(x.codigo_error),
           ])}
         />
       </section>

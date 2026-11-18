@@ -3,6 +3,7 @@ import {
   ErrorProveedor,
   camposDeExtraccion,
   clasificarError,
+  codigoDeMensaje,
   esquemaExtraccion,
   extraerConRespaldo,
   interpretarExtraccion,
@@ -159,6 +160,31 @@ describe("clasificarError", () => {
     expect(clasificarError(new ErrorProveedor(500, "api_error"))).toBe("reintentable");
     expect(clasificarError(new ErrorProveedor(null, "tiempo_agotado"))).toBe("reintentable");
     expect(clasificarError(new ErrorProveedor(400, "invalid_request_error"))).toBe("fatal");
+  });
+});
+
+describe("codigoDeMensaje", () => {
+  it("afina el 400 genérico con un código fijo, sin guardar el mensaje", () => {
+    const c = "invalid_request_error";
+    expect(
+      codigoDeMensaje(
+        c,
+        "Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+      ),
+    ).toBe("saldo_insuficiente");
+    expect(codigoDeMensaje(c, "A maximum of 100 PDF pages may be provided.")).toBe(
+      "pdf_demasiadas_paginas",
+    );
+    expect(codigoDeMensaje(c, "prompt is too long: 250000 tokens > 200000 maximum")).toBe(
+      "documento_largo",
+    );
+    expect(codigoDeMensaje(c, "model: claude-x not supported")).toBe("modelo_invalido");
+    expect(codigoDeMensaje(c, "tools.0.input_schema: invalid")).toBe("esquema_invalido");
+    expect(codigoDeMensaje(c, "The PDF specified was not valid.")).toBe("archivo_ilegible");
+    expect(codigoDeMensaje(c, "algo distinto")).toBe(c);
+    expect(codigoDeMensaje("rate_limit_error", "credit balance")).toBe("rate_limit_error");
+    // El saldo agotado pasa al proveedor de respaldo.
+    expect(clasificarError(new ErrorProveedor(400, "saldo_insuficiente"))).toBe("limite");
   });
 });
 
