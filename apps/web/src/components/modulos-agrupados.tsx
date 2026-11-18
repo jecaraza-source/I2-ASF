@@ -3,7 +3,6 @@
 import { CATEGORIAS_MODULO, MODULOS } from "@sigma/modelo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useId } from "react";
 
 /**
  * Módulos del encargo agrupados por capacidad (Integración de fuentes, Análisis, Gestión del
@@ -19,7 +18,6 @@ export function ModulosAgrupados({
   claseEnlace: string;
 }) {
   const pathname = usePathname();
-  const prefijo = useId();
   const actual = (ruta: string) =>
     ruta === ""
       ? pathname === base
@@ -33,12 +31,10 @@ export function ModulosAgrupados({
       {CATEGORIAS_MODULO.map((c, i) => {
         const modulos = MODULOS.filter((m) => m.categoria === c.clave && m.listo);
         if (modulos.length === 0) return null;
-        const id = `${prefijo}-${c.clave}`;
         return (
-          <section key={c.clave} aria-labelledby={id} className={i ? "mt-4" : ""}>
-            <h2 id={id} className="px-2 text-[10px] tracking-[2px] text-oro uppercase">
-              {c.nombre}
-            </h2>
+          // Sin aria-label en el grupo: el título basta y no choca con etiquetas de formularios («Fuente»).
+          <div key={c.clave} className={i ? "mt-4" : ""}>
+            <h2 className="px-2 text-[10px] tracking-[2px] text-oro uppercase">{c.nombre}</h2>
             <ul className="mt-1 flex flex-col gap-0.5">
               {modulos.map((m) => (
                 <li key={m.clave}>
@@ -52,7 +48,7 @@ export function ModulosAgrupados({
                 </li>
               ))}
             </ul>
-          </section>
+          </div>
         );
       })}
     </>
