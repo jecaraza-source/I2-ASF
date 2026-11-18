@@ -431,8 +431,8 @@ function CedulaCampo({
     };
   }, []);
 
-  const agregarFotos = async (archivos: FileList | null) => {
-    if (!archivos || archivos.length === 0) return;
+  const agregarFotos = async (archivos: File[]) => {
+    if (archivos.length === 0) return;
     setError(null);
     if (fotos.length + archivos.length > MAX_FOTOS_POR_VISITA) {
       setError(`Máximo ${MAX_FOTOS_POR_VISITA} fotos por visita.`);
@@ -441,7 +441,7 @@ function CedulaCampo({
     setOcupado(true);
     const ubicacion = await ubicacionActual();
     const nuevas: FotoPrevia[] = [];
-    for (const archivo of Array.from(archivos)) {
+    for (const archivo of archivos) {
       const mime =
         archivo.type || (archivo.name.toLowerCase().endsWith(".heic") ? "image/heic" : "");
       if (!(MIMES_FOTO as readonly string[]).includes(mime)) {
@@ -639,7 +639,8 @@ function CedulaCampo({
           capture="environment"
           multiple
           onChange={(e) => {
-            void agregarFotos(e.target.files);
+            // Se copia antes de limpiar el control: vaciarlo vacía también su FileList.
+            void agregarFotos(Array.from(e.target.files ?? []));
             e.target.value = "";
           }}
           className="text-sm text-tenue"

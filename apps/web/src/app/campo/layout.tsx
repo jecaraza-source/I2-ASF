@@ -28,7 +28,7 @@ export default function LayoutCampo({ children }: { children: ReactNode }) {
           priority
         />
         <span className="text-sm font-bold tracking-[0.5px] text-azul-claro">SIGMA</span>
-        <span className="text-[10px] tracking-[2px] text-azul-medio uppercase">
+        <span className="text-[11px] tracking-[2px] text-azul-claro uppercase">
           Verificación en campo
         </span>
       </header>

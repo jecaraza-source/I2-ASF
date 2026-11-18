@@ -80,14 +80,19 @@ test("verificación en campo: visita programada desde la red, cédula sin señal
   // Ya no se propone de nuevo.
   await expect(programa.getByRole("checkbox")).toHaveCount(10);
 
-  // App de campo: primero el aviso de confidencialidad.
+  // App de campo: primero el aviso de confidencialidad (una vez por organización y versión; en un
+  // reintento ya está aceptado).
   await page.goto("/campo");
-  await expect(page.getByRole("heading", { name: /Aviso de confidencialidad/ })).toBeVisible();
-  const acepto = page.getByRole("button", { name: "Acepto" });
-  await expect(acepto).toBeDisabled();
-  await page.getByLabel("Leí el aviso y me obligo a cumplirlo.").check();
-  await acepto.click();
-  await expect(page.getByRole("heading", { name: "Mis visitas" })).toBeVisible();
+  const aviso = page.getByRole("heading", { name: /Aviso de confidencialidad/ });
+  const misVisitas = page.getByRole("heading", { name: "Mis visitas" });
+  await expect(aviso.or(misVisitas)).toBeVisible();
+  if (await aviso.isVisible()) {
+    const acepto = page.getByRole("button", { name: "Acepto" });
+    await expect(acepto).toBeDisabled();
+    await page.getByLabel("Leí el aviso y me obligo a cumplirlo.").check();
+    await acepto.click();
+  }
+  await expect(misVisitas).toBeVisible();
   await page.getByRole("button", { name: /PROVEEDORA ALPHA SC/ }).click();
   await expect(page.getByRole("heading", { name: /Cédula de verificación/ })).toBeVisible();
   await expect(page.getByText("Fotografía la fachada y el número exterior.")).toBeVisible();
