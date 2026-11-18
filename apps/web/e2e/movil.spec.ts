@@ -52,6 +52,9 @@ async function revisar(page: Page, ruta: string, nombre: string) {
   await page.waitForLoadState("networkidle").catch(() => undefined);
   mkdirSync(CAPTURAS, { recursive: true });
   await page.screenshot({ path: path.join(CAPTURAS, `${nombre}.png`), fullPage: true });
+  // TEMPORAL (revisión visual de la tarea 16): la captura en el log, en JPEG reducido.
+  const jpg = await page.screenshot({ type: "jpeg", quality: 40, fullPage: true, scale: "css" });
+  console.log(`CAPTURA ${nombre} ${jpg.toString("base64")}`);
   expect(await desbordes(page), `se sale a lo ancho en ${ruta}`).toEqual([]);
 }
 
