@@ -53,9 +53,22 @@ async function revisar(page: Page, ruta: string, nombre: string) {
   await expect(page.locator("main").first()).toBeVisible();
   await page.waitForLoadState("networkidle").catch(() => undefined);
   mkdirSync(CAPTURAS, { recursive: true });
-  await page.screenshot({ path: path.join(CAPTURAS, `${nombre}.png`), fullPage: true });
+  // Páginas muy largas (la red de carga): solo los primeros 4,000 px.
+  const alto = await page.evaluate(() => document.documentElement.scrollHeight);
+  const recorte = alto > 4000 ? { clip: { x: 0, y: 0, width: 390, height: 4000 } } : {};
+  await page.screenshot({
+    path: path.join(CAPTURAS, `${nombre}.png`),
+    fullPage: true,
+    ...recorte,
+  });
   // TEMPORAL (revisión visual de la tarea 16): la captura en el log, en JPEG reducido.
-  const jpg = await page.screenshot({ type: "jpeg", quality: 40, fullPage: true, scale: "css" });
+  const jpg = await page.screenshot({
+    type: "jpeg",
+    quality: 40,
+    fullPage: true,
+    scale: "css",
+    ...recorte,
+  });
   console.log(`CAPTURA ${nombre} ${jpg.toString("base64")}`);
   expect(await desbordes(page), `se sale a lo ancho en ${ruta}`).toEqual([]);
 }
