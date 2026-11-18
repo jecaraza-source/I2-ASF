@@ -401,7 +401,14 @@ function Tabla({
   filas: string[][];
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-linea">
+    // En el celular la tabla se desplaza a lo ancho: el recuadro recibe el foco para poder
+    // recorrerla con el teclado (WCAG 2.1.1).
+    <div
+      role="region"
+      aria-label={titulo}
+      tabIndex={0}
+      className="overflow-x-auto rounded-lg border border-linea focus-visible:outline-2 focus-visible:outline-oro"
+    >
       <table className="w-full text-left text-sm">
         <caption className="px-4 py-2 text-left text-sm font-semibold text-texto">{titulo}</caption>
         <thead className="bg-panel-2 text-xs tracking-wide text-tenue uppercase">
