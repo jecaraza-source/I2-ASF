@@ -45,7 +45,9 @@ test("captura un contrato sin documento, aparece en la red y deja de estar sin s
   );
   const urlRegistro = page.url();
   await expect(page.getByText("Sin soporte documental", { exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Datos de origen" })).toContainText("1500000.00");
+  await expect(page.getByRole("region", { name: "Datos de origen" })).toContainText(
+    "$1,500,000.00",
+  );
   await expect(page.getByRole("link", { name: "CONSTRUCTORA CAPTURA E2E SA DE CV" })).toBeVisible();
 
   // Aparece en la lista de capturas y el autocompletado conoce a la entidad.
