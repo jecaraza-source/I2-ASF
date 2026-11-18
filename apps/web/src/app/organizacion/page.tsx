@@ -1,3 +1,4 @@
+import { NOMBRE_ROL } from "@sigma/modelo";
 import { Suspense } from "react";
 import { elegirOrganizacion } from "@/acciones/sesion";
 import { EstadoCargando } from "@/components/estados";
@@ -6,7 +7,7 @@ import { requerirSesion } from "@/lib/sesion";
 
 export const metadata = { title: "Organización — SIGMA" };
 
-const ROLES = { admin: "Administrador", auditor: "Auditor", lector: "Lector" } as const;
+const ROLES = NOMBRE_ROL;
 
 export default function Organizacion() {
   return (

@@ -5,12 +5,15 @@ export const NOMBRE_ROL: Record<Rol, string> = {
   admin: "Administrador",
   auditor: "Auditor",
   lector: "Lector",
+  verificador: "Verificador de campo",
 };
 
 export const DESCRIPCION_ROL: Record<Rol, string> = {
   admin: "Todo, incluida la configuración, la IA y los usuarios.",
   auditor: "Crea y valida registros, genera redes y resuelve alertas.",
   lector: "Solo consulta.",
+  verificador:
+    "Solo la app de campo: las visitas que tiene asignadas. No ve nada más de la organización.",
 };
 
 export const MODOS_ALTA = ["invitacion", "temporal"] as const;

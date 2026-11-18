@@ -12,7 +12,7 @@ import { agregarUsuario, cambiarEstadoUsuario, cambiarRolUsuario } from "@/accio
 import { BotonEnviar } from "@/components/formulario";
 import { ESTADO_INICIAL, type EstadoFormulario } from "@/lib/formulario";
 
-const ROLES: Rol[] = ["admin", "auditor", "lector"];
+const ROLES: Rol[] = ["admin", "auditor", "lector", "verificador"];
 const claseControl =
   "w-full rounded-md border border-linea-2 bg-fondo-2 px-3 py-2 text-sm text-texto focus:border-oro focus:outline-none aria-invalid:border-peligro";
 const claseBotonFila =

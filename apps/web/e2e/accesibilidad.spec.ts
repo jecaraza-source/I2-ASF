@@ -51,6 +51,8 @@ test("pantallas del auditor", async ({ page }) => {
     `${ENCARGO}/recorridos`,
     `${ENCARGO}/analizador`,
     `${ENCARGO}/hallazgos`,
+    `${ENCARGO}/verificacion`,
+    "/campo",
   ]) {
     await revisar(page, ruta);
   }

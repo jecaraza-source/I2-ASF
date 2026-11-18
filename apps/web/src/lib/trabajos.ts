@@ -3,6 +3,7 @@ import { z } from "zod";
 import { generarSintesis, sintesisFallida } from "@/lib/analizador/generar";
 import { consultarFuentes } from "@/lib/fuentes/consultar";
 import { extraerDocumento } from "@/lib/ia/extraer";
+import { ejecutarYGuardarReglas } from "@/lib/reglas-datos";
 import { clienteServicio } from "@/lib/supabase/servicio";
 
 type Servicio = NonNullable<ReturnType<typeof clienteServicio>>;
@@ -13,7 +14,17 @@ const MANEJADORES: Record<string, (s: Servicio, trabajo: Trabajo) => Promise<voi
   extraccion: extraerDocumento,
   consulta_fuentes: consultarFuentes,
   sintesis: generarSintesis,
+  reglas: ejecutarReglasDeTrabajo,
 };
+
+const payloadReglas = z.object({ encargo_id: z.uuid() });
+
+/** Reglas pedidas por la base (por ejemplo, al sincronizar una cédula de campo: R12). */
+async function ejecutarReglasDeTrabajo(servicio: Servicio, trabajo: Trabajo): Promise<void> {
+  const { encargo_id } = payloadReglas.parse(trabajo.payload);
+  const r = await ejecutarYGuardarReglas(servicio, encargo_id);
+  if (!r.ok) throw new Error(`reglas ${r.codigo ?? "?"}`);
+}
 
 /** Qué hacer cuando un trabajo agota sus intentos (además de marcarlo en error). */
 const AL_FALLAR: Record<string, (s: Servicio, payload: unknown) => Promise<void>> = {

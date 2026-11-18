@@ -4,6 +4,7 @@ import { cerrarSesion } from "@/acciones/sesion";
 import { BarraMarca } from "@/components/marca";
 import { MenuModulos } from "@/components/menu-modulos";
 import { BarraNavegacion } from "@/components/navegacion";
+import { redirect } from "next/navigation";
 import { requerirOrganizacion } from "@/lib/sesion";
 
 const ROLES = { admin: "Administrador", auditor: "Auditor", lector: "Lector" } as const;
@@ -40,6 +41,8 @@ export default function LayoutPlataforma({ children }: { children: ReactNode }) 
 
 async function ZonaUsuario() {
   const sesion = await requerirOrganizacion();
+  // El verificador de campo solo usa la app de campo.
+  if (sesion.activa.rol === "verificador") redirect("/campo");
   return (
     <div className="flex items-center gap-4 text-xs">
       <div className="text-right">

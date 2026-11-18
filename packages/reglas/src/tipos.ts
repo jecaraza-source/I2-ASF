@@ -72,6 +72,19 @@ export type DatosReglas = {
   vinculos: VinculoRegla[];
   eventos: EventoRegla[];
   coincidencias_69b?: CoincidenciaListaRegla[];
+  verificaciones_campo?: VerificacionCampoRegla[];
+};
+
+/** Cédula de verificación en campo ya sincronizada (tarea 14). */
+export type VerificacionCampoRegla = {
+  cedula_id: string;
+  registro_id: string;
+  entidad_id: string;
+  entidad: string;
+  /** Fecha y hora de captura en el teléfono (ISO 8601). */
+  capturada_en: string;
+  respuestas: Record<string, string>;
+  evidencias: number;
 };
 
 export type Severidad = "critica" | "alta" | "media" | "baja";

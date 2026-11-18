@@ -1,0 +1,11 @@
+{
+  "name": "SIGMA · Verificación en campo",
+  "short_name": "SIGMA Campo",
+  "start_url": "/campo",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0e14",
+  "theme_color": "#0a0e14",
+  "lang": "es-MX",
+  "icons": [{ "src": "/marca/escudo.png", "sizes": "any", "type": "image/png" }]
+}

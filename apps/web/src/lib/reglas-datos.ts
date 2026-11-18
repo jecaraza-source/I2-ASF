@@ -106,6 +106,7 @@ export async function cargarDatosReglas(
 
   return {
     coincidencias_69b: await cargarCoincidencias69b(supabase, encargoId, VALIDADOS),
+    verificaciones_campo: await cargarVerificacionesCampo(supabase, encargoId),
     registros: [...porRegistro.values()],
     entidades: entidades.map((e) => {
       const ids = (e.identificadores ?? {}) as Record<string, unknown>;
@@ -208,6 +209,32 @@ const datos69bSchema = z
  * Coincidencias con la lista 69-B que cuentan para R10 (todo menos lo descartado) y, para cada
  * entidad, un registro validado donde aparece (la evidencia de la alerta).
  */
+const respuestasCampoSchema = z.record(z.string(), z.string()).catch({});
+
+/** Cédulas de campo sincronizadas (R12), con el proveedor visitado y cuántas fotos traen. */
+async function cargarVerificacionesCampo(
+  supabase: Cliente,
+  encargoId: string,
+): Promise<NonNullable<DatosReglas["verificaciones_campo"]>> {
+  const { data, error } = await supabase
+    .from("cedula_campo")
+    .select(
+      "id, registro_id, respuestas, capturada_en, visita_campo!inner(entidad_id, entidad(nombre)), evidencia_campo(id)",
+    )
+    .eq("encargo_id", encargoId)
+    .limit(5000);
+  if (error) throw new Error(`cedula_campo ${error.code ?? "?"}`);
+  return (data ?? []).map((c) => ({
+    cedula_id: c.id,
+    registro_id: c.registro_id,
+    entidad_id: c.visita_campo.entidad_id,
+    entidad: c.visita_campo.entidad?.nombre ?? "(sin nombre)",
+    capturada_en: c.capturada_en,
+    respuestas: respuestasCampoSchema.parse(c.respuestas),
+    evidencias: c.evidencia_campo.length,
+  }));
+}
+
 async function cargarCoincidencias69b(
   supabase: Cliente,
   encargoId: string,

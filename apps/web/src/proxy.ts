@@ -50,5 +50,5 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Todo menos archivos estáticos y la marca.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|marca/).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|marca/|sw\\.js|campo\\.webmanifest).*)"],
 };

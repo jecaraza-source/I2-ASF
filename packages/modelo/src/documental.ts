@@ -17,11 +17,12 @@ export const ORDENES_DOCUMENTAL = ["fecha", "resumen", "tipo", "estado", "califi
 export type OrdenDocumental = (typeof ORDENES_DOCUMENTAL)[number];
 
 export const ESTADOS_DOCUMENTAL = ["validados", "pendiente", "rechazado"] as const;
-export const ORIGENES_DOCUMENTAL = ["documento", "captura", "importacion"] as const;
+export const ORIGENES_DOCUMENTAL = ["documento", "captura", "importacion", "campo"] as const;
 export const NOMBRE_ORIGEN: Record<(typeof ORIGENES_DOCUMENTAL)[number], string> = {
   documento: "Documento",
   captura: "Captura manual",
   importacion: "Excel",
+  campo: "Verificación en campo",
 };
 
 export const POR_PAGINA_DOCUMENTAL = 50;
