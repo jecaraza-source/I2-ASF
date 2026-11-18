@@ -272,10 +272,52 @@ export function codigoDeMensaje(codigo: string, mensaje: string | null | undefin
   if (/prompt is too long|context (window|length)|too many tokens/.test(m))
     return "documento_largo";
   if (/too large|exceeds the maximum|size limit|request_too_large/.test(m)) return "archivo_grande";
+  if (/tool_choice/.test(m)) return "herramienta_forzada";
+  if (/thinking/.test(m)) return "razonamiento_no_admitido";
   if (/model/.test(m)) return "modelo_invalido";
   if (/schema|tool/.test(m)) return "esquema_invalido";
   if (/pdf|document|image|media_type|base64/.test(m)) return "archivo_ilegible";
   return codigo;
+}
+
+const SIN_SOPORTE_ESTRICTO = new Set([
+  "maxItems",
+  "minimum",
+  "maximum",
+  "exclusiveMinimum",
+  "exclusiveMaximum",
+  "multipleOf",
+  "minLength",
+  "maxLength",
+  "pattern",
+  "format",
+]);
+
+/**
+ * Copia del esquema apta para herramientas estrictas de Claude: quita las restricciones numéricas y
+ * de longitud que el modo estricto no acepta (y `minItems` mayor que 1). La respuesta se sigue
+ * validando completa con zod en `interpretarExtraccion` / `interpretarSintesis`.
+ */
+export function esquemaEstricto(esquema: unknown): unknown {
+  if (Array.isArray(esquema)) return esquema.map(esquemaEstricto);
+  if (!esquema || typeof esquema !== "object") return esquema;
+  const salida: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(esquema)) {
+    if (SIN_SOPORTE_ESTRICTO.has(k)) continue;
+    if (k === "minItems" && typeof v === "number" && v > 1) continue;
+    if (k === "enum" || k === "required" || k === "const") {
+      // Listas de valores, no esquemas.
+      salida[k] = v;
+    } else if ((k === "properties" || k === "$defs") && v && typeof v === "object") {
+      // Las claves son nombres de propiedad (pueden llamarse «pattern» o «format»), no palabras clave.
+      salida[k] = Object.fromEntries(
+        Object.entries(v).map(([nombre, sub]) => [nombre, esquemaEstricto(sub)]),
+      );
+    } else {
+      salida[k] = esquemaEstricto(v);
+    }
+  }
+  return salida;
 }
 
 export type ClaseError = "limite" | "reintentable" | "fatal";

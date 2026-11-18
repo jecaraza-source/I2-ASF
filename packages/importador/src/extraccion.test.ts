@@ -4,6 +4,7 @@ import {
   camposDeExtraccion,
   clasificarError,
   codigoDeMensaje,
+  esquemaEstricto,
   esquemaExtraccion,
   extraerConRespaldo,
   interpretarExtraccion,
@@ -163,6 +164,32 @@ describe("clasificarError", () => {
   });
 });
 
+describe("esquemaEstricto", () => {
+  it("quita lo que el modo estricto no acepta y conserva estructura, enum y required", () => {
+    const e = {
+      type: "object",
+      additionalProperties: false,
+      required: ["a", "pattern"],
+      properties: {
+        a: { type: "array", minItems: 2, maxItems: 30, items: { type: "string", maxLength: 9 } },
+        pattern: { type: "number", minimum: 0, maximum: 1, enum: [0, 1] },
+      },
+    };
+    expect(esquemaEstricto(e)).toEqual({
+      type: "object",
+      additionalProperties: false,
+      required: ["a", "pattern"],
+      properties: {
+        a: { type: "array", items: { type: "string" } },
+        pattern: { type: "number", enum: [0, 1] },
+      },
+    });
+    expect(
+      esquemaEstricto(esquemaExtraccion([{ clave: "folio", etiqueta: "Folio", tipo: "texto" }])),
+    ).toEqual(esquemaExtraccion([{ clave: "folio", etiqueta: "Folio", tipo: "texto" }]));
+  });
+});
+
 describe("codigoDeMensaje", () => {
   it("afina el 400 genérico con un código fijo, sin guardar el mensaje", () => {
     const c = "invalid_request_error";
@@ -182,6 +209,9 @@ describe("codigoDeMensaje", () => {
     expect(codigoDeMensaje(c, "tools.0.input_schema: invalid")).toBe("esquema_invalido");
     expect(codigoDeMensaje(c, "The PDF specified was not valid.")).toBe("archivo_ilegible");
     expect(codigoDeMensaje(c, "algo distinto")).toBe(c);
+    expect(
+      codigoDeMensaje(c, 'tool_choice: type "tool" and "any" are not supported for this model.'),
+    ).toBe("herramienta_forzada");
     expect(codigoDeMensaje("rate_limit_error", "credit balance")).toBe("rate_limit_error");
     // El saldo agotado pasa al proveedor de respaldo.
     expect(clasificarError(new ErrorProveedor(400, "saldo_insuficiente"))).toBe("limite");

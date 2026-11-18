@@ -32,6 +32,8 @@ export const ERROR_IA: Record<string, string> = {
   archivo_ilegible: "La IA no pudo abrir el archivo (dañado o protegido)",
   modelo_invalido: "El modelo configurado no existe o no está disponible para la llave",
   esquema_invalido: "El proveedor rechazó el formato de la petición",
+  herramienta_forzada: "El modelo no admite la forma de pedir la respuesta (actualiza la app)",
+  razonamiento_no_admitido: "El modelo no admite esa configuración de razonamiento",
   invalid_request_error: "El proveedor rechazó la petición",
   authentication_error: "La llave del proveedor no es válida",
   permission_error: "La llave no tiene permiso para ese modelo",

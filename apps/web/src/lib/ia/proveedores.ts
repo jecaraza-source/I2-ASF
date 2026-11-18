@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import {
   codigoDeMensaje,
   ErrorProveedor,
+  esquemaEstricto,
   type RespuestaProveedor,
 } from "@sigma/importador/extraccion";
 import type { ProveedorIA } from "@sigma/modelo";
@@ -20,7 +21,8 @@ export const MIMES_LEGIBLES: readonly string[] = [
 export const MAX_BYTES_LECTURA = 20 * 1024 * 1024;
 
 const TIEMPO_LIMITE_MS = 120_000;
-const MAX_TOKENS_SALIDA = 8000;
+// Holgura para el razonamiento adaptativo de los modelos recientes, que cuenta dentro del tope.
+const MAX_TOKENS_SALIDA = 16000;
 const HERRAMIENTA = "registrar_extraccion";
 
 export type PeticionExtraccion = {
@@ -90,29 +92,44 @@ async function llamarAnthropic(p: PeticionExtraccion): Promise<RespuestaProveedo
           type: "image",
           source: { type: "base64", media_type: archivo.mime, data: base64 },
         } as const);
-  const r = await cliente.messages.create({
-    model: p.modelo,
-    max_tokens: MAX_TOKENS_SALIDA,
-    system: p.sistema,
-    tools: [
-      {
-        name: herramienta,
-        description: archivo
-          ? "Registra los datos extraídos del documento."
-          : "Registra el resultado con la estructura indicada.",
-        input_schema: p.esquema as Anthropic.Tool.InputSchema,
-      },
-    ],
-    tool_choice: { type: "tool", name: herramienta },
-    messages: [
-      {
-        role: "user",
-        content: adjunto
-          ? [adjunto, { type: "text", text: p.instruccion }]
-          : [{ type: "text", text: p.instruccion }],
-      },
-    ],
-  });
+  // Los modelos recientes (Sonnet 5.5, Opus 5.5) rechazan forzar la herramienta (`tool_choice`
+  // «tool» o «any»): se pide con «auto» + herramienta estricta y una instrucción explícita. Si el
+  // modo estricto no acepta el esquema, se reintenta una vez sin él (zod valida la respuesta igual).
+  const crear = (estricta: boolean) =>
+    cliente.messages.create({
+      model: p.modelo,
+      max_tokens: MAX_TOKENS_SALIDA,
+      system: `${p.sistema}\n\nResponde únicamente llamando a la herramienta «${herramienta}» una sola vez, sin texto adicional.`,
+      tools: [
+        {
+          name: herramienta,
+          description: archivo
+            ? "Registra los datos extraídos del documento."
+            : "Registra el resultado con la estructura indicada.",
+          input_schema: (estricta
+            ? esquemaEstricto(p.esquema)
+            : p.esquema) as Anthropic.Tool.InputSchema,
+          ...(estricta ? { strict: true } : {}),
+        },
+      ],
+      tool_choice: { type: "auto" },
+      messages: [
+        {
+          role: "user",
+          content: adjunto
+            ? [adjunto, { type: "text", text: p.instruccion }]
+            : [{ type: "text", text: p.instruccion }],
+        },
+      ],
+    });
+  let r: Awaited<ReturnType<typeof crear>>;
+  try {
+    r = await crear(true);
+  } catch (e) {
+    const err = errorDe(e);
+    if (err.status !== 400 || !/esquema_invalido|strict/.test(err.codigo)) throw e;
+    r = await crear(false);
+  }
   const uso = r.content.find((b) => b.type === "tool_use");
   const tokens = { tokensEntrada: r.usage.input_tokens, tokensSalida: r.usage.output_tokens };
   // Respuesta cortada o sin herramienta: se devuelve vacía para que cuente como inválida.

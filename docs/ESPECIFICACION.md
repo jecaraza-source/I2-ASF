@@ -329,7 +329,9 @@ domicilios, teléfonos. Cada tipo de documento añade los suyos en `campos_esper
   las demás entran a la cola de validación. Solo lo validado alimenta entidades y vínculos.
 - Formato de envío (verificado en la documentación de cada proveedor al implementar): el archivo va
   completo en base64. Anthropic: bloque `document` para PDF y bloque `image` para PNG, JPG y WEBP,
-  con respuesta forzada por herramienta. OpenAI (Responses API): `input_file` con `file_data` para
+  con una herramienta estricta (`strict: true`) y `tool_choice: auto` más la instrucción de usarla:
+  Sonnet 5.5 y Opus 5.5 rechazan forzar la herramienta. Si el esquema no se acepta en modo estricto,
+  se reintenta una vez sin él; zod valida la respuesta siempre. OpenAI (Responses API): `input_file` con `file_data` para
   PDF e `input_image` para imágenes, con salida estructurada estricta. Límite de 20 MB por archivo;
   TIFF, Excel y correos no se leen con IA y quedan para captura manual.
 - **Qué se pide:** por cada campo (comunes + `campos_esperados`) `valor`, `confianza` y `pagina`; la
