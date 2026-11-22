@@ -24,6 +24,8 @@ export const NOMBRE_NIVEL: Record<Nivel, string> = {
  */
 export const COLOR_FAMILIA: Record<FamiliaArista, string> = {
   propiedad: "#ef7b6a",
+  representacion: "#5fa8ff",
+  fe_publica: "#d6dde8",
   flujo: "#f0d572",
   irregularidad: "#ff9f43",
   familiar: "#c39bff",

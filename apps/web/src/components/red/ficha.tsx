@@ -1,5 +1,5 @@
-import { formatoMonto, formatoNumero } from "@sigma/modelo";
-import { DESCRIPCION_CRITERIO } from "@sigma/red";
+import { formatoMonto, formatoNumero, formatoPorcentaje } from "@sigma/modelo";
+import { DESCRIPCION_CRITERIO, NOMBRE_PAPEL, familiaArista } from "@sigma/red";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Ficha as DatosFicha, Origen } from "@/lib/vista-datos";
@@ -158,21 +158,49 @@ export function Ficha({
 
       <Seccion titulo={`Vínculos (${formatoNumero(ficha.vinculos.length)})`}>
         {ficha.vinculos.length ? (
-          <ul className="flex flex-col gap-2 text-xs" aria-label="Vínculos de la entidad">
-            {ficha.vinculos.slice(0, limite).map((v) => (
-              <li key={v.id} className="flex flex-col gap-0.5">
-                <span className="text-texto">
-                  {v.sentido === "sale" ? "→" : "←"} {otra(v.otra)}{" "}
-                  <span className="text-tenue">
-                    · {v.tipo}
-                    {v.fuerza !== null ? ` · fuerza ${v.fuerza}` : ""}
-                    {v.fecha_inicio ? ` · desde ${fecha(v.fecha_inicio)}` : ""}
-                  </span>
-                </span>
-                {!compacta ? <Origenes origenes={v.origenes} encargoId={encargoId} /> : null}
-              </li>
+          <div className="flex flex-col gap-2" aria-label="Vínculos de la entidad">
+            {gruposVinculos(ficha.vinculos).map((g) => (
+              <details
+                key={g.clave}
+                open
+                className="rounded-md border border-linea bg-fondo-2/40 px-3 py-2"
+              >
+                <summary className="cursor-pointer text-xs font-semibold text-texto">
+                  {g.titulo} ({formatoNumero(g.vinculos.length)})
+                  {g.total ? (
+                    <span className="font-normal text-tenue">
+                      {" "}
+                      · {formatoMonto(g.total.monto, g.total.moneda)}
+                    </span>
+                  ) : null}
+                </summary>
+                <ul className="mt-2 flex flex-col gap-2 text-xs">
+                  {g.vinculos.slice(0, limite).map((v) => (
+                    <li key={v.id} className="flex flex-col gap-0.5">
+                      <span className="text-texto">
+                        {v.sentido === "sale" ? "→" : "←"} {otra(v.otra)}{" "}
+                        <span className="text-tenue">
+                          · {NOMBRE_PAPEL[v.tipo] ?? v.tipo}
+                          {v.monto ? ` · ${formatoMonto(v.monto, v.moneda)}` : ""}
+                          {v.participacion !== null
+                            ? ` (${formatoPorcentaje(v.participacion, 1)})`
+                            : ""}
+                          {v.fuerza !== null && !v.monto ? ` · fuerza ${v.fuerza}` : ""}
+                          {v.fecha_inicio ? ` · desde ${fecha(v.fecha_inicio)}` : ""}
+                        </span>
+                      </span>
+                      {!compacta ? <Origenes origenes={v.origenes} encargoId={encargoId} /> : null}
+                    </li>
+                  ))}
+                </ul>
+                {g.vinculos.length > limite ? (
+                  <p className="mt-1 text-xs text-tenue-2">
+                    Se muestran {formatoNumero(limite)} de {formatoNumero(g.vinculos.length)}.
+                  </p>
+                ) : null}
+              </details>
             ))}
-          </ul>
+          </div>
         ) : (
           <p className="text-xs text-tenue">Sin vínculos declarados.</p>
         )}
@@ -219,4 +247,58 @@ function FilaDato({ k, v }: { k: string; v: string }) {
       <dd className="break-words text-texto">{v}</dd>
     </>
   );
+}
+
+type VinculoFicha = DatosFicha["vinculos"][number];
+
+/**
+ * Agrupa los vínculos para recorrerlos por capas (drill down): primero el capital (quién es socio
+ * y en qué participa), luego representación y vigilancia, fe pública y el resto.
+ */
+function gruposVinculos(vinculos: VinculoFicha[]) {
+  const grupos: {
+    clave: string;
+    titulo: string;
+    vinculos: VinculoFicha[];
+    total?: { monto: string; moneda: string | null };
+  }[] = [];
+  const socios = vinculos.filter((v) => v.tipo === "socio" && v.sentido === "entra");
+  const participa = vinculos.filter((v) => v.tipo === "socio" && v.sentido === "sale");
+  const usados = new Set([...socios, ...participa].map((v) => v.id));
+  const familia = (f: string) =>
+    vinculos.filter((v) => !usados.has(v.id) && familiaArista("vinculo", v.tipo) === f);
+  const representacion = [
+    ...familia("representacion"),
+    ...vinculos.filter((v) => v.tipo === "administrador"),
+  ];
+  representacion.forEach((v) => usados.add(v.id));
+  const fe = familia("fe_publica");
+  fe.forEach((v) => usados.add(v.id));
+  const otros = vinculos.filter((v) => !usados.has(v.id));
+
+  const suma = (lista: VinculoFicha[]) => {
+    const conMonto = lista.filter((v) => v.monto);
+    const moneda = conMonto[0]?.moneda ?? null;
+    if (!conMonto.length || conMonto.some((v) => v.moneda !== moneda)) return undefined;
+    const total = conMonto.reduce((t, v) => t + Number(v.monto), 0);
+    return { monto: total.toFixed(2), moneda };
+  };
+  if (socios.length)
+    grupos.push({
+      clave: "socios",
+      titulo: "Socios y capital",
+      vinculos: socios,
+      total: suma(socios),
+    });
+  if (participa.length)
+    grupos.push({ clave: "participa", titulo: "Participa en", vinculos: participa });
+  if (representacion.length)
+    grupos.push({
+      clave: "representacion",
+      titulo: "Representación y vigilancia",
+      vinculos: representacion,
+    });
+  if (fe.length) grupos.push({ clave: "fe", titulo: "Fe pública", vinculos: fe });
+  if (otros.length) grupos.push({ clave: "otros", titulo: "Otros vínculos", vinculos: otros });
+  return grupos;
 }

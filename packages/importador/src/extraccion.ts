@@ -41,7 +41,7 @@ Reglas:
 - Un RFC pertenece a quien el texto dice que pertenece: lee la frase completa. No atribuyas a la empresa el RFC de su representante o apoderado, ni al titular el RFC de quien emite un recibo. Si no aparece el RFC de alguien, deja null.
 - El notario, los testigos y quien emite un recibo no son la parte principal: usa el rol que les corresponde.
 - Los campos de texto largo (objeto social, facultades, concepto, asunto) se transcriben COMPLETOS y literales, con todas sus fracciones o incisos, sin resumir ni omitir.
-- En actas constitutivas y de asamblea: lista a cada socio o accionista con el monto de su aportación en "aportacion" (como aparece; null si no se indica); al comisario con el rol "comisario"; y a cada apoderado o representante legal con su rol. El capital social va en el campo de monto.`;
+- En actas constitutivas y de asamblea: lista a cada socio o accionista con el monto de su aportación en "aportacion" (como aparece; null si no se indica); al comisario con el rol "comisario"; al administrador único o a cada consejero con el rol "administrador"; a la sociedad misma con el rol "titular"; y a cada apoderado o representante legal con su rol. El capital social va en el campo de monto.`;
 
 const dato = (descripcion: string) => ({
   type: "object",

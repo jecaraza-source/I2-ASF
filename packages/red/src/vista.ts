@@ -27,6 +27,10 @@ export type AristaVista = {
   hasta: string | null;
   /** IDs de los vínculos o eventos que la sostienen (para la evidencia). */
   objetos: string[];
+  /** Vínculos de un documento (tarea 19): aportación del socio y su fracción del capital. */
+  monto?: string | null;
+  moneda?: string | null;
+  participacion?: number | null;
 };
 
 export type GrafoVista = { nodos: NodoVista[]; aristas: AristaVista[] };
@@ -47,8 +51,34 @@ const PLURAL: Record<string, string> = {
   otro: "eventos",
 };
 
+/** Papeles de un documento, como se leen en la red. */
+export const NOMBRE_PAPEL: Record<string, string> = {
+  socio: "Socio",
+  representante_legal: "Representante legal",
+  apoderado: "Apoderado",
+  comisario: "Comisario",
+  administrador: "Administrador",
+  notario: "Notario",
+};
+
+/** «$25,000.00» sin depender del paquete de modelo (la red es pura). */
+function pesos(monto: string, moneda: string | null | undefined): string {
+  const [entero = "0", dec = "00"] = monto.replace(/^-/, "").split(".");
+  const cuerpo = `${entero.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}.${(dec + "00").slice(0, 2)}`;
+  const signo = monto.startsWith("-") ? "-" : "";
+  if (!moneda || moneda === "MXN") return `${signo}$${cuerpo}`;
+  if (moneda === "USD") return `${signo}US$${cuerpo}`;
+  return `${signo}${cuerpo} ${moneda}`;
+}
+
 export function etiquetaArista(a: AristaVista): string {
-  if (a.clase === "vinculo") return a.tipo;
+  if (a.clase === "vinculo") {
+    const papel = NOMBRE_PAPEL[a.tipo] ?? a.tipo;
+    const partes = [papel];
+    if (a.monto) partes.push(pesos(a.monto, a.moneda));
+    const etiqueta = partes.join(" · ");
+    return a.participacion ? `${etiqueta} (${Math.round(a.participacion * 1000) / 10}%)` : etiqueta;
+  }
   return a.cantidad === 1 ? a.tipo : `${a.cantidad} ${PLURAL[a.tipo] ?? a.tipo}`;
 }
 
@@ -190,6 +220,7 @@ export const DISENOS = [
   "abanico",
   "empaquetado",
   "mincruce",
+  "estructura",
 ] as const;
 export type Diseno = (typeof DISENOS)[number];
 
@@ -202,6 +233,7 @@ export const NOMBRE_DISENO: Record<Diseno, string> = {
   abanico: "Abanico",
   empaquetado: "Empaquetado",
   mincruce: "Mínimos cruces",
+  estructura: "Estructura corporativa",
 };
 
 export type EstadoVista = FiltrosVista & {
@@ -340,5 +372,67 @@ export function posiciones(
       });
     });
   });
+  return pos;
+}
+
+const CAPA_PAPEL: Record<string, "capital" | "representacion" | "fe"> = {
+  socio: "capital",
+  administrador: "representacion",
+  representante_legal: "representacion",
+  apoderado: "representacion",
+  comisario: "representacion",
+  notario: "fe",
+};
+
+/**
+ * Estructura corporativa (tarea 19): los socios arriba de la sociedad en la que participan (en
+ * cadena, si una sociedad es socia de otra), la representación y la vigilancia debajo de su
+ * sociedad, el notario más abajo y lo que no tiene papel societario en una fila al final.
+ */
+export function posicionesEstructura(grafo: GrafoVista): Map<string, Punto> {
+  const capa = new Map<string, number>();
+  const capital = grafo.aristas.filter(
+    (a) => a.clase === "vinculo" && CAPA_PAPEL[a.tipo] === "capital",
+  );
+  // Sociedades: destino de un vínculo societario. Rango por cadena de capital (socio → sociedad).
+  for (const a of capital) {
+    if (!capa.has(a.origen)) capa.set(a.origen, 0);
+    if (!capa.has(a.destino)) capa.set(a.destino, 1);
+  }
+  for (let vuelta = 0; vuelta < grafo.nodos.length; vuelta++) {
+    let cambio = false;
+    for (const a of capital) {
+      const o = capa.get(a.origen) ?? 0;
+      if ((capa.get(a.destino) ?? 0) < o + 1) {
+        capa.set(a.destino, o + 1);
+        cambio = true;
+      }
+    }
+    if (!cambio) break;
+  }
+  const papeles = grafo.aristas.filter(
+    (a) =>
+      a.clase === "vinculo" &&
+      (CAPA_PAPEL[a.tipo] === "representacion" || CAPA_PAPEL[a.tipo] === "fe"),
+  );
+  for (const a of papeles) if (!capa.has(a.destino)) capa.set(a.destino, 1);
+  for (const a of papeles) {
+    if (capa.has(a.origen) && capital.some((c) => c.origen === a.origen)) continue;
+    const extra = CAPA_PAPEL[a.tipo] === "fe" ? 2 : 1;
+    capa.set(a.origen, Math.max(capa.get(a.origen) ?? 0, (capa.get(a.destino) ?? 1) + extra));
+  }
+  const maxima = Math.max(0, ...capa.values());
+  const filas = new Map<number, NodoVista[]>();
+  for (const n of grafo.nodos) {
+    const f = capa.has(n.id) ? (capa.get(n.id) as number) : maxima + 2;
+    const fila = filas.get(f);
+    if (fila) fila.push(n);
+    else filas.set(f, [n]);
+  }
+  const pos = new Map<string, Punto>();
+  for (const [f, fila] of filas) {
+    fila.sort((a, b) => ordenTipo(a.tipo) - ordenTipo(b.tipo) || a.nombre.localeCompare(b.nombre));
+    fila.forEach((n, i) => pos.set(n.id, { x: (i - (fila.length - 1) / 2) * 150, y: f * 170 }));
+  }
   return pos;
 }

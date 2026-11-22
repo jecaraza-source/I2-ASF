@@ -143,6 +143,11 @@ test("acta constitutiva: capital social y domicilio social, sin contrato ni fact
   await page.getByLabel("Nombre del involucrado 2").fill("LUIS PÉREZ SOTO E2E");
   await page.getByLabel("Rol del involucrado 2").selectOption({ label: "Comisario" });
 
+  await page.getByRole("button", { name: "Agregar involucrado" }).click();
+  await page.getByLabel("Tipo del involucrado 3").selectOption({ label: "Empresa" });
+  await page.getByLabel("Nombre del involucrado 3").fill("CONSTRUCTORA ACTA E2E SA DE CV");
+  await page.getByLabel("Rol del involucrado 3").selectOption({ label: "Titular" });
+
   await page.getByLabel(/^Fuente declarada/).fill("Registro Público de Comercio");
   await page.getByRole("button", { name: "Guardar captura" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
@@ -154,4 +159,43 @@ test("acta constitutiva: capital social y domicilio social, sin contrato ni fact
   await expect(datos).toContainText("II. La prestación de servicios de construcción.");
   await expect(page.getByText(/Socio o accionista · aportación \$25,000\.00/)).toBeVisible();
   await expect(page.getByText(/Comisario/).first()).toBeVisible();
+
+  // La red une a cada involucrado con la sociedad según su papel (tarea 19).
+  await page
+    .getByRole("navigation", { name: "Módulos" })
+    .getByRole("link", { name: "Red de vínculos" })
+    .click();
+  await page.getByRole("button", { name: "Generar red" }).click();
+  await expect(page.getByLabel("Indicadores")).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("link", { name: "Explorar la red" }).click();
+  const resumen = page.getByTestId("resumen-vista");
+  await expect(resumen).toContainText("2 relaciones visibles", { timeout: 30_000 });
+  await page.getByLabel("Buscar entidad").fill("CONSTRUCTORA ACTA E2E SA DE CV");
+  await page.getByRole("button", { name: "Centrar", exact: true }).click();
+  const ficha = page.getByRole("region", { name: "Ficha" });
+  // Drill down: el capital primero, con la aportación y su porcentaje.
+  const socios = ficha.locator("details").filter({ hasText: "Socios y capital (1)" });
+  await expect(socios).toBeVisible({ timeout: 30_000 });
+  await expect(socios).toContainText("ANA RUIZ GÓMEZ E2E");
+  await expect(socios).toContainText("$25,000.00 (50.0%)");
+  await expect(
+    ficha.locator("details").filter({ hasText: "Representación y vigilancia (1)" }),
+  ).toContainText("LUIS PÉREZ SOTO E2E");
+  // Al elegir al socio, la red baja a él y la ruta lo registra.
+  await socios.getByRole("button", { name: "ANA RUIZ GÓMEZ E2E" }).click();
+  const ruta = page.getByRole("navigation", { name: "Ruta" });
+  await expect(ruta.getByRole("button", { name: /ANA RUIZ GÓMEZ E2E/ })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(ficha.locator("details").filter({ hasText: "Participa en (1)" })).toContainText(
+    "CONSTRUCTORA ACTA E2E SA DE CV",
+  );
+
+  // Estructura corporativa e imagen de la vista.
+  await page.getByLabel("Diseño").selectOption({ label: "Estructura corporativa" });
+  await expect(page).toHaveURL(/diseno=estructura/);
+  const descarga = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Descargar imagen" }).click();
+  expect((await descarga).suggestedFilename()).toMatch(/^red-\d{4}-\d{2}-\d{2}\.png$/);
 });

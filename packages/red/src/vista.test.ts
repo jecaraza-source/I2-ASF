@@ -11,12 +11,14 @@ import {
   filtrar,
   leerEstado,
   posiciones,
+  posicionesEstructura,
   vecindad,
   volverA,
   type AristaVista,
   type GrafoVista,
   type NodoVista,
 } from "./vista";
+import { familiaArista } from "./familia";
 
 const RAIZ = join(__dirname, "..", "..", "..");
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -164,5 +166,74 @@ describe("eventos agrupados (07734)", () => {
     const mayor = [...llamadas].sort((a, b) => b.cantidad - a.cantidad)[0];
     expect(mayor && etiquetaArista(mayor)).toMatch(/^\d+ llamadas$/);
     expect(mayor?.fuerza).toBeLessThanOrEqual(10);
+  });
+});
+
+describe("vínculos de documentos (tarea 19)", () => {
+  const arista = (
+    tipo: string,
+    origen: string,
+    destino: string,
+    extra: Partial<AristaVista> = {},
+  ): AristaVista => ({
+    id: `v:${origen}-${destino}-${tipo}`,
+    clase: "vinculo",
+    tipo,
+    origen,
+    destino,
+    fuerza: 3,
+    cantidad: 1,
+    desde: null,
+    hasta: null,
+    objetos: [],
+    ...extra,
+  });
+  const nodo = (id: string, tipo = "persona_fisica") => ({
+    id,
+    nombre: id.toUpperCase(),
+    tipo,
+    nivel: "bajo" as const,
+    puntaje: 0,
+  });
+
+  it("la etiqueta dice el papel, la aportación y la participación", () => {
+    expect(
+      etiquetaArista(
+        arista("socio", "a", "s", { monto: "25000.00", moneda: "MXN", participacion: 0.25 }),
+      ),
+    ).toBe("Socio · $25,000.00 (25%)");
+    expect(etiquetaArista(arista("representante_legal", "a", "s"))).toBe("Representante legal");
+    expect(etiquetaArista(arista("TESTAFERRO", "a", "s"))).toBe("TESTAFERRO");
+    expect(familiaArista("vinculo", "socio")).toBe("propiedad");
+    expect(familiaArista("vinculo", "apoderado")).toBe("representacion");
+    expect(familiaArista("vinculo", "comisario")).toBe("representacion");
+    expect(familiaArista("vinculo", "notario")).toBe("fe_publica");
+  });
+
+  it("estructura corporativa: socios arriba, sociedad, representación, notario y el resto al final", () => {
+    const grafo: GrafoVista = {
+      nodos: [
+        nodo("holding", "persona_moral"),
+        nodo("ana"),
+        nodo("sociedad", "persona_moral"),
+        nodo("apoderado"),
+        nodo("notario"),
+        nodo("telefono", "telefono"),
+      ],
+      aristas: [
+        arista("socio", "ana", "holding"),
+        arista("socio", "holding", "sociedad"),
+        arista("apoderado", "apoderado", "sociedad"),
+        arista("notario", "notario", "sociedad"),
+      ],
+    };
+    const p = posicionesEstructura(grafo);
+    const y = (id: string) => p.get(id)?.y ?? -1;
+    expect(y("ana")).toBeLessThan(y("holding"));
+    expect(y("holding")).toBeLessThan(y("sociedad"));
+    expect(y("sociedad")).toBeLessThan(y("apoderado"));
+    expect(y("apoderado")).toBeLessThan(y("notario"));
+    expect(y("notario")).toBeLessThan(y("telefono"));
+    expect(p.size).toBe(6);
   });
 });

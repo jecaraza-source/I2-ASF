@@ -27,6 +27,7 @@ solo dicen qué construir y cómo saber que quedó.
 | 16 | Plataforma responsiva (celular) | 13 | |
 | 17 | Barra lateral agrupada | 16 | |
 | 18 | Validación según el tipo de documento | 09 | |
+| 19 | Red desde documentos y visor mejorado | 18 | |
 
 06 puede ir en paralelo con 04–05, y 07–09 en paralelo con 04–06, en ramas separadas.
 

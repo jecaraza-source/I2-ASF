@@ -122,7 +122,9 @@ export async function cargarVista(
     enLotes(gen.vinculos, (lote) =>
       supabase
         .from("vinculo")
-        .select("id, origen_id, destino_id, tipo, fuerza, fecha_inicio")
+        .select(
+          "id, origen_id, destino_id, tipo, fuerza, fecha_inicio, monto, moneda, participacion",
+        )
         .eq("encargo_id", encargoId)
         .in("id", lote),
     ),
@@ -158,6 +160,9 @@ export async function cargarVista(
       desde: v.fecha_inicio,
       hasta: v.fecha_inicio,
       objetos: [v.id],
+      monto: v.monto === null ? null : String(v.monto),
+      moneda: v.moneda,
+      participacion: v.participacion === null ? null : Number(v.participacion),
     }));
   const aristasEvento = agruparEventos(
     eventos.map((e) => ({
@@ -312,6 +317,9 @@ export type Ficha = {
     tipo: string;
     fuerza: number | null;
     fecha_inicio: string | null;
+    monto: string | null;
+    moneda: string | null;
+    participacion: number | null;
     sentido: "sale" | "entra";
     otra: { id: string; nombre: string };
     origenes: Origen[];
@@ -366,7 +374,9 @@ export async function cargarFicha(
         .limit(500),
       supabase
         .from("vinculo")
-        .select("id, origen_id, destino_id, tipo, fuerza, fecha_inicio")
+        .select(
+          "id, origen_id, destino_id, tipo, fuerza, fecha_inicio, monto, moneda, participacion",
+        )
         .eq("encargo_id", encargoId)
         .or(`origen_id.eq.${e.id},destino_id.eq.${e.id}`)
         .limit(500),
@@ -471,6 +481,9 @@ export async function cargarFicha(
         tipo: v.tipo,
         fuerza: v.fuerza,
         fecha_inicio: v.fecha_inicio,
+        monto: v.monto === null ? null : String(v.monto),
+        moneda: v.moneda,
+        participacion: v.participacion === null ? null : Number(v.participacion),
         sentido: sale ? "sale" : "entra",
         otra: { id: otra, nombre: nombre.get(otra) ?? "?" },
         origenes: origenes.porObjeto.get(v.id) ?? [],
