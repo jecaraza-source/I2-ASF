@@ -2267,8 +2267,12 @@ export type Database = {
           fuerza: number | null
           fuerza_original: string | null
           id: string
+          moneda: string | null
+          monto: number | null
           organizacion_id: string
           origen_id: string
+          participacion: number | null
+          registro_id: string | null
           tipo: string
         }
         ComputedFields: never
@@ -2282,8 +2286,12 @@ export type Database = {
           fuerza?: number | null
           fuerza_original?: string | null
           id?: string
+          moneda?: string | null
+          monto?: number | null
           organizacion_id: string
           origen_id: string
+          participacion?: number | null
+          registro_id?: string | null
           tipo: string
         }
         Update: {
@@ -2296,8 +2304,12 @@ export type Database = {
           fuerza?: number | null
           fuerza_original?: string | null
           id?: string
+          moneda?: string | null
+          monto?: number | null
           organizacion_id?: string
           origen_id?: string
+          participacion?: number | null
+          registro_id?: string | null
           tipo?: string
         }
         Relationships: [
@@ -2321,6 +2333,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "encargo"
             referencedColumns: ["organizacion_id", "id"]
+          },
+          {
+            foreignKeyName: "vinculo_registro_fk"
+            columns: ["encargo_id", "registro_id"]
+            isOneToOne: false
+            referencedRelation: "registro"
+            referencedColumns: ["encargo_id", "id"]
           },
         ]
       }

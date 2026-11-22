@@ -4,6 +4,8 @@
  */
 export const FAMILIAS_ARISTA = [
   "propiedad",
+  "representacion",
+  "fe_publica",
   "flujo",
   "irregularidad",
   "familiar",
@@ -16,6 +18,8 @@ export type FamiliaArista = (typeof FAMILIAS_ARISTA)[number];
 
 export const NOMBRE_FAMILIA: Record<FamiliaArista, string> = {
   propiedad: "Propiedad y control",
+  representacion: "Representación y vigilancia",
+  fe_publica: "Fe pública",
   flujo: "Flujo de recursos",
   irregularidad: "Posible irregularidad",
   familiar: "Familiar o personal",
@@ -39,6 +43,9 @@ const PATRONES: [RegExp, FamiliaArista][] = [
   [/OFFSHORE|CUENTA|CORRESPONSAL|FIDUCIAR/, "cuenta"],
   [/TRANSFER|WIRE|FLUJO|DEPOSITO|REPATRIA|PAGO|INVERSION/, "flujo"],
   [/PROPIED|CONTROL|ACCIONARI|SOCIO|BENEFICIARIO|ADMINISTRA|RED EMPRESARIAL/, "propiedad"],
+  // Papeles de un acta o un poder (tarea 19).
+  [/^(APODERADO|REPRESENTANTE_LEGAL|COMISARIO)$/, "representacion"],
+  [/^NOTARIO$/, "fe_publica"],
   [
     /CONTRAT|CONTRACT|LICITA|ADJUDIC|REPRESENTA|FEDATARIO|CARGO|JERARQU|AUTORIZA|AUDITOR/,
     "contractual",

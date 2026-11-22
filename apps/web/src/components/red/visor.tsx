@@ -14,6 +14,7 @@ import {
   filtrar,
   leerEstado,
   posiciones,
+  posicionesEstructura,
   vecindad,
   volverA,
   type AristaVista,
@@ -61,8 +62,9 @@ function estilos(tipos: string[]): StylesheetJson {
       // Como en el prototipo: relleno translúcido y contorno del color del nivel, nombre debajo.
       selector: "node",
       style: {
-        width: 38,
-        height: 38,
+        // El tamaño crece con el puntaje de riesgo: lo crítico resalta sin leer.
+        width: "mapData(puntaje, 0, 100, 30, 62)",
+        height: "mapData(puntaje, 0, 100, 30, 62)",
         "background-color": COLOR_SIN_NIVEL,
         "background-opacity": 0.28,
         "background-image": iconoTipo("otro"),
@@ -105,8 +107,8 @@ function estilos(tipos: string[]): StylesheetJson {
         "border-width": 4,
         "border-color": "#f0d572",
         "background-opacity": 0.5,
-        width: 50,
-        height: 50,
+        width: 64,
+        height: 64,
         "font-size": 12,
         "font-weight": 600,
         color: "#ffffff",
@@ -200,6 +202,10 @@ function opcionesDiseno(
           distancia ? 10 - (distancia.get(n.id()) ?? 9) : Number(n.data("puntaje") ?? 0),
         levelWidth: () => (distancia ? 1 : 25),
       };
+    case "estructura": {
+      const pos = posicionesEstructura(grafo);
+      return { ...comun, name: "preset", positions: Object.fromEntries(pos) };
+    }
     case "agrupados":
     case "organizacion":
     case "empaquetado": {
@@ -457,6 +463,55 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
     });
   };
   const ajustar = () => cyRef.current?.fit(undefined, 40);
+
+  // --- Pantalla completa e imagen ------------------------------------------------------------
+  const lienzo = useRef<HTMLDivElement>(null);
+  const [completa, setCompleta] = useState(false);
+  useEffect(() => {
+    const salir = () => {
+      if (!document.fullscreenElement) setCompleta(false);
+    };
+    document.addEventListener("fullscreenchange", salir);
+    return () => document.removeEventListener("fullscreenchange", salir);
+  }, []);
+  useEffect(() => {
+    // Al cambiar el tamaño del lienzo Cytoscape debe medirlo de nuevo.
+    const cy = cyRef.current;
+    if (!cy) return;
+    const t = window.setTimeout(() => {
+      cy.resize();
+      cy.fit(undefined, 40);
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, [completa]);
+  const alternarCompleta = async () => {
+    const el = lienzo.current;
+    if (!el) return;
+    if (completa) {
+      if (document.fullscreenElement) await document.exitFullscreen().catch(() => undefined);
+      setCompleta(false);
+      return;
+    }
+    // iPhone no tiene pantalla completa para elementos: el lienzo ocupa la ventana.
+    if (el.requestFullscreen) await el.requestFullscreen().catch(() => undefined);
+    setCompleta(true);
+  };
+  const descargarImagen = () => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    const blob = cy.png({ output: "blob", full: true, scale: 2, bg: "#0b1220" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `red-${new Date().toISOString().slice(0, 10)}.png`;
+    a.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  // --- Panel inferior en el celular: se abre al elegir una entidad o una línea ------------------
+  const claveDetalle = `${estado.foco ?? ""}|${arista?.id ?? ""}`;
+  const [detalleCerrado, setDetalleCerrado] = useState<string | null>(null);
+  const hoja = (estado.foco !== null || arista !== null) && detalleCerrado !== claveDetalle;
   const accionesMenu = (m: Menu): AccionMenu[] =>
     m.entidadId
       ? [
@@ -605,6 +660,17 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
             <button type="button" onClick={ajustar} className={claseBoton}>
               Ajustar
             </button>
+            <button
+              type="button"
+              onClick={() => void alternarCompleta()}
+              className={claseBoton}
+              aria-pressed={completa}
+            >
+              {completa ? "Salir de pantalla completa" : "Pantalla completa"}
+            </button>
+            <button type="button" onClick={descargarImagen} className={claseBoton}>
+              Descargar imagen
+            </button>
             {estado.foco ? (
               <button
                 type="button"
@@ -727,13 +793,26 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
             alCerrar={() => setPaletaDe(null)}
           />
         ) : null}
-        <div className="relative" onContextMenu={(ev) => ev.preventDefault()}>
+        <div
+          ref={lienzo}
+          className={completa ? "fixed inset-0 z-40 bg-[#0b1220]" : "relative"}
+          onContextMenu={(ev) => ev.preventDefault()}
+        >
           <div
             ref={contenedor}
             role="img"
             aria-label="Red de vínculos"
-            className="h-[68dvh] w-full touch-none rounded-lg border border-linea-2 bg-[#0b1220] md:h-[680px] bg-[radial-gradient(ellipse_at_50%_0%,rgba(212,175,55,0.07),transparent_60%)]"
+            className={`w-full touch-none bg-[#0b1220] bg-[radial-gradient(ellipse_at_50%_0%,rgba(212,175,55,0.07),transparent_60%)] ${completa ? "h-full" : "h-[68dvh] rounded-lg border border-linea-2 md:h-[680px]"}`}
           />
+          {completa ? (
+            <button
+              type="button"
+              onClick={() => void alternarCompleta()}
+              className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 rounded-md border border-linea-2 bg-fondo/90 px-3 py-2 text-sm text-texto"
+            >
+              Salir de pantalla completa
+            </button>
+          ) : null}
           {menu ? (
             <MenuContextual
               x={menu.x}
@@ -755,7 +834,19 @@ export function VisorRed({ encargoId, grafo }: { encargoId: string; grafo: Grafo
         <Leyenda tipos={tipos} familias={familias} />
       </div>
 
-      <aside className="flex flex-col gap-4" aria-label="Detalle">
+      <aside
+        className={`flex flex-col gap-4 ${hoja ? "max-xl:fixed max-xl:inset-x-0 max-xl:bottom-0 max-xl:z-30 max-xl:max-h-[60dvh] max-xl:overflow-y-auto max-xl:overscroll-contain max-xl:rounded-t-2xl max-xl:border-t max-xl:border-linea-2 max-xl:bg-fondo max-xl:p-3 max-xl:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-xl:shadow-[0_-8px_24px_rgba(0,0,0,0.5)]" : ""}`}
+        aria-label="Detalle"
+      >
+        {hoja ? (
+          <button
+            type="button"
+            onClick={() => setDetalleCerrado(claveDetalle)}
+            className="self-center rounded-full border border-linea-2 px-4 py-1.5 text-xs text-tenue xl:hidden"
+          >
+            Cerrar panel
+          </button>
+        ) : null}
         {arista ? (
           <section
             className="rounded-lg border border-linea bg-panel p-4"

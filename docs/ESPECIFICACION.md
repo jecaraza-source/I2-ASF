@@ -101,7 +101,7 @@ cuando pertenece a un encargo. No se repiten abajo.
 | `alias_entidad` | `entidad_id`, `alias`, `extraccion_id` |
 | `fusion_propuesta` | `entidad_a`, `entidad_b`, `motivo`, `estado` (`propuesta`, `aceptada`, `rechazada`), `resuelta_por` |
 | `registro_entidad` | `registro_id`, `entidad_id`, `rol` (involucrados de un registro) |
-| `vinculo` | `origen_id`, `destino_id`, `tipo`, `fuerza smallint` (1–10), `fuerza_original text`, `fecha_inicio`, `dirigido bool` |
+| `vinculo` | `origen_id`, `destino_id`, `tipo`, `fuerza smallint` (1–10), `fuerza_original text`, `fecha_inicio`, `dirigido bool`, `monto numeric(18,2)` + `moneda`, `participacion` (fracción del capital), `registro_id` (documento del que se derivó) |
 | `evento` | `tipo` (`contrato`, `transferencia`, `llamada`, `pago`, `otro`), `fecha_hora`, `monto numeric(18,2)`, `moneda`, `atributos jsonb` |
 | `evento_participante` | `evento_id`, `entidad_id`, `rol` (`origen`, `destino`, `parte`) |
 | `evidencia` | `objeto_tipo` (`entidad`, `vinculo`, `evento`, `alerta`), `objeto_id`, `registro_id`, `extraccion_id` |
@@ -476,6 +476,15 @@ vínculos, eventos ni evidencia: marca `entidad_b.fusionada_en = entidad_a`, agr
 alias de A y la red usa la entidad canónica al generarse. Un par (en cualquier orden) se propone una sola
 vez; un rechazo no se vuelve a proponer.
 
+**Vínculos de documentos (tarea 19).** Al validar o capturar un documento, cada involucrado se une con
+la sociedad del documento (la empresa con rol «titular»; si no hay, la única empresa que no es notaría,
+dependencia ni funcionario; si hay más de una, no se adivina) según su papel: `socio` (con
+`monto`/`moneda` de su aportación y `participacion` = aportación / capital social del documento;
+fuerza 1–10 según la participación), `administrador`, `representante_legal`, `apoderado`, `comisario`
+y `notario`. Lo hace `privado.vinculos_de_documento` desde un disparador diferido sobre
+`registro_entidad` (al confirmar la transacción); es idempotente (un vínculo por persona, sociedad,
+papel y documento) y cada vínculo lleva evidencia con su registro y la lectura del involucrado.
+
 **Generación.** Entrada: una o varias entidades semilla y alcance (1 o 2 saltos). Pasos: reunir
 registros validados que las mencionan → obtener entidades → reunir vínculos declarados y eventos
 entre ellas (los eventos se dibujan como aristas aparte y no cuentan como vínculos) → calificar → guardar `red_generada` con sus nodos, vínculos y
@@ -543,7 +552,12 @@ Funciones puras `(datos) => Alerta[]`. Cada alerta enlaza las evidencias que se 
 ## 11. Vista dinámica y ficha
 
 - **Motor:** Cytoscape.js. Diseños: fuerza, circular, agrupados, jerarquía, organización, abanico,
-  empaquetado, mínimos cruces. Ícono por tipo, color por nivel, grosor por fuerza.
+  empaquetado, mínimos cruces y estructura corporativa (socios arriba de su sociedad, en cadena;
+  representación y vigilancia debajo; notario al final). Ícono por tipo, color por nivel, tamaño por
+  puntaje de riesgo, grosor por fuerza. Familias de línea: propiedad y control, representación y
+  vigilancia, fe pública, flujo, irregularidad, familiar, cuentas, contratos, comunicación. La etiqueta
+  de un vínculo de documento dice papel, aportación y participación («Socio · $25,000.00 (50%)»).
+  Pantalla completa y «Descargar imagen» (PNG de la red completa).
 - **Entidad central:** al elegir un nodo, la red se redibuja con él al centro y sus vínculos directos;
   control para ampliar a 2 saltos. El estado vive en la URL (`?foco=<id>&saltos=1&ruta=<id>,<id>`),
   así el botón atrás y los enlaces compartidos funcionan. Ruta de navegación visible con regreso a
@@ -553,6 +567,10 @@ Funciones puras `(datos) => Alerta[]`. Cada alerta enlaza las evidencias que se 
   eventos se agrupan en una línea por par de entidades y tipo («12 llamadas»), punteada, con grosor
   creciente según la cantidad. En una llamada se unen teléfono con teléfono y persona con persona.
   Clic en una línea muestra los vínculos o eventos que la sostienen y sus registros de origen.
+- **Drill down:** elegir una entidad (en la red o en la ficha) la centra, la agrega a la ruta y abre su
+  ficha; en el celular la ficha sale en un panel desde abajo. Los vínculos de la ficha van por capas
+  desplegables: socios y capital (con el total aportado), participa en, representación y vigilancia,
+  fe pública y otros; cada contraparte es un paso más del recorrido.
 - **Ficha:** panel lateral y página propia. Secciones: datos generales e identificadores, registros y
   documentos, vínculos y eventos, calificación con criterios, otros expedientes, coincidencias externas.
 - **Ficha enriquecida:** detalle en §11.1.
