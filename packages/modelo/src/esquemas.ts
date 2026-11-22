@@ -209,6 +209,11 @@ export const vinculoSchema = z.object({
   fuerza_original: z.string().nullable(),
   fecha_inicio: fechaSchema.nullable(),
   dirigido: z.boolean(),
+  /** Vínculo de un documento (tarea 19): aportación del socio y su fracción del capital. */
+  monto: montoSchema.nullable(),
+  moneda: monedaSchema.nullable(),
+  participacion: z.number().gt(0).max(1).nullable(),
+  registro_id: uuidSchema.nullable(),
 });
 
 export const eventoSchema = z

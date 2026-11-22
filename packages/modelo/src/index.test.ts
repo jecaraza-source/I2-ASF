@@ -127,8 +127,13 @@ describe("otras entidades", () => {
       fuerza_original: "CRÍTICO",
       fecha_inicio: null,
       dirigido: false,
+      monto: "25000.00",
+      moneda: "MXN",
+      participacion: 0.25,
+      registro_id: id,
     };
     expect(vinculoSchema.safeParse(v).success).toBe(true);
+    expect(vinculoSchema.safeParse({ ...v, participacion: 1.5 }).success).toBe(false);
     expect(vinculoSchema.safeParse({ ...v, fuerza: 11 }).success).toBe(false);
   });
 
