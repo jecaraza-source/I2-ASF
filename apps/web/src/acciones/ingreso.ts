@@ -295,3 +295,35 @@ export async function reencolarExtraccion(f: FormData): Promise<void> {
   if (typeof data === "string") procesarAhora(data, "reencolarExtraccion");
   refresh();
 }
+
+export type ResultadoReleer = { ok: true } | { ok: false; mensaje: string };
+
+/**
+ * Vuelve a leer con IA un documento ya leído que nadie ha validado. La lectura anterior no se
+ * borra: queda reemplazada (trazabilidad) y deja de aparecer en la validación.
+ */
+export async function releerExtraccion(
+  encargoId: string,
+  registroId: string,
+): Promise<ResultadoReleer> {
+  const p = reencolarSchema.safeParse({ encargoId, registroId });
+  if (!p.success) return { ok: false, mensaje: "Documento no válido." };
+  const c = await contexto(p.data.encargoId);
+  if (!c) return { ok: false, mensaje: "Tu rol no permite esta acción." };
+  const { data, error } = await c.supabase.rpc("releer_extraccion", {
+    p_registro: p.data.registroId,
+  });
+  if (error) {
+    if ((error.message ?? "").startsWith("no_releible")) {
+      console.error(`[releerExtraccion] error de base: ${error.code ?? "desconocido"}`);
+      return {
+        ok: false,
+        mensaje: "Solo se vuelve a leer un documento ya leído y sin validar. Recarga la página.",
+      };
+    }
+    return { ok: false, mensaje: mensajeDeError(error, "releerExtraccion") };
+  }
+  if (typeof data === "string") procesarAhora(data, "releerExtraccion");
+  refresh();
+  return { ok: true };
+}

@@ -286,3 +286,66 @@ test("lector consulta la cola de validación pero no valida", async ({ page }) =
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Validación");
   await expect(page.getByText("Tu rol permite consultar la cola, no validar.")).toBeVisible();
 });
+
+test("volver a leer con IA: la lectura anterior queda reemplazada y el documento regresa a la cola", async ({
+  page,
+}) => {
+  test.skip(process.env.IA_SIMULADA !== "1", "Requiere IA_SIMULADA=1 en el servidor de pruebas");
+  test.setTimeout(300_000);
+  await ingresar(page, "admin");
+  await page.getByRole("link", { name: "Nuevo encargo" }).first().click();
+  const encargo = unico("Releer e2e");
+  await page.getByLabel("Nombre").fill(encargo);
+  await page.getByRole("button", { name: "Crear encargo" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(encargo);
+  const modulos = page.getByRole("navigation", { name: "Módulos" });
+  await modulos.getByRole("link", { name: "Configuración" }).click();
+  await page.getByLabel(`Anthropic (Claude) en ${encargo}`).check();
+  await page.getByRole("button", { name: `Guardar IA de ${encargo}` }).click();
+  await expect(
+    page.getByText(/^Guardado\. Los documentos de este encargo pueden enviarse/),
+  ).toBeVisible();
+
+  await modulos.getByRole("link", { name: "Ingreso de documentos" }).click();
+  await expect(page).toHaveURL(/\/ingreso\/importar/);
+  await page.getByLabel("Tipo de documento del lote").selectOption({ label: "Contrato" });
+  await page
+    .getByLabel("Expediente del lote", { exact: true })
+    .selectOption({ label: "Nuevo expediente…" });
+  await page.getByLabel("Identificador del expediente nuevo del lote").fill("EXP-RELEER");
+  await page.getByLabel("Fuente del lote").fill("Entrega física");
+  await subir(page, pdf("contrato-releer.pdf", contrato));
+  const tabla = page.getByRole("region", { name: "Documentos ingresados" });
+  const fila = tabla.getByRole("row", { name: /contrato-releer\.pdf/ });
+  await esperarFila(page, fila, "Extraído · leído con Anthropic (Claude)");
+
+  // 1. Desde Ingreso: dos pasos, y el documento vuelve a la cola de lectura.
+  await fila.getByRole("button", { name: "Volver a leer con IA contrato-releer.pdf" }).click();
+  const confirmar = fila.getByRole("group", {
+    name: "Confirmar nueva lectura de contrato-releer.pdf",
+  });
+  await expect(confirmar).toContainText("La anterior queda en el historial");
+  await confirmar.getByRole("button", { name: "Cancelar" }).click();
+  await expect(confirmar).toHaveCount(0);
+  await fila.getByRole("button", { name: "Volver a leer con IA contrato-releer.pdf" }).click();
+  await confirmar.getByRole("button", { name: "Sí, volver a leer" }).click();
+  // El botón desaparece mientras el documento está en cola (la lectura simulada tarda segundos).
+  await expect(confirmar).toHaveCount(0);
+  await esperarFila(page, fila, "Extraído · leído con Anthropic (Claude)");
+
+  // 2. La validación muestra solo la lectura vigente (un solo juego de campos).
+  await modulos.getByRole("link", { name: "Validación" }).click();
+  const cola = page.getByRole("region", { name: "Cola de validación" });
+  await expect(cola.getByRole("row", { name: /contrato-releer\.pdf/ })).toHaveCount(1);
+  await cola.getByRole("link", { name: "contrato-releer.pdf" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Validar: Contrato");
+  const lectura = page.getByRole("region", { name: "Lectura de la IA" });
+  await expect(lectura.getByLabel("Número de contrato", { exact: true })).toHaveValue("SOP-IA-001");
+  await expect(lectura.getByLabel("Nombre del involucrado 2")).toHaveCount(0);
+
+  // 3. Desde Validación: se pide la lectura y regresa a la cola.
+  await page.getByRole("button", { name: "Volver a leer con IA contrato-releer.pdf" }).click();
+  await page.getByRole("button", { name: "Sí, volver a leer" }).click();
+  await expect(page).toHaveURL(/\/validacion$/);
+  await expect(cola).toBeVisible();
+});
