@@ -347,5 +347,5 @@ test("volver a leer con IA: la lectura anterior queda reemplazada y el documento
   await page.getByRole("button", { name: "Volver a leer con IA contrato-releer.pdf" }).click();
   await page.getByRole("button", { name: "Sí, volver a leer" }).click();
   await expect(page).toHaveURL(/\/validacion$/);
-  await expect(cola).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Validación");
 });
