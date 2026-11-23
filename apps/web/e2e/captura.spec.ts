@@ -126,6 +126,16 @@ test("acta constitutiva: capital social y domicilio social, sin contrato ni fact
   await expect(page.getByLabel("Número de factura")).toHaveCount(0);
   await expect(page.getByLabel("Número de cuenta")).toHaveCount(0);
 
+  // La constancia de situación fiscal tampoco lleva contrato, factura, cuenta ni monto.
+  await page.getByLabel(/^Tipo de documento/).selectOption({
+    label: "Constancia de situación fiscal",
+  });
+  await expect(page.getByLabel("Domicilio fiscal")).toBeVisible();
+  for (const ausente of ["Número de contrato", "Número de factura", "Número de cuenta", "Monto"]) {
+    await expect(page.getByLabel(ausente, { exact: true })).toHaveCount(0);
+  }
+  await page.getByLabel(/^Tipo de documento/).selectOption({ label: "Acta constitutiva" });
+
   await page.getByLabel("Capital social constitutivo").fill("50,000.00");
   await page.getByLabel("Domicilio social").fill("Av. Reforma 100, Ciudad de México");
   await page
@@ -138,6 +148,7 @@ test("acta constitutiva: capital social y domicilio social, sin contrato ni fact
   await expect(page.getByLabel("Aportación del involucrado 1")).toHaveCount(0);
   await page.getByLabel("Rol del involucrado 1").selectOption({ label: "Socio o accionista" });
   await page.getByLabel("Aportación del involucrado 1").fill("25,000");
+  await page.getByLabel("Acciones del involucrado 1").fill("250");
   await page.getByRole("button", { name: "Agregar involucrado" }).click();
   await page.getByLabel("Tipo del involucrado 2").selectOption({ label: "Persona" });
   await page.getByLabel("Nombre del involucrado 2").fill("LUIS PÉREZ SOTO E2E");
@@ -157,7 +168,9 @@ test("acta constitutiva: capital social y domicilio social, sin contrato ni fact
   const datos = page.getByRole("region", { name: "Datos de origen" });
   await expect(datos).toContainText("$50,000.00");
   await expect(datos).toContainText("II. La prestación de servicios de construcción.");
-  await expect(page.getByText(/Socio o accionista · aportación \$25,000\.00/)).toBeVisible();
+  await expect(
+    page.getByText(/Socio o accionista · aportación \$25,000\.00 · 250 acciones/),
+  ).toBeVisible();
   await expect(page.getByText(/Comisario/).first()).toBeVisible();
 
   // La red une a cada involucrado con la sociedad según su papel (tarea 19).

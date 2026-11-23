@@ -14,6 +14,8 @@ import {
 } from "./captura";
 import {
   agregarIdentificador,
+  claveDesdeTexto,
+  normalizarEntero,
   normalizarFecha,
   normalizarMonto,
   normalizarNombre,
@@ -39,9 +41,10 @@ Reglas:
 - "pagina" es la página (empezando en 1) donde viste el dato, o null si no hay dato.
 - Involucrados: lista a cada persona, empresa o dependencia con un papel en el documento. Transcribe la razón social EXACTAMENTE como aparece, sin abreviar ni expandir el tipo de sociedad.
 - Un RFC pertenece a quien el texto dice que pertenece: lee la frase completa. No atribuyas a la empresa el RFC de su representante o apoderado, ni al titular el RFC de quien emite un recibo. Si no aparece el RFC de alguien, deja null.
+- RFC y CURP van en su forma de clave, con dígitos y sin espacios (por ejemplo SESV730415AB1). Las escrituras notariales a veces los escriben con letra («SESV siete, tres, cero, cuatro…»): convierte cada número escrito con letra a su dígito y une la clave completa.
 - El notario, los testigos y quien emite un recibo no son la parte principal: usa el rol que les corresponde.
-- Los campos de texto largo (objeto social, facultades, concepto, asunto) se transcriben COMPLETOS y literales, con todas sus fracciones o incisos, sin resumir ni omitir.
-- En actas constitutivas y de asamblea: lista a cada socio o accionista con el monto de su aportación en "aportacion" (como aparece; null si no se indica); al comisario con el rol "comisario"; al administrador único o a cada consejero con el rol "administrador"; a la sociedad misma con el rol "titular"; y a cada apoderado o representante legal con su rol. El capital social va en el campo de monto.`;
+- Los campos de texto largo (objeto social, facultades, concepto, asunto) se transcriben COMPLETOS y literales, palabra por palabra, desde el primer inciso o fracción hasta el último, aunque ocupen varias páginas. No te detengas en los primeros incisos, no resumas, no uses «etc.» ni puntos suspensivos. Si el texto es largo, sigue copiando hasta terminarlo.
+- En actas constitutivas y de asamblea: busca la cláusula de capital social y el cuadro o la cláusula transitoria de suscripción y pago de acciones o partes sociales. Lista a cada socio o accionista con el monto de su aportación en "aportacion" y el número de acciones o partes sociales que suscribe en "acciones" (como aparecen; si el acta solo da el valor por acción, multiplica para obtener la aportación; null solo si de verdad no se indica). Lista al comisario con el rol "comisario"; al administrador único o a cada consejero con el rol "administrador"; a la sociedad misma con el rol "titular"; y a cada apoderado o representante legal con su rol. El capital social va en el campo de monto.`;
 
 const dato = (descripcion: string) => ({
   type: "object",
@@ -110,10 +113,25 @@ export function esquemaExtraccion(campos: CampoEsperado[]) {
               type: ["string", "null"],
               description: "Monto que aporta al capital (solo socios o accionistas), o null",
             },
+            acciones: {
+              type: ["string", "null"],
+              description:
+                "Número de acciones o partes sociales que suscribe (solo socios o accionistas), o null",
+            },
             confianza: { type: "number" },
             pagina: { type: ["integer", "null"] },
           },
-          required: ["tipo", "nombre", "rol", "rfc", "curp", "aportacion", "confianza", "pagina"],
+          required: [
+            "tipo",
+            "nombre",
+            "rol",
+            "rfc",
+            "curp",
+            "aportacion",
+            "acciones",
+            "confianza",
+            "pagina",
+          ],
           additionalProperties: false,
         },
       },
@@ -140,10 +158,12 @@ const respuestaSchema = z.object({
         tipo: z.enum(TIPOS_INVOLUCRADO),
         nombre: z.string().trim().min(1).max(300),
         rol: z.enum(ROLES_INVOLUCRADO),
-        rfc: z.string().max(30).nullable(),
-        curp: z.string().max(30).nullable(),
+        // Holgura: una escritura notarial puede escribir la clave con letra.
+        rfc: z.string().max(200).nullable(),
+        curp: z.string().max(200).nullable(),
         // Opcional: respuestas de modelos o simulaciones anteriores no lo traen.
         aportacion: z.string().max(60).nullable().optional(),
+        acciones: z.string().max(60).nullable().optional(),
         confianza,
         pagina,
       }),
@@ -225,9 +245,20 @@ export function interpretarExtraccion(
     if (inv.curp) ids = agregarIdentificador(ids, "curp", inv.curp);
     const aportacionCruda = inv.aportacion?.trim() || null;
     const aportacion = aportacionCruda ? normalizarMonto(aportacionCruda) : null;
-    // Un RFC o CURP con formato inválido o una aportación ilegible siempre lo revisa una persona.
+    const accionesCrudas = inv.acciones?.trim() || null;
+    const acciones = accionesCrudas ? normalizarEntero(accionesCrudas) : null;
+    // Un RFC o CURP escrito con letra se convierte a dígitos, pero siempre lo confirma una persona.
+    const dictada = [inv.rfc, inv.curp].some(
+      (v) => !!v && claveDesdeTexto(v) !== v.trim().toUpperCase().replace(/[\s-]/g, ""),
+    );
+    // Un RFC o CURP con formato inválido, o una aportación o acciones ilegibles, siempre lo revisa
+    // una persona.
     const dudoso =
-      !normalizado || (ids.invalidos?.length ?? 0) > 0 || (aportacionCruda !== null && !aportacion);
+      !normalizado ||
+      dictada ||
+      (ids.invalidos?.length ?? 0) > 0 ||
+      (aportacionCruda !== null && !aportacion) ||
+      (accionesCrudas !== null && !acciones);
     extracciones.push({
       campo: `involucrado_${i + 1}`,
       valor_crudo: [
@@ -236,6 +267,7 @@ export function interpretarExtraccion(
         inv.rfc,
         inv.curp,
         aportacionCruda ? `aportación ${aportacionCruda}` : null,
+        accionesCrudas ? `acciones ${accionesCrudas}` : null,
       ]
         .filter(Boolean)
         .join(" · "),
@@ -247,6 +279,8 @@ export function interpretarExtraccion(
         ...ids,
         ...(aportacion ? { aportacion: { monto: aportacion, moneda } } : {}),
         ...(aportacionCruda ? { aportacion_texto: aportacionCruda } : {}),
+        ...(acciones ? { acciones } : {}),
+        ...(accionesCrudas ? { acciones_texto: accionesCrudas } : {}),
       },
       confianza: inv.confianza,
       ubicacion: inv.pagina ? { pagina: inv.pagina } : {},

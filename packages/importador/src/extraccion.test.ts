@@ -360,6 +360,7 @@ describe("acta constitutiva", () => {
       "Capital social constitutivo",
     );
     expect(e.properties.involucrados.items.required).toContain("aportacion");
+    expect(e.properties.involucrados.items.required).toContain("acciones");
   });
 
   it("lee la aportación de un socio y manda a revisar una ilegible", () => {
@@ -392,5 +393,53 @@ describe("acta constitutiva", () => {
     });
     expect(r.extracciones[0]?.valor_crudo).toContain("aportación $25,000.00");
     expect(r.extracciones[1]).toMatchObject({ estado: "pendiente" });
+  });
+
+  it("lee las acciones de un socio y manda a revisar un RFC escrito con letra", () => {
+    const vacioActa = Object.fromEntries(
+      camposActa.map((c) => [c.clave, { valor: null, confianza: 0, pagina: null }]),
+    );
+    const r = interpretarExtraccion(
+      {
+        campos: vacioActa,
+        moneda: "MXN",
+        involucrados: [
+          {
+            tipo: "persona_fisica",
+            nombre: "Ana Ruiz Gómez",
+            rol: "socio",
+            rfc: "RUGA siete tres cero cuatro uno cinco A B uno",
+            curp: null,
+            aportacion: "$25,000.00",
+            acciones: "250 acciones",
+            confianza: 0.97,
+            pagina: 4,
+          },
+          {
+            tipo: "persona_fisica",
+            nombre: "Luis Pérez Soto",
+            rol: "socio",
+            rfc: "PESL800101XY2",
+            curp: null,
+            aportacion: "$75,000.00",
+            acciones: "750",
+            confianza: 0.97,
+            pagina: 4,
+          },
+        ],
+      },
+      camposActa,
+      0.85,
+    );
+    if (!r.ok) throw new Error(r.motivo);
+    expect(r.extracciones[0]).toMatchObject({
+      estado: "pendiente",
+      valor_normalizado: { rfc: "RUGA730415AB1", acciones: "250", acciones_texto: "250 acciones" },
+    });
+    expect(r.extracciones[0]?.valor_crudo).toContain("acciones 250 acciones");
+    expect(r.extracciones[1]).toMatchObject({
+      estado: "validado",
+      valor_normalizado: { acciones: "750" },
+    });
   });
 });

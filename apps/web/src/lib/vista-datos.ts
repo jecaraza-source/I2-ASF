@@ -623,8 +623,9 @@ export async function cargarRegistro(supabase: Cliente, encargoId: string, regis
       .eq("encargo_id", encargoId)
       .eq("registro_id", r.id),
   ]);
-  // Aportación de cada socio: sale de la lectura validada del involucrado (con su página).
+  // Aportación y acciones de cada socio: salen de la lectura validada del involucrado.
   const aportaciones = new Map<string, { monto: string; moneda: string }>();
+  const acciones = new Map<string, string>();
   for (const x of extracciones) {
     if (!/^involucrado_\d+$/.test(x.campo) || !["validado", "corregido"].includes(x.estado))
       continue;
@@ -632,6 +633,8 @@ export async function cargarRegistro(supabase: Cliente, encargoId: string, regis
     if (v.success && v.data.aportacion) {
       aportaciones.set(`${v.data.nombre}|${v.data.rol}`, v.data.aportacion);
     }
+    if (v.success && v.data.acciones)
+      acciones.set(`${v.data.nombre}|${v.data.rol}`, v.data.acciones);
   }
   return {
     registro: r,
@@ -647,6 +650,9 @@ export async function cargarRegistro(supabase: Cliente, encargoId: string, regis
       aportacion: m.entidad
         ? (aportaciones.get(`${m.entidad.nombre_normalizado}|${m.rol}`) ?? null)
         : null,
+      acciones: m.entidad
+        ? (acciones.get(`${m.entidad.nombre_normalizado}|${m.rol}`) ?? null)
+        : null,
     })),
   };
 }
@@ -656,6 +662,7 @@ const aportacionSchema = z
     nombre: z.string(),
     rol: z.string(),
     aportacion: z.object({ monto: z.string(), moneda: z.string() }).optional(),
+    acciones: z.string().optional(),
   })
   .catch({ nombre: "", rol: "" });
 

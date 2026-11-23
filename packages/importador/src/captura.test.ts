@@ -206,7 +206,13 @@ describe("campos comunes por tipo de documento", () => {
           objeto_social: "I. La compraventa de bienes. II. La prestación de servicios.",
         },
         involucrados: [
-          { tipo: "persona_fisica", nombre: "Ana Ruiz Gómez", rol: "socio", aportacion: "25,000" },
+          {
+            tipo: "persona_fisica",
+            nombre: "Ana Ruiz Gómez",
+            rol: "socio",
+            aportacion: "25,000",
+            acciones: "250",
+          },
           { tipo: "persona_fisica", nombre: "Luis Pérez Soto", rol: "comisario" },
         ],
       },
@@ -224,7 +230,23 @@ describe("campos comunes por tipo de documento", () => {
       r.carga.campos.find((c) => c.campo === "involucrado_1")?.valor_normalizado,
     ).toMatchObject({
       aportacion: { monto: "25000.00", moneda: "MXN" },
+      acciones: "250",
     });
+  });
+
+  it("un número de acciones ilegible se marca en su involucrado", () => {
+    const r = construirCaptura(
+      {
+        ...base,
+        valores: { monto: "1000" },
+        involucrados: [
+          { tipo: "persona_fisica", nombre: "Ana Ruiz Gómez", rol: "socio", acciones: "muchas" },
+        ],
+      },
+      acta,
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errores["involucrados.0.acciones"]).toBe("Número de acciones inválido");
   });
 
   it("una aportación ilegible se marca en su involucrado", () => {

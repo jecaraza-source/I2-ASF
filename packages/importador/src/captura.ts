@@ -6,6 +6,7 @@
 import { z } from "zod";
 import {
   agregarIdentificador,
+  normalizarEntero,
   normalizarFecha,
   normalizarMonto,
   normalizarNombre,
@@ -144,6 +145,8 @@ export const involucradoSchema = z.object({
   curp: z.string().trim().max(20).optional().default(""),
   /** Monto que aporta un socio al capital (acta constitutiva o asamblea); vacío si no aplica. */
   aportacion: z.string().trim().max(40).optional().default(""),
+  /** Número de acciones o partes sociales del socio; vacío si no aplica. */
+  acciones: z.string().trim().max(40).optional().default(""),
   /** Solo en validación: la lectura de la IA de la que viene este involucrado. */
   campoIa: z
     .string()
@@ -298,6 +301,14 @@ export function construirCaptura(
         return;
       }
     }
+    let acciones: string | null = null;
+    if (inv.acciones) {
+      acciones = normalizarEntero(inv.acciones);
+      if (!acciones) {
+        errores[`involucrados.${i}.acciones`] = "Número de acciones inválido";
+        return;
+      }
+    }
     let ids: Identificadores = {};
     if (inv.rfc) ids = agregarIdentificador(ids, "rfc", inv.rfc);
     if (inv.curp) ids = agregarIdentificador(ids, "curp", inv.curp);
@@ -318,6 +329,7 @@ export function construirCaptura(
         inv.rfc,
         inv.curp,
         inv.aportacion ? `aportación ${inv.aportacion}` : "",
+        inv.acciones ? `${inv.acciones} acciones` : "",
       ]
         .filter(Boolean)
         .join(" · "),
@@ -327,6 +339,7 @@ export function construirCaptura(
         rol: inv.rol,
         ...ids,
         ...(aportacion ? { aportacion: { monto: aportacion, moneda: d.moneda } } : {}),
+        ...(acciones ? { acciones } : {}),
       },
     });
   });

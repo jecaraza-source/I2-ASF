@@ -29,6 +29,7 @@ solo dicen qué construir y cómo saber que quedó.
 | 18 | Validación según el tipo de documento | 09 | |
 | 19 | Red desde documentos y visor mejorado | 18 | |
 | 20 | Volver a leer con IA un documento sin validar | 18 | |
+| 21 | Acta: acciones por socio, objeto social completo, claves con letra; CSF sin contrato ni monto | 18 | |
 
 06 puede ir en paralelo con 04–05, y 07–09 en paralelo con 04–06, en ramas separadas.
 

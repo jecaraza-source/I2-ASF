@@ -208,6 +208,7 @@ export default async function Registro({
                   {e.aportacion
                     ? ` · aportación ${formatoMonto(e.aportacion.monto, e.aportacion.moneda)}`
                     : ""}
+                  {e.acciones ? ` · ${formatoNumero(e.acciones)} acciones` : ""}
                 </span>
               </li>
             ))}

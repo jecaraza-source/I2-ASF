@@ -275,12 +275,17 @@ campo con lo capturado; cada diferencia genera una alerta `R11_captura_vs_docume
   constitutivo" }`) o lo quita (`{ clave: "numero_factura", oculto: true }`). El tipo de dato no
   cambia. Lo interpreta `camposComunesDe`. El catálogo provisional trae los ajustes del acta
   constitutiva (capital social constitutivo, domicilio social; sin contrato, factura, cuenta ni
-  teléfono) y del poder notarial (sin contrato, factura, cuenta, monto ni teléfono); se editan en
+  teléfono), del poder notarial (sin contrato, factura, cuenta, monto ni teléfono) y de la
+  constancia de situación fiscal (domicilio fiscal; sin contrato, factura, cuenta ni monto); se editan en
   Configuración → tipo de documento → «Campos comunes en este tipo de documento». Una lectura de la
   IA de un campo oculto se rechaza al validar.
 - **Socios y aportaciones:** un involucrado con rol `socio` lleva `aportacion` (monto, en la moneda
-  del registro), que se guarda en la extracción del involucrado (`valor_normalizado.aportacion`,
-  con su página) y se muestra en el registro. Rol `comisario` para el comisario de la sociedad.
+  del registro) y `acciones` (número de acciones o partes sociales, entero), que se guardan en la
+  extracción del involucrado (`valor_normalizado.aportacion` y `valor_normalizado.acciones`, con su
+  página) y se muestran en el registro. Rol `comisario` para el comisario de la sociedad.
+- **RFC y CURP escritos con letra:** las escrituras notariales a veces dictan la clave («SESV siete,
+  tres, cero…»). `claveDesdeTexto` convierte cada dígito en palabra y une la clave antes de validarla.
+  Una lectura de la IA con la clave escrita con letra siempre va a revisión humana.
 - **Qué guarda `capturar_registro`** (una transacción): el registro `validado`; una extracción
   `manual`/`validado` por campo y por involucrado, sin confianza; las entidades (se reutiliza la que
   tenga el mismo RFC válido, o el mismo tipo y nombre normalizado); `registro_entidad` con el rol;

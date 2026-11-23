@@ -32,6 +32,8 @@ type FilaInvolucrado = Required<Pick<Involucrado, "tipo" | "nombre" | "rol">> & 
   curp: string;
   /** Aportación al capital, tal como se escribe (solo socios). */
   aportacion: string;
+  /** Número de acciones o partes sociales (solo socios). */
+  acciones: string;
   clave: number;
   /** Validación: la lectura de la IA de la que viene (p. ej. `involucrado_2`). */
   campoIa?: string;
@@ -141,15 +143,18 @@ export function FormularioRegistro({
         fuente,
         moneda,
         valores,
-        involucrados: involucrados.map(({ tipo, nombre, rol, rfc, curp, aportacion, campoIa }) => ({
-          tipo,
-          nombre,
-          rol,
-          rfc,
-          curp,
-          aportacion: rol === "socio" ? aportacion : "",
-          ...(campoIa ? { campoIa } : {}),
-        })),
+        involucrados: involucrados.map(
+          ({ tipo, nombre, rol, rfc, curp, aportacion, acciones, campoIa }) => ({
+            tipo,
+            nombre,
+            rol,
+            rfc,
+            curp,
+            aportacion: rol === "socio" ? aportacion : "",
+            acciones: rol === "socio" ? acciones : "",
+            ...(campoIa ? { campoIa } : {}),
+          }),
+        ),
       });
       setResultado(r);
       if (r.ok) alGuardar(r.registroId);
@@ -383,6 +388,7 @@ export function FormularioRegistro({
               const n = i + 1;
               const error = errores[`involucrados.${i}.nombre`];
               const errorAportacion = errores[`involucrados.${i}.aportacion`];
+              const errorAcciones = errores[`involucrados.${i}.acciones`];
               const nota = f.campoIa ? anotaciones?.[f.campoIa] : undefined;
               const id = `${idLista}-inv-${f.clave}`;
               const etiqueta = "mb-1 block text-xs text-tenue";
@@ -527,6 +533,27 @@ export function FormularioRegistro({
                         <ErrorCampo texto={errorAportacion} />
                       </div>
                     ) : null}
+                    {f.rol === "socio" ? (
+                      <div>
+                        <label htmlFor={`${id}-acciones`} className={etiqueta}>
+                          Número de acciones
+                        </label>
+                        <input
+                          id={`${id}-acciones`}
+                          aria-label={`Acciones del involucrado ${n}`}
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={f.acciones}
+                          maxLength={40}
+                          onChange={(e) =>
+                            cambiarInvolucrado(f.clave, { acciones: e.target.value })
+                          }
+                          aria-invalid={errorAcciones ? true : undefined}
+                          className={claseControl}
+                        />
+                        <ErrorCampo texto={errorAcciones} />
+                      </div>
+                    ) : null}
                   </div>
                 </li>
               );
@@ -546,6 +573,7 @@ export function FormularioRegistro({
                 rfc: "",
                 curp: "",
                 aportacion: "",
+                acciones: "",
               },
             ]);
             setConsecutivo((n) => n + 1);

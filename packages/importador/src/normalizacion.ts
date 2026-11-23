@@ -297,13 +297,73 @@ export type Identificadores = {
  * Agrega un identificador validando su formato. Si falla, se conserva y se
  * marca en `invalidos` (§5). `id_fiscal` acepta RFC o un identificador extranjero.
  */
+const DIGITO_EN_PALABRA: Record<string, string> = {
+  CERO: "0",
+  UNO: "1",
+  UNA: "1",
+  UN: "1",
+  DOS: "2",
+  TRES: "3",
+  CUATRO: "4",
+  CINCO: "5",
+  SEIS: "6",
+  SIETE: "7",
+  OCHO: "8",
+  NUEVE: "9",
+};
+/** Palabras de relleno al dictar una clave: «guion», «letra», «número». */
+const RELLENO_CLAVE = new Set(["GUION", "LETRA", "NUMERO", "NO", "DIGITO"]);
+
+/**
+ * Las escrituras notariales suelen escribir el RFC o la CURP con letra («SESV siete, tres, cero,
+ * cuatro…»). Convierte cada dígito escrito con palabra a su número y une el resto; si no hay ningún
+ * dígito en palabra, devuelve el texto tal cual (sin espacios ni guiones).
+ */
+export function claveDesdeTexto(crudo: string): string {
+  const mayus = crudo
+    .toUpperCase()
+    .replace(/[ÁÀÄ]/g, "A")
+    .replace(/[ÉÈË]/g, "E")
+    .replace(/[ÍÌÏ]/g, "I")
+    .replace(/[ÓÒÖ]/g, "O")
+    .replace(/[ÚÙÜ]/g, "U")
+    // Una etiqueta al inicio («R.F.C.:», «CURP») no es parte de la clave.
+    .replace(/^\s*(R\.?\s*F\.?\s*C\.?|C\.?\s*U\.?\s*R\.?\s*P\.?)(\s*[:.-]\s*|\s+)/, "");
+  const fichas = mayus.split(/[^A-ZÑ&0-9]+/).filter(Boolean);
+  if (!fichas.some((f) => f in DIGITO_EN_PALABRA)) return mayus.replace(/[\s-]/g, "");
+  const esDigito = (f: string | undefined) => f !== undefined && f in DIGITO_EN_PALABRA;
+  return (
+    fichas
+      // «Y» entre dos dígitos en palabra es conjunción («cuatro y cinco»); en otro lugar es la letra.
+      .filter(
+        (f, i) =>
+          !RELLENO_CLAVE.has(f) &&
+          !(f === "Y" && esDigito(fichas[i - 1]) && esDigito(fichas[i + 1])),
+      )
+      .map((f) => DIGITO_EN_PALABRA[f] ?? f)
+      .join("")
+  );
+}
+
+/**
+ * Número entero de un texto como «500», «1,500 acciones» o «quinientas (500)»: los dígitos del
+ * primer grupo numérico. Null si no hay dígitos.
+ */
+export function normalizarEntero(texto: string): string | null {
+  const grupo = texto.match(/\d{1,3}(?:[,.\s]\d{3})+(?!\d)|\d+/);
+  if (!grupo) return null;
+  const n = grupo[0].replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+  return n.length <= 15 ? n : null;
+}
+
 export function agregarIdentificador(
   ids: Identificadores,
   clase: "rfc" | "curp" | "clabe" | "id_fiscal",
   crudo: string,
 ): Identificadores {
-  const valor = crudo.trim().toUpperCase();
-  if (!valor || valor === "N/A") return ids;
+  const limpio = crudo.trim().toUpperCase();
+  if (!limpio || limpio === "N/A") return ids;
+  const valor = clase === "rfc" || clase === "curp" ? claveDesdeTexto(limpio) : limpio;
   const r: Identificadores = { ...ids };
   const marcar = (c: string) => {
     r.invalidos = [...new Set([...(r.invalidos ?? []), c])];
