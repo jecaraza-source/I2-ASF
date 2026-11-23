@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   agregarIdentificador,
+  claveDesdeTexto,
   esClabe,
   fechaHoraLocal,
   montosEnTexto,
+  normalizarEntero,
   normalizarFecha,
   normalizarFuerza,
   normalizarHora,
@@ -126,5 +128,45 @@ describe("identificadores", () => {
   it("referencias A1", () => {
     expect(referenciaA1(16, 8)).toBe("H16");
     expect(referenciaA1(1, 27)).toBe("AA1");
+  });
+});
+
+describe("claves escritas con letra", () => {
+  it("convierte los dígitos en palabra de un RFC notarial", () => {
+    expect(claveDesdeTexto("SESV siete, tres, cero, cuatro, uno, cinco, A, B, uno")).toBe(
+      "SESV730415AB1",
+    );
+    expect(claveDesdeTexto("R.F.C.: ABC-nueve-ocho-cero-uno-cero-uno-guion-X Y Z")).toBe(
+      "ABC980101XYZ",
+    );
+    expect(claveDesdeTexto("Siete, TRES")).toBe("73");
+  });
+
+  it("deja igual una clave que ya trae números", () => {
+    expect(claveDesdeTexto("SESV-730415-AB1")).toBe("SESV730415AB1");
+    expect(claveDesdeTexto("RFC SESV730415AB1")).toBe("SESV730415AB1");
+  });
+
+  it("agregarIdentificador valida la clave ya convertida", () => {
+    const ids = agregarIdentificador({}, "rfc", "SESV siete tres cero cuatro uno cinco A B uno");
+    expect(ids.rfc).toBe("SESV730415AB1");
+    expect(ids.invalidos).toBeUndefined();
+    const curp = agregarIdentificador(
+      {},
+      "curp",
+      "SESV siete tres cero cuatro uno cinco H D F R R S cero nueve",
+    );
+    expect(curp.curp).toBe("SESV730415HDFRRS09");
+    expect(curp.invalidos).toBeUndefined();
+  });
+});
+
+describe("normalizarEntero", () => {
+  it("toma el número de acciones", () => {
+    expect(normalizarEntero("500")).toBe("500");
+    expect(normalizarEntero("1,500 acciones")).toBe("1500");
+    expect(normalizarEntero("quinientas (500) acciones")).toBe("500");
+    expect(normalizarEntero("2.500")).toBe("2500");
+    expect(normalizarEntero("quinientas")).toBeNull();
   });
 });

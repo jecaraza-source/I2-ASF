@@ -60,6 +60,7 @@ const involucradoSchema = z.object({
   rfc: z.string().optional().catch(undefined),
   curp: z.string().optional().catch(undefined),
   aportacion_texto: z.string().optional().catch(undefined),
+  acciones_texto: z.string().optional().catch(undefined),
 });
 const montoSchema = z.object({ moneda: z.enum(MONEDAS) });
 const paginaSchema = z.object({ pagina: z.number().int().positive().optional() }).catch({});
@@ -105,6 +106,7 @@ export async function registroPorValidar(supabase: Cliente, encargoId: string, r
         rfc: v.data.rfc ?? "",
         curp: v.data.curp ?? "",
         aportacion: v.data.aportacion_texto ?? "",
+        acciones: v.data.acciones_texto ?? "",
         campoIa: l.campo,
       });
       continue;

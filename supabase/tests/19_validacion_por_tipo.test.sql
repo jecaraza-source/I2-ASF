@@ -19,6 +19,11 @@ select ok(
      from public.tipo_documento
     where organizacion_id = 'b0000000-0000-4000-8000-000000000001' and clave = 'poder_notarial'),
   'el poder notarial no lleva monto');
+select ok(
+  (select campos_esperados @> '[{"clave":"numero_contrato","oculto":true},{"clave":"numero_factura","oculto":true},{"clave":"numero_cuenta","oculto":true},{"clave":"monto","oculto":true},{"clave":"domicilio","etiqueta":"Domicilio fiscal"}]'
+     from public.tipo_documento
+    where organizacion_id = 'b0000000-0000-4000-8000-000000000001' and clave = 'constancia_situacion_fiscal'),
+  'la constancia de situación fiscal no lleva contrato, factura, cuenta ni monto');
 select is(
   (select count(*)::int from public.tipo_documento t, jsonb_array_elements(t.campos_esperados) c
     where t.organizacion_id = 'b0000000-0000-4000-8000-000000000001' and t.clave = 'acta_constitutiva'
