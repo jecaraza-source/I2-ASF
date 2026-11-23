@@ -32,6 +32,7 @@ export async function colaValidacion(supabase: Cliente, encargoId: string) {
         .select("registro_id, estado")
         .eq("encargo_id", encargoId)
         .eq("metodo", "ia")
+        .neq("estado", "reemplazado")
         .in("registro_id", ids)
     : { data: [] };
   const conteo = new Map<string, { total: number; porRevisar: number }>();
@@ -79,6 +80,7 @@ export async function registroPorValidar(supabase: Cliente, encargoId: string, r
     .select("id, campo, valor_crudo, valor_normalizado, confianza, ubicacion, estado")
     .eq("registro_id", r.id)
     .eq("metodo", "ia")
+    .neq("estado", "reemplazado")
     .order("creado_en");
 
   const campos = leerCamposEsperados(r.tipo_documento.campos_esperados);
@@ -127,6 +129,7 @@ export async function registroPorValidar(supabase: Cliente, encargoId: string, r
       r.estado_extraccion === "hecha" &&
       r.estado_validacion === "pendiente",
     estadoValidacion: r.estado_validacion,
+    estadoExtraccion: r.estado_extraccion,
     proveedor: r.extraccion_nota,
     documento: r.documento_origen,
     tipo: {

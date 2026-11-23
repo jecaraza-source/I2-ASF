@@ -43,6 +43,8 @@ export const rolSchema = z.enum(["admin", "auditor", "lector", "verificador"]);
 export const estadoEncargoSchema = z.enum(["activo", "cerrado", "archivado"]);
 export const origenRegistroSchema = z.enum(["documento", "captura", "importacion", "campo"]);
 export const estadoValidacionSchema = z.enum(["pendiente", "validado", "corregido", "rechazado"]);
+/** Una extracción también puede quedar `reemplazada` por otra lectura de la IA (no cuenta para nada). */
+export const estadoExtraccionSchema = z.enum([...estadoValidacionSchema.options, "reemplazado"]);
 export const metodoExtraccionSchema = z.enum(["ia", "manual", "importacion"]);
 export const tipoEntidadSchema = z.enum([
   "persona_fisica",
@@ -176,7 +178,7 @@ export const extraccionSchema = z
     confianza: z.number().min(0).max(1).nullable(),
     ubicacion: ubicacionSchema,
     metodo: metodoExtraccionSchema,
-    estado: estadoValidacionSchema,
+    estado: estadoExtraccionSchema,
     validado_por: uuidSchema.nullable(),
     validado_en: marcaTiempoSchema.nullable(),
     /** Solo en corregidas: lo que leyó la IA antes de la corrección. */

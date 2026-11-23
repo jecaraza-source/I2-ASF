@@ -91,7 +91,7 @@ cuando pertenece a un encargo. No se repiten abajo.
 | `tipo_documento` | `clave`, `nombre`, `categoria_id`, `campos_esperados jsonb` |
 | `documento_origen` | `expediente_id`, `sha256`, `storage_path`, `nombre_archivo`, `mime`, `tamano`, `folio`, `fuente`, `recibido_por`, `recibido_en`, `original_id` (si es derivado); único (`encargo_id`, `sha256`) |
 | `registro` | `expediente_id`, `tipo_documento_id`, `origen` (`documento`, `captura`, `importacion`), `documento_id` (nulo en capturas), `fuente`, `fecha_documento`, `estado_validacion` (`pendiente`, `validado`, `corregido`, `rechazado`), `estado_extraccion`, `resumen` |
-| `extraccion` | `registro_id`, `campo`, `valor_crudo text`, `valor_normalizado jsonb`, `confianza numeric` (nulo si es manual), `ubicacion jsonb` (página, hoja, fila, celda), `metodo` (`ia`, `manual`, `importacion`), `estado`, `validado_por`, `validado_en`, `valor_original jsonb` (solo en corregidas: lo que leyó la IA) |
+| `extraccion` | `registro_id`, `campo`, `valor_crudo text`, `valor_normalizado jsonb`, `confianza numeric` (nulo si es manual), `ubicacion jsonb` (página, hoja, fila, celda), `metodo` (`ia`, `manual`, `importacion`), `estado` (`pendiente`, `validado`, `corregido`, `rechazado`, `reemplazado`), `validado_por`, `validado_en`, `valor_original jsonb` (solo en corregidas: lo que leyó la IA) |
 
 **Entidades, vínculos y eventos**
 
@@ -367,6 +367,11 @@ franja a su página. Debajo, los datos se recorren con «Siguiente por revisar»
 - **Estados:** si ningún proveedor está permitido el registro queda `en_espera` con el motivo en
   `extraccion_nota` (no es un fallo) y vuelve a la cola al encender la IA del encargo o con
   «Reintentar lectura». Tras tres intentos fallidos queda `error`, disponible para captura manual.
+- **Volver a leer** (`releer_extraccion`, admin y auditor): un documento ya leído (`hecha`) que
+  nadie ha validado puede leerse otra vez, desde Ingreso de documentos o desde la pantalla de
+  validación, con confirmación. Las lecturas `ia` anteriores no se borran: quedan `reemplazado`
+  (trazabilidad) y no cuentan para validación, entidades, red ni reglas. El documento vuelve a la
+  cola y queda en bitácora (`extraccion.releer`). Un registro validado o rechazado no se vuelve a leer.
 - **Pruebas:** con `IA_SIMULADA=1` la respuesta sale de una línea de guion dentro del archivo de
   prueba; ningún proveedor recibe nada. Se ignora en producción.
 

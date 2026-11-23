@@ -2,6 +2,7 @@ import { MOTIVO_BLOQUEO_IA, NOMBRE_PROVEEDOR_IA, puede, textoErrorIA } from "@si
 import Link from "next/link";
 import { z } from "zod";
 import { reencolarExtraccion } from "@/acciones/ingreso";
+import { BotonReleer } from "@/components/ingreso/releer";
 import { EstadoVacio } from "@/components/estados";
 import { ZonaIngreso } from "@/components/ingreso/zona";
 import { Etiqueta, Panel, Titulo } from "@/components/ui";
@@ -187,6 +188,15 @@ export default async function IngresoDocumentos({
                           Reintentar lectura
                         </button>
                       </form>
+                    ) : null}
+                    {puedeIngresar &&
+                    r.estado_extraccion === "hecha" &&
+                    r.estado_validacion === "pendiente" ? (
+                      <BotonReleer
+                        encargoId={encargo.id}
+                        registroId={r.id}
+                        documento={r.documento_origen?.nombre_archivo ?? "documento"}
+                      />
                     ) : null}
                   </td>
                   <td data-etiqueta="Recibido" className="px-4 py-2 text-tenue">

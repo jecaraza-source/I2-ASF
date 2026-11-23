@@ -2,6 +2,7 @@ import { puede, tipoPorMime } from "@sigma/modelo";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { SinPermiso } from "@/components/estados";
+import { BotonReleer } from "@/components/ingreso/releer";
 import { EnlaceBoton, Panel, Titulo } from "@/components/ui";
 import { ValidarRegistro } from "@/components/validacion/validar";
 import { obtenerEncargo } from "@/lib/datos";
@@ -41,7 +42,9 @@ export default async function PaginaValidarRegistro({
         <Titulo>Validar registro</Titulo>
         <Panel>
           <p className="text-sm text-texto">
-            Este registro ya no está en la cola de validación (estado: {r.estadoValidacion}).
+            {r.estadoValidacion === "pendiente" && r.estadoExtraccion !== "hecha"
+              ? "La IA está leyendo este documento. Volverá a la cola en cuanto termine."
+              : `Este registro ya no está en la cola de validación (estado: ${r.estadoValidacion}).`}
           </p>
           <div className="mt-4 flex gap-3">
             <EnlaceBoton href={`${base}/registros/${r.id}`}>Ver el registro</EnlaceBoton>
@@ -96,9 +99,15 @@ export default async function PaginaValidarRegistro({
       >
         Validar: {r.tipo.nombre}
       </Titulo>
-      <p className="-mt-3 mb-5 text-sm text-tenue">
-        {posicion >= 0 ? `Documento ${posicion + 1} de ${cola.length} en la cola.` : null}
-      </p>
+      <div className="-mt-3 mb-5 flex flex-wrap items-start justify-between gap-x-6 gap-y-1 text-sm text-tenue">
+        <p>{posicion >= 0 ? `Documento ${posicion + 1} de ${cola.length} en la cola.` : null}</p>
+        <BotonReleer
+          encargoId={encargo.id}
+          registroId={r.id}
+          documento={r.documento.nombre_archivo}
+          volverA={`${base}/validacion`}
+        />
+      </div>
       <ValidarRegistro
         key={r.id}
         encargoId={encargo.id}

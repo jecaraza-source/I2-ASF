@@ -61,6 +61,7 @@ export async function validarRegistro(
     .select("id, campo, valor_crudo, valor_normalizado")
     .eq("registro_id", registro.id)
     .eq("metodo", "ia")
+    .neq("estado", "reemplazado")
     .order("creado_en");
   if (errorLecturas) return { ok: false, mensaje: mensajeBase(errorLecturas, "validarRegistro") };
 

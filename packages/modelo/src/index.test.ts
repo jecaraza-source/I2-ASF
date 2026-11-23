@@ -90,6 +90,17 @@ describe("extraccion", () => {
     expect(extraccionSchema.safeParse({ ...extraccion, confianza: 0.9 }).success).toBe(false);
   });
 
+  it("acepta una lectura de la IA reemplazada por otra", () => {
+    expect(
+      extraccionSchema.safeParse({
+        ...extraccion,
+        metodo: "ia",
+        confianza: 0.9,
+        estado: "reemplazado",
+      }).success,
+    ).toBe(true);
+  });
+
   it("rechaza confianza fuera de 0–1", () => {
     expect(
       extraccionSchema.safeParse({ ...extraccion, metodo: "ia", confianza: 1.2 }).success,

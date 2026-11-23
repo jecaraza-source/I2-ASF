@@ -2668,6 +2668,7 @@ export type Database = {
         Args: { p_motivo: string; p_registro: string }
         Returns: undefined
       }
+      releer_extraccion: { Args: { p_registro: string }; Returns: string }
       registrar_acceso: {
         Args: { p_ip?: string; p_navegador?: string; p_tipo: string }
         Returns: undefined
